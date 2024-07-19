@@ -1,6 +1,9 @@
 name: build and upload artifacts
 
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -43,12 +46,13 @@ jobs:
           if [ ! -z "${{ env.VERSION }}" ]; then
             echo "PRODUCTION=true" >> $GITHUB_ENV
           fi
-          - name: Build CLI
-          shell: bash
-          run: task build:cli
-          env:
-            OS: ${{ matrix.target }}
-            ARCH: ${{ matrix.arch }}
+
+      - name: Build CLI
+        shell: bash
+        run: task build:cli
+        env:
+          OS: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
 
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
