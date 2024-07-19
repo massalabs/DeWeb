@@ -1,0 +1,28 @@
+name: Install
+
+inputs:
+  # the input value is the 'runs-on'
+  os:
+    required: true
+    default: "ubuntu-22.04"
+  repo-token:
+    description: The token to use to authenticate with the GitHub API
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version: 1.22
+        cache: true
+
+    - name: Install Task
+      uses: arduino/setup-task@v2
+      with:
+        version: 3.x
+        repo-token: ${{ inputs.repo-token }}
+
+    - name: Install Dependencies
+      run: task install
+      shell: bash

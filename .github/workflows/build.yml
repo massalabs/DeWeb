@@ -1,0 +1,70 @@
+name: build and upload artifacts
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag_name:
+        type: string
+        description: "The tag name of the release without v prefix"
+
+env:
+  VERSION: ${{ inputs.tag_name }}
+
+jobs:
+  build:
+    name: build and upload artifacts
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: amd64
+            target: windows
+            ext: .exe
+          - os: ubuntu-20.04
+            arch: amd64
+            target: linux
+          - os: macos-13
+            arch: amd64
+            target: darwin
+          - os: macos-14
+            arch: arm64
+            target: darwin
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if VERSION exists
+        shell: bash
+        id: check_version
+        run: |
+          if [ ! -z "${{ env.VERSION }}" ]; then
+            echo "PRODUCTION=true" >> $GITHUB_ENV
+          fi
+          - name: Build CLI
+          shell: bash
+          run: task build:cli
+          env:
+            OS: ${{ matrix.target }}
+            ARCH: ${{ matrix.arch }}
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}-${{ matrix.arch }}-${{ env.VERSION }}
+          path: build/cli${{ matrix.ext }}
+
+      - name: Build Server
+        shell: bash
+        run: task build:server
+        env:
+          OS: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Upload Server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.target }}-${{ matrix.arch }}-${{ env.VERSION }}
+          path: build/server${{ matrix.ext }}
