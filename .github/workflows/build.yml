@@ -39,6 +39,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: installing dependencies
+        uses: ./.github/actions/install
+        with:
+          os: ${{ matrix.os }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check if VERSION exists
         shell: bash
         id: check_version
