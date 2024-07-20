@@ -1,8 +1,8 @@
 name: Install
 
 inputs:
-  # the input value is the 'runs-on'
   os:
+    description: The operating system to run the action on, should be the 'runs-on' in workflows
     required: true
     default: "ubuntu-22.04"
   repo-token:
