@@ -21,11 +21,9 @@ func TestChunk(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			chunks := DivideIntoChunks(test.data, test.chunkSize)
 
 			if test.data == nil || test.chunkSize <= 0 {
-
 				assert.Nil(t, chunks)
 
 				return
