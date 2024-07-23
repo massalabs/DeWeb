@@ -1,15 +1,11 @@
 package chunk
 
-import "fmt"
-
 func DivideIntoChunks(data []byte, chunkSize int) [][]byte {
 	if data == nil || chunkSize <= 0 {
 		return nil
 	}
 
 	var chunks [][]byte
-
-	fmt.Printf("Data: %v\nLength: %v\n", data, len(data))
 
 	for i := 0; i < len(data); i += chunkSize {
 		end := i + chunkSize
@@ -22,5 +18,3 @@ func DivideIntoChunks(data []byte, chunkSize int) [][]byte {
 
 	return chunks
 }
-
-// string => byte arr ==> function ==> assert chunk length

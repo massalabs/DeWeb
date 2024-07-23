@@ -29,9 +29,9 @@ func TestChunk(t *testing.T) {
 				return
 			}
 
-			expectedChunks := (len(test.data) + test.chunkSize - 1) / test.chunkSize
+			expectedLen := (len(test.data) + test.chunkSize - 1) / test.chunkSize
 
-			assert.Equal(t, len(chunks), expectedChunks)
+			assert.Equal(t, len(chunks), expectedLen)
 
 		})
 	}
