@@ -16,7 +16,8 @@ func TestChunk(t *testing.T) {
 		{"Nil chunkSize", []byte("Hello"), 0},
 		{"Nominal test case", []byte("Hello, World!"), 1},
 		{"Median", []byte("Hello, World!"), 4},
-		{"Big byte string", []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."), 16},
+		{"Big byte array", []byte("Lorem ipsum dolor sit amet, consectetur adipiscing elit."), 16},
+		{"Small byte array", []byte("hello"), 32},
 	}
 
 	for _, test := range tests {
@@ -32,7 +33,6 @@ func TestChunk(t *testing.T) {
 			expectedLen := (len(test.data) + test.chunkSize - 1) / test.chunkSize
 
 			assert.Equal(t, len(chunks), expectedLen)
-
 		})
 	}
 }
