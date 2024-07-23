@@ -78,5 +78,7 @@ tasks:
 
   fmt:
     cmds:
-      - cmd: go fmt ./...
       - cmd: go mod tidy
+      - cmd: gofumpt -l -w .
+      - cmd: gci write .
+      - cmd: golangci-lint run --fix
