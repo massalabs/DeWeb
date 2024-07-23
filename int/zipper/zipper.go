@@ -6,9 +6,8 @@ import (
 	"io"
 )
 
-
 func GetZipFileContent(z *zip.File) ([]byte, error) {
-file, err := z.Open()
+	file, err := z.Open()
 	if err != nil {
 		return nil, fmt.Errorf("opening zip content: %w", err)
 	}
