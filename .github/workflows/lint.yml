@@ -23,6 +23,7 @@ jobs:
         run: go install mvdan.cc/gofumpt@latest
       - name: run gofumpt
         run: |
+          gofumpt -l -w .
           ERRORS=$(gofumpt -l . | wc -l)
           if [[ "$ERRORS" != "0" ]]; then
             echo "following files are not gofumpted:"
