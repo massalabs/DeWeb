@@ -1,21 +1,17 @@
 package chunk
 
-import "fmt"
+func DivideIntoChunks(data []byte, chunkSize int) [][]byte {
+    if data == nil || chunkSize <= 0 {
+        return nil
+    }
 
-func DivideChunk(data []byte, chunkSize int) ([][]byte, error) {
-	chunkNumber := len(data)/chunkSize + 1
-
-	if len(data) < 1 {
-		return nil, fmt.Errorf("data is empty")
-	}
-
-	var chunks [][]byte
-
-	for i := 1; i < chunkNumber; i++ {
-		chunks = append(chunks, data[(i-1)*chunkSize:(i)*chunkSize])
-	}
-
-	chunks = append(chunks, data[(chunkNumber-1)*chunkSize:])
-
-	return chunks, nil
+    var chunks [][]byte
+    for i := 0; i < len(data); i += chunkSize {
+        end := i + chunkSize
+        if end > len(data) {
+            end = len(data)
+        }
+        chunks = append(chunks, data[i:end])
+    }
+    return chunks
 }
