@@ -7,6 +7,7 @@ import (
 
 	"github.com/massalabs/DeWeb/int/config"
 	"github.com/massalabs/DeWeb/int/utils"
+	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/DeWeb/pkg/website"
 	"github.com/massalabs/station/pkg/logger"
 )
@@ -23,7 +24,7 @@ func main() {
 		logger.Fatalf("usage: %s <website.zip>", os.Args[0])
 	}
 
-	config := config.DefaultConfig("fullpower", "https://buildnet.massa.net/api/v2")
+	config := pkgConfig.DefaultConfig("fullpower", "https://buildnet.massa.net/api/v2")
 
 	address, err := deployWebsite(config)
 	if err != nil {
@@ -33,7 +34,7 @@ func main() {
 	logger.Infof("Website uploaded successfully to address: %s", address)
 }
 
-func deployWebsite(config *config.Config) (string, error) {
+func deployWebsite(config *pkgConfig.Config) (string, error) {
 	logger.Debugf("Deploying website contract with config: %+v", config)
 
 	deploymentResult, err := website.Deploy(config)
@@ -58,7 +59,7 @@ func deployWebsite(config *config.Config) (string, error) {
 	return deploymentResult.Address, nil
 }
 
-func uploadChunks(chunks [][]byte, address string, config *config.Config) error {
+func uploadChunks(chunks [][]byte, address string, config *pkgConfig.Config) error {
 	for i, chunk := range chunks {
 		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
 

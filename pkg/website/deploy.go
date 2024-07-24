@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/massalabs/DeWeb/int/config"
+	"github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/station/pkg/node/sendoperation"
 	"github.com/massalabs/station/pkg/node/sendoperation/signer"
 	"github.com/massalabs/station/pkg/onchain"

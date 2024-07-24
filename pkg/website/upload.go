@@ -3,7 +3,7 @@ package website
 import (
 	"fmt"
 
-	"github.com/massalabs/DeWeb/int/config"
+	"github.com/massalabs/DeWeb/pkg/config"
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/logger"
