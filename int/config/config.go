@@ -9,7 +9,7 @@ import (
 
 const (
 	defaultMinimalFees = uint64(100_000_000)
-	defaultMaxGas      = uint64(4_000_000_000)
+	defaultMaxGas      = uint64(3_980_167_295)
 	defaultMaxCoins    = uint64(10_000_000_000)
 	defaultExpiry      = uint64(3)
 
