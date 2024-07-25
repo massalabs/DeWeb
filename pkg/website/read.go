@@ -32,7 +32,7 @@ func getNumberOfChunks(client *node.Client, websiteAddress string) (int32, error
 		return 0, fmt.Errorf("fetching website number of chunks: %w", err)
 	}
 
-	chunkNumber, err := convert.BytesToI32(nbChunkResponse.CandidateValue)
+	chunkNumber, err := convert.BytesToI32(nbChunkResponse.FinalValue)
 	if err != nil {
 		return 0, fmt.Errorf("converting fetched data for key '%s': %w", nbChunkKey, err)
 	}
@@ -58,7 +58,7 @@ func fetchAllChunks(client *node.Client, websiteAddress string, chunkNumber int3
 
 	var dataStore []byte
 	for _, entry := range response {
-		dataStore = append(dataStore, entry.CandidateValue...)
+		dataStore = append(dataStore, entry.FinalValue...)
 	}
 
 	return dataStore, nil
@@ -73,5 +73,5 @@ func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, erro
 		return "", fmt.Errorf("fetching website owner: %w", err)
 	}
 
-	return string(ownerResponse.CandidateValue), nil
+	return string(ownerResponse.FinalValue), nil
 }
