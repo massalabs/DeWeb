@@ -30,10 +30,7 @@ func UploadChunk(
 		return "", fmt.Errorf("chunk is empty, no data to upload")
 	}
 
-	params, err := prepareUploadParams(chunk, chunkIndex)
-	if err != nil {
-		return "", fmt.Errorf("preparing upload params: %w", err)
-	}
+	params := prepareUploadParams(chunk, chunkIndex)
 
 	uploadCost, err := ComputeChunkCost(chunkIndex, len(chunk))
 	if err != nil {
@@ -45,12 +42,12 @@ func UploadChunk(
 	return performUpload(config, websiteAddress, params, uploadCost, chunkIndex)
 }
 
-func prepareUploadParams(chunk []byte, chunkIndex int) ([]byte, error) {
+func prepareUploadParams(chunk []byte, chunkIndex int) []byte {
 	params := convert.I32ToBytes(chunkIndex)
 	params = append(params, convert.U32ToBytes(len(chunk))...)
 	params = append(params, chunk...)
 
-	return params, nil
+	return params
 }
 
 func performUpload(
