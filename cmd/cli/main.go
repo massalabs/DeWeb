@@ -7,6 +7,7 @@ import (
 
 	"github.com/massalabs/DeWeb/int/config"
 	"github.com/massalabs/DeWeb/int/utils"
+	"github.com/massalabs/DeWeb/int/zipper"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/DeWeb/pkg/website"
 	"github.com/massalabs/station/pkg/logger"
@@ -32,6 +33,40 @@ func main() {
 	}
 
 	logger.Infof("Website uploaded successfully to address: %s", address)
+
+	owner, err := website.GetOwner(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Fatalf("failed to get website owner: %v", err)
+	}
+
+	logger.Infof("Website owner: %s", owner)
+
+	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Fatalf("failed to fetch website: %v", err)
+	}
+
+	logger.Infof("Website fetched successfully with size: %d", len(websiteBytes))
+
+	outputZipPath := fmt.Sprintf("website_%s.zip", address)
+
+	err = os.WriteFile(outputZipPath, websiteBytes, 0o644)
+	if err != nil {
+		logger.Error("Failed to write website zip file", err)
+		return
+	}
+
+	logger.Info("Website successfully written to file: %s", outputZipPath)
+
+	fileName := "index.html"
+
+	content, err := zipper.GetFileFromZip(outputZipPath, fileName)
+	if err != nil {
+		logger.Error(err)
+		return
+	}
+
+	logger.Infof("%s content:\n %s", fileName, content)
 }
 
 func deployWebsite(config *pkgConfig.Config) (string, error) {
