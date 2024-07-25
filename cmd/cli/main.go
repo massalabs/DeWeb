@@ -14,6 +14,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type User struct {
+	config      *pkgConfig.Config
+	nickname    string
+	filepath    string
+	siteAddress string
+}
+
 func main() {
 	app := &cli.App{
 		Name:      "DeWeb CLI",
@@ -21,6 +28,7 @@ func main() {
 		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
 		Action: func(cCtx *cli.Context) error {
+
 			err := cli.ShowAppHelp(cCtx)
 			if err != nil {
 				return fmt.Errorf("failed to show app help: %v", err)
@@ -35,26 +43,25 @@ func main() {
 				Usage:     "Upload a website",
 				ArgsUsage: "<wallet nickname> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-					nickname := cCtx.Args().Get(0)
-
-					if nickname == "" {
-						return fmt.Errorf("wallet nickname is required")
+					if cCtx.Args().Len() < 2 {
+						return fmt.Errorf("<wallet nickname> <website zip file path> are required")
 					}
 
-					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
-
-					filepath := cCtx.Args().Get(1)
-
-					if filepath == "" {
-						return fmt.Errorf("website zip file path is required")
+					user := User{
+						nickname: cCtx.Args().Get(0), filepath: cCtx.Args().Get(1),
+						config: pkgConfig.DefaultConfig(cCtx.Args().Get(0),
+							"https://buildnet.massa.net/api/v2"),
 					}
 
-					address, err := deployWebsite(config, filepath)
+					address, err := deployWebsite(user.config, user.filepath)
 					if err != nil {
-						logger.Fatalf("failed to deploy website: %v", err)
+						logger.Fatalf("sorry %s, failed to deploy website: %v", user.nickname, err)
 					}
 
-					logger.Infof("Website uploaded successfully to address: %s", address)
+					user.siteAddress = address
+
+					logger.Infof("%s successfully uploaded a website at %s", user.nickname, user.siteAddress)
+
 					return nil
 				},
 			},
@@ -64,37 +71,32 @@ func main() {
 				Usage:     "Edit website",
 				ArgsUsage: "<wallet nickname> <website sc address> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-					nickname := cCtx.Args().Get(0)
-
-					if nickname == "" {
-						return fmt.Errorf("wallet nickname is required")
+					if cCtx.Args().Len() < 3 {
+						return fmt.Errorf("<wallet nickname> <website zip file path> <website zip file path> are required")
 					}
 
-					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
+					user := User{
+						nickname:    cCtx.Args().Get(0),
+						siteAddress: cCtx.Args().Get(1),
+						filepath:    cCtx.Args().Get(2),
+						config: pkgConfig.DefaultConfig(cCtx.Args().Get(0),
+
+							"https://buildnet.massa.net/api/v2"),
+					}
 
 					address := cCtx.Args().Get(1)
 
-					if address == "" {
-						return fmt.Errorf("sc address is required")
-					}
-
-					zipPath := cCtx.Args().Get(2)
-
-					if zipPath == "" {
-						return fmt.Errorf("website zip path is required")
-					}
-
-					bytecode, err := processFileForUpload(zipPath)
+					bytecode, err := processFileForUpload(user.filepath)
 					if err != nil {
 						logger.Fatalf("failed to process file for upload: %v", err)
 					}
 
-					err = uploadChunks(bytecode, address, config)
+					err = uploadChunks(bytecode, address, user.config)
 					if err != nil {
 						logger.Fatalf("failed to upload chunks: %v", err)
 					}
 
-					logger.Infof("Website bytecode updated successfully at address: %s", address)
+					logger.Infof("Nice %s, %s was updated with new files", user.nickname, user.siteAddress)
 
 					return nil
 				},
@@ -102,23 +104,17 @@ func main() {
 			{
 				Name:      "view",
 				Aliases:   []string{"v"},
-				Usage:     "View website html content",
+				Usage:     "View  html content",
 				ArgsUsage: "<nickname> <website sc address>",
 				Action: func(cCtx *cli.Context) error {
-					nickname := cCtx.Args().Get(0)
-					if nickname == "" {
-						return fmt.Errorf("wallet nickname is required")
+					if cCtx.Args().Len() < 2 {
+						return fmt.Errorf("<wallet nickname> <website zip file path> are required")
 					}
-					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
+					user := User{nickname: cCtx.Args().Get(0), siteAddress: cCtx.Args().Get(1), config: pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")}
 
-					address := cCtx.Args().Get(1)
-					if address == "" {
-						return fmt.Errorf("sc address is required")
-					}
-
-					err := viewWebsite(address, config)
+					err := viewWebsite(user.siteAddress, user.config)
 					if err != nil {
-						logger.Fatalf("failed to view website: %v", err)
+						logger.Fatalf("Sorry %s, can't view your website: %v", user.nickname, err)
 					}
 
 					return nil
