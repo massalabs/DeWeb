@@ -35,17 +35,19 @@ func main() {
 				Usage:     "Upload a website",
 				ArgsUsage: "<wallet nickname> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Get(0) == "" {
+					nickname := cCtx.Args().Get(0)
+
+					if nickname == "" {
 						return fmt.Errorf("wallet nickname is required")
 					}
 
-					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
-
-					if cCtx.Args().Get(1) == "" {
-						return fmt.Errorf("website zip file path is required")
-					}
+					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
 
 					filepath := cCtx.Args().Get(1)
+
+					if filepath == "" {
+						return fmt.Errorf("website zip file path is required")
+					}
 
 					address, err := deployWebsite(config, filepath)
 					if err != nil {
@@ -59,28 +61,28 @@ func main() {
 			{
 				Name:      "edit",
 				Aliases:   []string{"e"},
-				Usage:     "Edit website bytecode",
+				Usage:     "Edit website",
 				ArgsUsage: "<wallet nickname> <sc address> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Get(0) == "" {
+					nickname := cCtx.Args().Get(0)
+
+					if nickname == "" {
 						return fmt.Errorf("wallet nickname is required")
 					}
 
-					nickname := cCtx.Args().Get(0)
-
 					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
-
-					if cCtx.Args().Get(1) == "" {
-						return fmt.Errorf("sc is required")
-					}
 
 					address := cCtx.Args().Get(1)
 
-					if cCtx.Args().Get(2) == "" {
-						return fmt.Errorf("website zip path is required")
+					if address == "" {
+						return fmt.Errorf("sc address is required")
 					}
 
 					zipPath := cCtx.Args().Get(2)
+
+					if zipPath == "" {
+						return fmt.Errorf("website zip path is required")
+					}
 
 					bytecode, err := processFileForUpload(zipPath)
 					if err != nil {
