@@ -11,25 +11,60 @@ import (
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/DeWeb/pkg/website"
 	"github.com/massalabs/station/pkg/logger"
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
+	app := &cli.App{
+		Name:      "Massa's Great DeWEB CLI",
+		Usage:     "CLI app for deploying websites",
+		UsageText: "U_ia	pload, delete & edit DeWeb site from the terminal",
+		Version:   config.Version,
+		Action: func(cCtx *cli.Context) error {
+			cli.ShowAppHelp(cCtx)
+			return nil
+		},
+
+		Commands: []*cli.Command{
+			{
+				Name:      "upload",
+				Aliases:   []string{"u"},
+				Usage:     "Upload a website",
+				ArgsUsage: "<wallet nickname> <website zip file path>",
+				Action: func(cCtx *cli.Context) error {
+
+					if cCtx.Args().Get(0) == "" {
+						return fmt.Errorf("wallet nickname is required")
+					}
+
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
+
+					if cCtx.Args().Get(1) == "" {
+						return fmt.Errorf("website zip file path is required")
+					}
+
+					filepath := cCtx.Args().Get(1)
+
+					address, err := deployWebsite(config, filepath)
+
+					if err != nil {
+						logger.Fatalf("failed to deploy website: %v", err)
+					}
+
+					logger.Infof("Website uploaded successfully to address: %s", address)
+					return nil
+				},
+			},
+		},
+	}
+
 	err := logger.InitializeGlobal("./deweb-cli.log")
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	logger.Infof("Hello, World from DeWeb CLI %s !", config.Version)
-
-	if len(os.Args) < 2 {
-		logger.Fatalf("usage: %s <website.zip>", os.Args[0])
-	}
-
-	config := pkgConfig.DefaultConfig("fullpower", "https://buildnet.massa.net/api/v2")
-
-	address, err := deployWebsite(config)
-	if err != nil {
-		logger.Fatalf("failed to deploy website: %v", err)
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
 	}
 
 	logger.Infof("Website uploaded successfully to address: %s", address)
@@ -69,7 +104,7 @@ func main() {
 	logger.Infof("%s content:\n %s", fileName, content)
 }
 
-func deployWebsite(config *pkgConfig.Config) (string, error) {
+func deployWebsite(config *pkgConfig.Config, filepath string) (string, error) {
 	logger.Debugf("Deploying website contract with config: %+v", config)
 
 	deploymentResult, err := website.Deploy(config)
@@ -79,7 +114,7 @@ func deployWebsite(config *pkgConfig.Config) (string, error) {
 
 	logger.Infof("Website contract deployed at address: %s", deploymentResult.Address)
 
-	chunks, err := processFileForUpload(os.Args[1])
+	chunks, err := processFileForUpload(filepath)
 	if err != nil {
 		return "", fmt.Errorf("failed to process file for upload: %v", err)
 	}
