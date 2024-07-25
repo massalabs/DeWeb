@@ -21,7 +21,10 @@ func main() {
 		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
 		Action: func(cCtx *cli.Context) error {
-			cli.ShowAppHelp(cCtx)
+			err := cli.ShowAppHelp(cCtx)
+			if err != nil {
+				return fmt.Errorf("failed to show app help: %v", err)
+			}
 			return nil
 		},
 
@@ -32,7 +35,6 @@ func main() {
 				Usage:     "Upload a website",
 				ArgsUsage: "<wallet nickname> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-
 					if cCtx.Args().Get(0) == "" {
 						return fmt.Errorf("wallet nickname is required")
 					}
@@ -46,7 +48,6 @@ func main() {
 					filepath := cCtx.Args().Get(1)
 
 					address, err := deployWebsite(config, filepath)
-
 					if err != nil {
 						logger.Fatalf("failed to deploy website: %v", err)
 					}
@@ -61,7 +62,6 @@ func main() {
 				Usage:     "Edit website bytecode",
 				ArgsUsage: "<wallet nickname> <sc address> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-
 					if cCtx.Args().Get(0) == "" {
 						return fmt.Errorf("wallet nickname is required")
 					}
@@ -83,7 +83,6 @@ func main() {
 					zipPath := cCtx.Args().Get(2)
 
 					bytecode, err := processFileForUpload(zipPath)
-
 					if err != nil {
 						logger.Fatalf("failed to process file for upload: %v", err)
 					}
