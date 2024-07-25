@@ -16,9 +16,9 @@ import (
 
 func main() {
 	app := &cli.App{
-		Name:      "Massa's Great DeWEB CLI",
+		Name:      "DeWeb CLI",
 		Usage:     "CLI app for deploying websites",
-		UsageText: "U_ia	pload, delete & edit DeWeb site from the terminal",
+		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
 		Action: func(cCtx *cli.Context) error {
 			cli.ShowAppHelp(cCtx)
@@ -52,6 +52,49 @@ func main() {
 					}
 
 					logger.Infof("Website uploaded successfully to address: %s", address)
+					return nil
+				},
+			},
+			{
+				Name:      "edit",
+				Aliases:   []string{"e"},
+				Usage:     "Edit website bytecode",
+				ArgsUsage: "<wallet nickname> <sc address> <website zip file path>",
+				Action: func(cCtx *cli.Context) error {
+
+					if cCtx.Args().Get(0) == "" {
+						return fmt.Errorf("wallet nickname is required")
+					}
+
+					nickname := cCtx.Args().Get(0)
+
+					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
+
+					if cCtx.Args().Get(1) == "" {
+						return fmt.Errorf("sc is required")
+					}
+
+					address := cCtx.Args().Get(1)
+
+					if cCtx.Args().Get(2) == "" {
+						return fmt.Errorf("website zip path is required")
+					}
+
+					zipPath := cCtx.Args().Get(2)
+
+					bytecode, err := processFileForUpload(zipPath)
+
+					if err != nil {
+						logger.Fatalf("failed to process file for upload: %v", err)
+					}
+
+					err = uploadChunks(bytecode, address, config)
+					if err != nil {
+						logger.Fatalf("failed to upload chunks: %v", err)
+					}
+
+					logger.Infof("Website bytecode updated successfully at address: %s", address)
+
 					return nil
 				},
 			},
