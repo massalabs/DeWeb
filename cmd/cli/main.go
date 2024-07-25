@@ -62,7 +62,7 @@ func main() {
 				Name:      "edit",
 				Aliases:   []string{"e"},
 				Usage:     "Edit website",
-				ArgsUsage: "<wallet nickname> <sc address> <website zip file path>",
+				ArgsUsage: "<wallet nickname> <website sc address> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
 					nickname := cCtx.Args().Get(0)
 
@@ -99,6 +99,31 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:      "view",
+				Aliases:   []string{"v"},
+				Usage:     "View website html content",
+				ArgsUsage: "<nickname> <website sc address>",
+				Action: func(cCtx *cli.Context) error {
+					nickname := cCtx.Args().Get(0)
+					if nickname == "" {
+						return fmt.Errorf("wallet nickname is required")
+					}
+					config := pkgConfig.DefaultConfig(nickname, "https://buildnet.massa.net/api/v2")
+
+					address := cCtx.Args().Get(1)
+					if address == "" {
+						return fmt.Errorf("sc address is required")
+					}
+
+					err := viewWebsite(address, config)
+					if err != nil {
+						logger.Fatalf("failed to view website: %v", err)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
@@ -110,42 +135,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-
-	logger.Infof("Website uploaded successfully to address: %s", address)
-
-	owner, err := website.GetOwner(&config.NetworkInfos, address)
-	if err != nil {
-		logger.Fatalf("failed to get website owner: %v", err)
-	}
-
-	logger.Infof("Website owner: %s", owner)
-
-	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
-	if err != nil {
-		logger.Fatalf("failed to fetch website: %v", err)
-	}
-
-	logger.Infof("Website fetched successfully with size: %d", len(websiteBytes))
-
-	outputZipPath := fmt.Sprintf("website_%s.zip", address)
-
-	err = os.WriteFile(outputZipPath, websiteBytes, 0o644)
-	if err != nil {
-		logger.Error("Failed to write website zip file", err)
-		return
-	}
-
-	logger.Info("Website successfully written to file: %s", outputZipPath)
-
-	fileName := "index.html"
-
-	content, err := zipper.GetFileFromZip(outputZipPath, fileName)
-	if err != nil {
-		logger.Error(err)
-		return
-	}
-
-	logger.Infof("%s content:\n %s", fileName, content)
 }
 
 func deployWebsite(config *pkgConfig.Config, filepath string) (string, error) {
@@ -195,4 +184,42 @@ func processFileForUpload(filepath string) ([][]byte, error) {
 	}
 
 	return website.DivideIntoChunks(websiteBytes, website.ChunkSize), nil
+}
+
+func viewWebsite(address string, config *pkgConfig.Config) error {
+	owner, err := website.GetOwner(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Fatalf("failed to get website owner: %v", err)
+	}
+
+	logger.Infof("Website owner: %s", owner)
+
+	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Fatalf("failed to fetch website: %v", err)
+	}
+
+	logger.Infof("Website fetched successfully with size: %d", len(websiteBytes))
+
+	outputZipPath := fmt.Sprintf("website_%s.zip", address)
+
+	err = os.WriteFile(outputZipPath, websiteBytes, 0o644)
+	if err != nil {
+		logger.Error("Failed to write website zip file", err)
+		return err
+	}
+
+	logger.Info("Website successfully written to file: %s", outputZipPath)
+
+	fileName := "index.html"
+
+	content, err := zipper.GetFileFromZip(outputZipPath, fileName)
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+
+	logger.Infof("%s content:\n %s", fileName, content)
+
+	return nil
 }
