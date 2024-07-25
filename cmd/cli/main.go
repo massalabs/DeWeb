@@ -28,7 +28,6 @@ func main() {
 		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
 		Action: func(cCtx *cli.Context) error {
-
 			err := cli.ShowAppHelp(cCtx)
 			if err != nil {
 				return fmt.Errorf("failed to show app help: %v", err)
