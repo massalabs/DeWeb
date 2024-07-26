@@ -14,13 +14,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type User struct {
-	config      *pkgConfig.Config
-	nickname    string
-	filepath    string
-	siteAddress string
-}
-
 func main() {
 	app := &cli.App{
 		Name:      "DeWeb CLI",
@@ -43,23 +36,18 @@ func main() {
 				ArgsUsage: "<wallet nickname> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 2 {
-						return fmt.Errorf("<wallet nickname> <website zip file path> are required")
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					user := User{
-						nickname: cCtx.Args().Get(0), filepath: cCtx.Args().Get(1),
-						config: pkgConfig.DefaultConfig(cCtx.Args().Get(0),
-							"https://buildnet.massa.net/api/v2"),
-					}
+					filepath := cCtx.Args().Get(1)
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
 
-					address, err := deployWebsite(user.config, user.filepath)
+					siteAddress, err := deployWebsite(config, filepath)
 					if err != nil {
-						logger.Fatalf("sorry %s, failed to deploy website: %v", user.nickname, err)
+						logger.Fatalf("failed to deploy website: %v", err)
 					}
 
-					user.siteAddress = address
-
-					logger.Infof("%s successfully uploaded a website at %s", user.nickname, user.siteAddress)
+					logger.Infof("successfully uploaded a website at %s", siteAddress)
 
 					return nil
 				},
@@ -71,31 +59,24 @@ func main() {
 				ArgsUsage: "<wallet nickname> <website sc address> <website zip file path>",
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 3 {
-						return fmt.Errorf("<wallet nickname> <website zip file path> <website zip file path> are required")
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					user := User{
-						nickname:    cCtx.Args().Get(0),
-						siteAddress: cCtx.Args().Get(1),
-						filepath:    cCtx.Args().Get(2),
-						config: pkgConfig.DefaultConfig(cCtx.Args().Get(0),
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
+					siteAddress := cCtx.Args().Get(1)
+					filepath := cCtx.Args().Get(2)
 
-							"https://buildnet.massa.net/api/v2"),
-					}
-
-					address := cCtx.Args().Get(1)
-
-					bytecode, err := processFileForUpload(user.filepath)
+					bytecode, err := processFileForUpload(filepath)
 					if err != nil {
 						logger.Fatalf("failed to process file for upload: %v", err)
 					}
 
-					err = uploadChunks(bytecode, address, user.config)
+					err = uploadChunks(bytecode, siteAddress, config)
 					if err != nil {
 						logger.Fatalf("failed to upload chunks: %v", err)
 					}
 
-					logger.Infof("Nice %s, %s was updated with new files", user.nickname, user.siteAddress)
+					logger.Infof("%s was succesfully updated", siteAddress)
 
 					return nil
 				},
@@ -107,13 +88,15 @@ func main() {
 				ArgsUsage: "<nickname> <website sc address>",
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 2 {
-						return fmt.Errorf("<wallet nickname> <website zip file path> are required")
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
-					user := User{nickname: cCtx.Args().Get(0), siteAddress: cCtx.Args().Get(1), config: pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")}
 
-					err := viewWebsite(user.siteAddress, user.config)
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
+					siteAddress := cCtx.Args().Get(1)
+
+					err := viewWebsite(siteAddress, config)
 					if err != nil {
-						logger.Fatalf("Sorry %s, can't view your website: %v", user.nickname, err)
+						logger.Fatalf("An error occured while attempting to view website %s: %v", siteAddress, err)
 					}
 
 					return nil
@@ -128,7 +111,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
 }
 
@@ -184,14 +167,14 @@ func processFileForUpload(filepath string) ([][]byte, error) {
 func viewWebsite(address string, config *pkgConfig.Config) error {
 	owner, err := website.GetOwner(&config.NetworkInfos, address)
 	if err != nil {
-		logger.Fatalf("failed to get website owner: %v", err)
+		logger.Warnf("failed to get owner of %s: %v", address, err)
 	}
 
 	logger.Infof("Website owner: %s", owner)
 
 	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
 	if err != nil {
-		logger.Fatalf("failed to fetch website: %v", err)
+		return fmt.Errorf("failed to fetch website: %v", err)
 	}
 
 	logger.Infof("Website fetched successfully with size: %d", len(websiteBytes))
@@ -200,18 +183,16 @@ func viewWebsite(address string, config *pkgConfig.Config) error {
 
 	err = os.WriteFile(outputZipPath, websiteBytes, 0o644)
 	if err != nil {
-		logger.Error("Failed to write website zip file", err)
-		return err
+		return fmt.Errorf("failed to write website zip file %v", err)
 	}
 
-	logger.Info("Website successfully written to file: %s", outputZipPath)
+	logger.Infof("Website successfully written to file: %s", outputZipPath)
 
 	fileName := "index.html"
 
 	content, err := zipper.GetFileFromZip(outputZipPath, fileName)
 	if err != nil {
-		logger.Error(err)
-		return err
+		return fmt.Errorf("failed to get file %s from zip: %v", fileName, err)
 	}
 
 	logger.Infof("%s content:\n %s", fileName, content)
