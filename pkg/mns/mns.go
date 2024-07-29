@@ -36,9 +36,21 @@ func ResolveDomain(network *msConfig.NetworkInfos, domain string) (string, error
 		return "", fmt.Errorf("resolving domain %s: %w", domain, err)
 	}
 
+	resolvedDomain, err := deserializeResult(res.Result.Ok)
+	if err != nil {
+		return "", fmt.Errorf("deserializing result: %w", err)
+	}
+
+	logger.Debugf("Resolved domain %s to %s", domain, resolvedDomain)
+
+	return resolvedDomain, nil
+}
+
+// deserializeResult deserializes the result from the smart contract call.
+func deserializeResult(result []interface{}) (string, error) {
 	var target strings.Builder
 
-	for _, val := range res.Result.Ok {
+	for _, val := range result {
 		char, ok := val.(float64)
 		if !ok {
 			return "", fmt.Errorf("unexpected type for value: %v", val)
@@ -47,10 +59,7 @@ func ResolveDomain(network *msConfig.NetworkInfos, domain string) (string, error
 		target.WriteRune(rune(char))
 	}
 
-	resolvedDomain := target.String()
-	logger.Debugf("Resolved domain %s to %s", domain, resolvedDomain)
-
-	return resolvedDomain, nil
+	return target.String(), nil
 }
 
 // GetSCAddress returns the smart contract address based on the network chain ID.
