@@ -3,7 +3,7 @@ version: "3"
 tasks:
   install:
     cmds:
-      # Empty for now
+      - cmd: go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
   generate:
     cmds:
@@ -80,5 +80,5 @@ tasks:
     cmds:
       - cmd: go mod tidy
       - cmd: gofumpt -l -w .
-      - cmd: gci write .
+      - cmd: gci write . --skip-generated
       - cmd: golangci-lint run --fix
