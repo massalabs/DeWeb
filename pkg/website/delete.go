@@ -30,6 +30,8 @@ func Delete(conf *config.Config, address string) (*string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("deleting website: %w", err)
 	}
+
 	logger.Infof("Event received : %s", res.Event)
+
 	return &res.OperationResponse.OperationID, nil
 }
