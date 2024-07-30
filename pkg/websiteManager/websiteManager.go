@@ -51,12 +51,21 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 }
 
 // if the lastUpdated timestamp changes then the website should be fetched again
-func shouldFetch(fileName string, cache *cache.Cache, lastUpdated time.Time, creationDate time.Time) bool {
-	if cache.IsPresent(fileName) && creationDate == lastUpdated {
-		logger.Infof("Website found in cache at: %s", fileName)
-		return false
+func shouldFetch(fileName string, cache *cache.Cache, lastUpdated, creationDate time.Time) bool {
+	isFilePresent := cache.IsPresent(fileName)
+	isFileOutdated := lastUpdated.After(creationDate)
 
+	if isFilePresent {
+		logger.Infof("Website found in cache: %s", fileName)
+	} else {
+		logger.Infof("Website not found in cache: %s", fileName)
 	}
 
-	return true
+	if isFileOutdated {
+		logger.Infof("Website is outdated, fetching again: %s", fileName)
+	} else {
+		logger.Infof("Website is up to date, no need to fetch: %s", fileName)
+	}
+
+	return isFileOutdated && !isFilePresent
 }
