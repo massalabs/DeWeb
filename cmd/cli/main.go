@@ -164,38 +164,25 @@ func processFileForUpload(filepath string) ([][]byte, error) {
 	return website.DivideIntoChunks(websiteBytes, website.ChunkSize), nil
 }
 
-func viewWebsite(address string, config *pkgConfig.Config) error {
-	owner, err := website.GetOwner(&config.NetworkInfos, address)
+func viewWebsite(scAddress string, config *pkgConfig.Config) error {
+	owner, err := website.GetOwner(&config.NetworkInfos, scAddress)
 	if err != nil {
-		logger.Warnf("failed to get owner of %s: %v", address, err)
+		logger.Warnf("failed to get owner of %s: %v", scAddress, err)
 	}
 
 	logger.Infof("Website owner: %s", owner)
 
-	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
+	zipFile, err := website.CheckWebsiteCache(scAddress, config)
 	if err != nil {
-		return fmt.Errorf("failed to fetch website: %v", err)
+		return fmt.Errorf("failed to check website cache: %v", err)
 	}
 
-	logger.Infof("Website fetched successfully with size: %d", len(websiteBytes))
-
-	outputZipPath := fmt.Sprintf("website_%s.zip", address)
-
-	err = os.WriteFile(outputZipPath, websiteBytes, 0o644)
+	indexFile, err := zipper.ReadFileFromZip(zipFile, "index.html")
 	if err != nil {
-		return fmt.Errorf("failed to write website zip file %v", err)
+		return fmt.Errorf("failed to read index.html from zip: %v", err)
 	}
 
-	logger.Infof("Website successfully written to file: %s", outputZipPath)
-
-	fileName := "index.html"
-
-	content, err := zipper.GetFileFromZip(outputZipPath, fileName)
-	if err != nil {
-		return fmt.Errorf("failed to get file %s from zip: %v", fileName, err)
-	}
-
-	logger.Infof("%s content:\n %s", fileName, content)
+	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
 
 	return nil
 }

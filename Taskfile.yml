@@ -3,7 +3,7 @@ version: '3'
 tasks:
   install:
     cmds:
-      # Empty for now
+      - cmd: go install ./cmd/cli
 
   generate:
     cmds:
