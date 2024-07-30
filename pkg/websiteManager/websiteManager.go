@@ -23,7 +23,7 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 
 	shouldFetchWebsite := shouldFetch(fileName, cache, lastUpdated, creationDate)
 
-	if shouldFetchWebsite {
+	if !shouldFetchWebsite {
 		content, err := cache.Read(fileName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read cached website: %w", err)
@@ -54,10 +54,9 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 func shouldFetch(fileName string, cache *cache.Cache, lastUpdated time.Time, creationDate time.Time) bool {
 	if cache.IsPresent(fileName) && creationDate == lastUpdated {
 		logger.Infof("Website found in cache at: %s", fileName)
-
-		return true
+		return false
 
 	}
 
-	return false
+	return true
 }
