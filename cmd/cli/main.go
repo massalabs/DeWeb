@@ -103,6 +103,27 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:      "delete",
+				Aliases:   []string{"d"},
+				Usage:     "Delete a website",
+				ArgsUsage: "<wallet nickname> <website sc address>",
+				Action: func(cCtx *cli.Context) error {
+					if cCtx.Args().Len() < 2 {
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
+					}
+
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
+					siteAddress := cCtx.Args().Get(1)
+
+					err := deleteWebsite(siteAddress, config)
+					if err != nil {
+						logger.Fatalf("An error occured while attempting to delete website %s: %v", siteAddress, err)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
@@ -186,6 +207,17 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 	}
 
 	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
+
+	return nil
+}
+
+func deleteWebsite(siteAddress string, config *pkgConfig.Config) error {
+	operationID, err := website.Delete(config, siteAddress)
+	if err != nil {
+		return fmt.Errorf("error while deleting website %s: %v", siteAddress, err)
+	}
+
+	logger.Infof("Website %s deleted with operation ID: %s", siteAddress, *operationID)
 
 	return nil
 }

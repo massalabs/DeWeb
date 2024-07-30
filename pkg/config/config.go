@@ -18,6 +18,7 @@ const (
 
 	MainnetChainID  = 77658377
 	BuildnetChainID = 77658366
+	NoCoins         = uint64(0)
 )
 
 type Config struct {
