@@ -9,9 +9,8 @@ import (
 	"github.com/massalabs/station/pkg/logger"
 )
 
-// ReadIndexFromZip returns the content of the index.html file from the given zip content.
+// ReadIndexFromZip returns the content of the desired file from the given zip file.
 func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
-
 	reader := bytes.NewReader(zipFile)
 
 	zipReader, err := zip.NewReader(reader, int64(reader.Len()))
