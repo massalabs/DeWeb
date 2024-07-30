@@ -10,6 +10,7 @@ import (
 	"github.com/massalabs/DeWeb/int/zipper"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/DeWeb/pkg/website"
+	"github.com/massalabs/DeWeb/pkg/websiteManager"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/urfave/cli/v2"
 )
@@ -172,7 +173,7 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 
 	logger.Infof("Website owner: %s", owner)
 
-	zipFile, err := website.CheckWebsiteCache(scAddress, config)
+	zipFile, err := websiteManager.RequestWebsite(scAddress, config)
 	if err != nil {
 		return fmt.Errorf("failed to check website cache: %v", err)
 	}
