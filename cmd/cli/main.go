@@ -196,20 +196,18 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 	logger.Infof("Website owner: %s", owner)
 
 	zipFile, err := webmanager.RequestWebsite(scAddress, &config.NetworkInfos)
-
-	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(&config.NetworkInfos, address)
-	if err != nil {
-		logger.Warnf("failed to get first creation timestamp of %s: %v", address, err)
-	}
-
-	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(&config.NetworkInfos, address)
-	if err != nil {
-		logger.Warnf("failed to get last update timestamp of %s: %v", address, err)
-	}
-
-	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
 	if err != nil {
 		return fmt.Errorf("failed to request website: %v", err)
+	}
+
+	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(&config.NetworkInfos, scAddress)
+	if err != nil {
+		logger.Warnf("failed to get first creation timestamp of %s: %v", scAddress, err)
+	}
+
+	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(&config.NetworkInfos, scAddress)
+	if err != nil {
+		logger.Warnf("failed to get last update timestamp of %s: %v", scAddress, err)
 	}
 
 	fileName := "index.html"
