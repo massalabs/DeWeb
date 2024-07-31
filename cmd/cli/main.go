@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/massalabs/DeWeb/int/config"
 	"github.com/massalabs/DeWeb/int/utils"
@@ -207,6 +208,9 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 	}
 
 	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
+	prettyPrintUnixTimestamp(int64(firstCreationTimestamp), int64(lastUpdateTimestamp))
+
+	logger.Infof("%s content:\n %s", fileName, content)
 
 	return nil
 }
@@ -220,4 +224,20 @@ func deleteWebsite(siteAddress string, config *pkgConfig.Config) error {
 	logger.Infof("Website %s deleted with operation ID: %s", siteAddress, *operationID)
 
 	return nil
+}
+
+func prettyPrintUnixTimestamp(firstCreationTimestamp int64, lastUpdateTimestamp int64) {
+	readableFCTimestamp := getDateFromTimestamp(firstCreationTimestamp)
+	readableLUTimestamp := getDateFromTimestamp(lastUpdateTimestamp)
+
+	logger.Infof("First creation date: %s", readableFCTimestamp)
+	logger.Infof("Last update date: %s", readableLUTimestamp)
+}
+
+func getDateFromTimestamp(timestamp int64) string {
+	seconds := timestamp / 1000
+	t := time.Unix(seconds, 0)
+	date := t.Format(time.RFC3339)
+
+	return date
 }

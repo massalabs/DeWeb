@@ -65,13 +65,33 @@ func fetchAllChunks(client *node.Client, websiteAddress string, chunkNumber int3
 }
 
 // GetOwner retrieves the owner of the website.
-func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, error) {
+func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, uint64, uint64, error) {
 	client := node.NewClient(network.NodeURL)
 
 	ownerResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(ownerKey))
 	if err != nil {
-		return "", fmt.Errorf("fetching website owner: %w", err)
+		return "", 0, 0, fmt.Errorf("fetching website owner: %w", err)
 	}
 
-	return string(ownerResponse.FinalValue), nil
+	firstCreationTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("fetching website first creation timestamp: %w", err)
+	}
+
+	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(lastUpdateTimestampKey))
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("fetching website last update timestamp: %w", err)
+	}
+
+	castedFCTimestamp, err := convert.BytesToU64(firstCreationTimestampResponse.FinalValue)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("converting website first creation timestamp: %w", err)
+	}
+
+	castedLUTimestamp, err := convert.BytesToU64(lastUpdateTimestampResponse.FinalValue)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("converting website last update timestamp: %w", err)
+	}
+
+	return string(ownerResponse.FinalValue), castedFCTimestamp, castedLUTimestamp, nil
 }
