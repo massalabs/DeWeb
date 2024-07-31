@@ -1,18 +1,18 @@
-package websiteManager
+package webmanager
 
 import (
 	"fmt"
 	"os"
 	"time"
 
-	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	"github.com/massalabs/DeWeb/pkg/website"
+	"github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/cache"
 	"github.com/massalabs/station/pkg/logger"
 )
 
 // RequestWebsite fetches a website and caches it, or retrieves it from the cache if already present.
-func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) {
+func RequestWebsite(scAddress string, networkInfo *config.NetworkInfos) ([]byte, error) {
 	cache := new(cache.Cache)
 	fileName := fmt.Sprintf("website_%s.zip", scAddress)
 
@@ -41,7 +41,7 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 
 	logger.Debugf("Website %s not found in cache or not up to date, fetching...", scAddress)
 
-	websiteBytes, err := fetchAndCache(config, scAddress, cache, fileName)
+	websiteBytes, err := fetchAndCache(networkInfo, scAddress, cache, fileName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch and cache website: %w", err)
 	}
@@ -50,8 +50,8 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 }
 
 // Fetches the website and saves it to the cache.
-func fetchAndCache(config *pkgConfig.Config, scAddress string, cache *cache.Cache, fileName string) ([]byte, error) {
-	websiteBytes, err := website.Fetch(&config.NetworkInfos, scAddress)
+func fetchAndCache(networkInfo *config.NetworkInfos, scAddress string, cache *cache.Cache, fileName string) ([]byte, error) {
+	websiteBytes, err := website.Fetch(networkInfo, scAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch website: %w", err)
 	}
