@@ -196,6 +196,18 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 	logger.Infof("Website owner: %s", owner)
 
 	zipFile, err := webmanager.RequestWebsite(scAddress, &config.NetworkInfos)
+
+	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Warnf("failed to get first creation timestamp of %s: %v", address, err)
+	}
+
+	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(&config.NetworkInfos, address)
+	if err != nil {
+		logger.Warnf("failed to get last update timestamp of %s: %v", address, err)
+	}
+
+	websiteBytes, err := website.Fetch(&config.NetworkInfos, address)
 	if err != nil {
 		return fmt.Errorf("failed to request website: %v", err)
 	}
@@ -207,10 +219,9 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 		return fmt.Errorf("failed to get file %s from zip: %v", fileName, err)
 	}
 
-	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
 	prettyPrintUnixTimestamp(int64(firstCreationTimestamp), int64(lastUpdateTimestamp))
 
-	logger.Infof("%s content:\n %s", fileName, content)
+	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
 
 	return nil
 }
