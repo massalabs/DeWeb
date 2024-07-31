@@ -83,9 +83,6 @@ func fetchAndCache(config *pkgConfig.Config, scAddress string, cache *cache.Cach
 // Compares the last updated timestamp to the file's last modified timestamp.
 func isFileOutdated(fileName string, lastUpdated time.Time) (bool, error) {
 	fi, err := os.Stat("./websitesCache/" + fileName)
-
-	logger.Debugf("File info: %+v", fi)
-
 	if err != nil {
 		return false, fmt.Errorf("failed to get file info: %w", err)
 	}
