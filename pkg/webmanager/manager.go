@@ -5,19 +5,42 @@ import (
 	"os"
 	"time"
 
+	"github.com/massalabs/DeWeb/int/zipper"
 	"github.com/massalabs/DeWeb/pkg/website"
-	"github.com/massalabs/station/int/config"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/cache"
 	"github.com/massalabs/station/pkg/logger"
 )
 
+const cacheDir = "./websitesCache/"
+
+// getWebsiteResource fetches a resource from a website and returns its content.
+func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, bool, error) {
+	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
+
+	websiteBytes, err := RequestWebsite(websiteAddress, network)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get website: %w", err)
+	}
+
+	logger.Debugf("Website %s successfully retrieved", websiteAddress)
+
+	content, err := zipper.ReadFileFromZip(websiteBytes, resourceName)
+	if err != nil {
+		logger.Warnf("Filenot found: %b", zipper.IsNotFoundError(err, resourceName))
+		return nil, zipper.IsNotFoundError(err, resourceName), fmt.Errorf("failed to get file from zip: %w", err)
+	}
+
+	return content, false, nil
+}
+
 // RequestWebsite fetches a website and caches it, or retrieves it from the cache if already present.
-func RequestWebsite(scAddress string, networkInfo *config.NetworkInfos) ([]byte, error) {
+func RequestWebsite(scAddress string, networkInfo *msConfig.NetworkInfos) ([]byte, error) {
 	cache := new(cache.Cache)
 	fileName := fmt.Sprintf("website_%s.zip", scAddress)
 
-	// TODO: get last updated from callSc
-	lastUpdated := time.Now()
+	// TODO: replace with last update from SC
+	lastUpdated := time.Date(2024, time.January, 1, 0, 12, 32, 123, time.UTC)
 
 	if cache.IsPresent(fileName) {
 		logger.Debugf("Website %s present in cache", scAddress)
@@ -50,7 +73,7 @@ func RequestWebsite(scAddress string, networkInfo *config.NetworkInfos) ([]byte,
 }
 
 // Fetches the website and saves it to the cache.
-func fetchAndCache(networkInfo *config.NetworkInfos, scAddress string, cache *cache.Cache, fileName string) ([]byte, error) {
+func fetchAndCache(networkInfo *msConfig.NetworkInfos, scAddress string, cache *cache.Cache, fileName string) ([]byte, error) {
 	websiteBytes, err := website.Fetch(networkInfo, scAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch website: %w", err)
@@ -69,7 +92,7 @@ func fetchAndCache(networkInfo *config.NetworkInfos, scAddress string, cache *ca
 
 // Compares the last updated timestamp to the file's last modified timestamp.
 func isFileOutdated(fileName string, lastUpdated time.Time) (bool, error) {
-	fi, err := os.Stat("./websitesCache/" + fileName)
+	fi, err := os.Stat(cacheDir + fileName)
 	if err != nil {
 		return false, fmt.Errorf("failed to get file info: %w", err)
 	}
