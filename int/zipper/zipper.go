@@ -2,35 +2,36 @@ package zipper
 
 import (
 	"archive/zip"
+	"bytes"
 	"fmt"
 	"io"
 )
 
-// GetFileFromZip returns the content of the given file from the zip file.
-// It returns an error if the file is not found in the zip.
-func GetFileFromZip(zipFilePath, fileName string) ([]byte, error) {
-	zipReader, err := zip.OpenReader(zipFilePath)
+// ReadIndexFromZip returns the content of the desired file from the given zip file.
+func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
+	reader := bytes.NewReader(zipFile)
+
+	zipReader, err := zip.NewReader(reader, int64(reader.Len()))
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to open zip file: %w", err)
+		return nil, fmt.Errorf("failed to initiate reader: %v", err)
 	}
-	defer zipReader.Close()
 
 	for _, file := range zipReader.File {
 		if file.Name == fileName {
 			rc, err := file.Open()
 			if err != nil {
-				return []byte{}, fmt.Errorf("failed to open file in zip: %w", err)
+				return nil, fmt.Errorf("failed to open file in zip: %w", err)
 			}
 			defer rc.Close()
 
 			buf, err := io.ReadAll(rc)
 			if err != nil {
-				return []byte{}, fmt.Errorf("failed to read file in zip: %w", err)
+				return nil, fmt.Errorf("failed to read file in zip: %w", err)
 			}
 
 			return buf, nil
 		}
 	}
 
-	return []byte{}, fmt.Errorf("%s not found in zip", fileName)
+	return nil, fmt.Errorf("%s not found in zip", fileName)
 }
