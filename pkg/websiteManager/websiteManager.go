@@ -24,6 +24,8 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 	shouldFetchWebsite := shouldFetch(fileName, cache, lastUpdated, creationDate)
 
 	if !shouldFetchWebsite {
+		logger.Debugf("Website %s present in cache and is up to date", scAddress)
+
 		content, err := cache.Read(fileName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read cached website: %w", err)
@@ -32,20 +34,20 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 		return content, nil
 	}
 
-	logger.Infof("Website not found in cache, fetching from network: %s", fileName)
+	logger.Debugf("Website %s not found in cache or not up to date, fetching...", scAddress)
 
 	websiteBytes, err := website.Fetch(&config.NetworkInfos, scAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch website: %w", err)
 	}
 
-	logger.Infof("Website fetched successfully with size: %d bytes", len(websiteBytes))
+	logger.Debugf("Website fetched successfully with size: %d bytes", len(websiteBytes))
 
 	if err := cache.Save(fileName, websiteBytes); err != nil {
 		return nil, fmt.Errorf("failed to save website to cache: %w", err)
 	}
 
-	logger.Infof("Website successfully written to cache at: %s", fileName)
+	logger.Debugf("Website successfully written to cache at: %s", fileName)
 
 	return websiteBytes, nil
 }
@@ -56,9 +58,9 @@ func shouldFetch(fileName string, cache *cache.Cache, lastUpdated, creationDate 
 	isFileOutdated := lastUpdated.After(creationDate)
 
 	if isFilePresent {
-		logger.Infof("Website found in cache: %s", fileName)
+		logger.Debugf("Website found in cache: %s", fileName)
 	} else {
-		logger.Infof("Website not found in cache: %s", fileName)
+		logger.Debugf("Website not found in cache: %s", fileName)
 	}
 
 	if isFileOutdated {
@@ -67,5 +69,5 @@ func shouldFetch(fileName string, cache *cache.Cache, lastUpdated, creationDate 
 		logger.Infof("Website is up to date, no need to fetch: %s", fileName)
 	}
 
-	return isFileOutdated && !isFilePresent
+	return isFileOutdated || !isFilePresent
 }

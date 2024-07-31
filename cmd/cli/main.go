@@ -175,7 +175,7 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 
 	zipFile, err := websiteManager.RequestWebsite(scAddress, config)
 	if err != nil {
-		return fmt.Errorf("failed to check website cache: %v", err)
+		return fmt.Errorf("failed to request website: %v", err)
 	}
 
 	fileName := "index.html"

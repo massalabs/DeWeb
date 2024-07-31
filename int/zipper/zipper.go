@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-
-	"github.com/massalabs/station/pkg/logger"
 )
 
 // ReadIndexFromZip returns the content of the desired file from the given zip file.
@@ -15,7 +13,7 @@ func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
 
 	zipReader, err := zip.NewReader(reader, int64(reader.Len()))
 	if err != nil {
-		logger.Errorf("failed to initiate reader: %v", err)
+		return nil, fmt.Errorf("failed to initiate reader: %v", err)
 	}
 
 	for _, file := range zipReader.File {
