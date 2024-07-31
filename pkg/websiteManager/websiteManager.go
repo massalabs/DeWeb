@@ -19,7 +19,7 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 	// TODO: get last updated from callSc
 	lastUpdated := time.Now()
 
-	if isFileCached(fileName, cache) {
+	if cache.IsPresent(fileName) {
 		logger.Debugf("Website %s present in cache", scAddress)
 
 		isOutdated, err := isFileOutdated(fileName, lastUpdated)
@@ -47,19 +47,6 @@ func RequestWebsite(scAddress string, config *pkgConfig.Config) ([]byte, error) 
 	}
 
 	return websiteBytes, nil
-}
-
-// Checks if file is present in cache.
-func isFileCached(fileName string, cache *cache.Cache) bool {
-	isFilePresent := cache.IsPresent(fileName)
-
-	if isFilePresent {
-		logger.Debugf("Website found in cache: %s", fileName)
-	} else {
-		logger.Debugf("Website not found in cache: %s", fileName)
-	}
-
-	return isFilePresent
 }
 
 // Fetches the website and saves it to the cache.
