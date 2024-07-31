@@ -7,6 +7,8 @@ import (
 	"io"
 )
 
+const notFoundErrorTemplate = "%s not found in zip"
+
 // ReadIndexFromZip returns the content of the desired file from the given zip file.
 func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
 	reader := bytes.NewReader(zipFile)
@@ -33,5 +35,9 @@ func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("%s not found in zip", fileName)
+	return nil, fmt.Errorf(notFoundErrorTemplate, fileName)
+}
+
+func IsNotFoundError(err error, fileName string) bool {
+	return fmt.Sprintf(notFoundErrorTemplate, fileName) == err.Error()
 }
