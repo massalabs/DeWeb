@@ -75,3 +75,35 @@ func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, erro
 
 	return string(ownerResponse.FinalValue), nil
 }
+
+func GetFirstCreationTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
+	client := node.NewClient(network.NodeURL)
+
+	firstCreationTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
+	if err != nil {
+		return 0, fmt.Errorf("fetching website first creation timestamp: %w", err)
+	}
+
+	castedFCTimestamp, err := convert.BytesToU64(firstCreationTimestampResponse.FinalValue)
+	if err != nil {
+		return 0, fmt.Errorf("converting website first creation timestamp: %w", err)
+	}
+
+	return castedFCTimestamp, nil
+}
+
+func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
+	client := node.NewClient(network.NodeURL)
+
+	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
+	if err != nil {
+		return 0, fmt.Errorf("fetching website last update timestamp: %w", err)
+	}
+
+	castedLUTimestamp, err := convert.BytesToU64(lastUpdateTimestampResponse.FinalValue)
+	if err != nil {
+		return 0, fmt.Errorf("converting website last update timestamp: %w", err)
+	}
+
+	return castedLUTimestamp, nil
+}

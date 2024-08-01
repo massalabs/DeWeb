@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/massalabs/DeWeb/int/config"
 	"github.com/massalabs/DeWeb/int/utils"
@@ -103,6 +104,27 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:      "delete",
+				Aliases:   []string{"d"},
+				Usage:     "Delete a website",
+				ArgsUsage: "<wallet nickname> <website sc address>",
+				Action: func(cCtx *cli.Context) error {
+					if cCtx.Args().Len() < 2 {
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
+					}
+
+					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
+					siteAddress := cCtx.Args().Get(1)
+
+					err := deleteWebsite(siteAddress, config)
+					if err != nil {
+						logger.Fatalf("An error occured while attempting to delete website %s: %v", siteAddress, err)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
@@ -178,6 +200,16 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 		return fmt.Errorf("failed to request website: %v", err)
 	}
 
+	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(&config.NetworkInfos, scAddress)
+	if err != nil {
+		logger.Warnf("failed to get first creation timestamp of %s: %v", scAddress, err)
+	}
+
+	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(&config.NetworkInfos, scAddress)
+	if err != nil {
+		logger.Warnf("failed to get last update timestamp of %s: %v", scAddress, err)
+	}
+
 	fileName := "index.html"
 
 	indexFile, err := zipper.ReadFileFromZip(zipFile, fileName)
@@ -185,7 +217,36 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 		return fmt.Errorf("failed to get file %s from zip: %v", fileName, err)
 	}
 
+	prettyPrintUnixTimestamp(int64(firstCreationTimestamp), int64(lastUpdateTimestamp))
+
 	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
 
 	return nil
+}
+
+func deleteWebsite(siteAddress string, config *pkgConfig.Config) error {
+	operationID, err := website.Delete(config, siteAddress)
+	if err != nil {
+		return fmt.Errorf("error while deleting website %s: %v", siteAddress, err)
+	}
+
+	logger.Infof("Website %s deleted with operation ID: %s", siteAddress, *operationID)
+
+	return nil
+}
+
+func prettyPrintUnixTimestamp(firstCreationTimestamp int64, lastUpdateTimestamp int64) {
+	readableFCTimestamp := getDateFromTimestamp(firstCreationTimestamp)
+	readableLUTimestamp := getDateFromTimestamp(lastUpdateTimestamp)
+
+	logger.Infof("First creation date: %s", readableFCTimestamp)
+	logger.Infof("Last update date: %s", readableLUTimestamp)
+}
+
+func getDateFromTimestamp(timestamp int64) string {
+	seconds := timestamp / 1000
+	t := time.Unix(seconds, 0)
+	date := t.Format(time.RFC3339)
+
+	return date
 }
