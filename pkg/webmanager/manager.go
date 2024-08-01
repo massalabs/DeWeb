@@ -39,8 +39,12 @@ func RequestWebsite(scAddress string, networkInfo *msConfig.NetworkInfos) ([]byt
 	cache := new(cache.Cache)
 	fileName := fmt.Sprintf("website_%s.zip", scAddress)
 
-	// TODO: replace with last update from SC
-	lastUpdated := time.Date(2024, time.January, 1, 0, 12, 32, 123, time.UTC)
+	lastUpdatedUint, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get last update timestamp: %w", err)
+	}
+
+	lastUpdated := time.UnixMilli(int64(lastUpdatedUint))
 
 	if cache.IsPresent(fileName) {
 		logger.Debugf("Website %s present in cache", scAddress)
