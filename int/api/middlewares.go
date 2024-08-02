@@ -18,7 +18,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("SubdomainMiddleware: Handling request for %s", r.Host)
 
-		subdomain := extractSubdomain(r.Host)
+		subdomain := extractSubdomain(r.Host, conf.Domain)
 		if subdomain != "" {
 			path := cleanPath(r.URL.Path)
 
@@ -55,8 +55,8 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 }
 
 // extractSubdomain extracts the subdomain from the host.
-func extractSubdomain(host string) string {
-	subdomain := strings.Split(host, ".")[0]
+func extractSubdomain(host string, domain string) string {
+	subdomain := strings.Split(host, domain)[0]
 
 	return strings.TrimSuffix(subdomain, ".")
 }
