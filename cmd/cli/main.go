@@ -42,6 +42,10 @@ func main() {
 					}
 
 					filepath := cCtx.Args().Get(1)
+					if !zipper.IsValidZipFile(filepath) {
+						return fmt.Errorf("invalid zip file: %s", filepath)
+					}
+
 					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
 
 					siteAddress, err := deployWebsite(config, filepath)
@@ -67,6 +71,10 @@ func main() {
 					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
 					siteAddress := cCtx.Args().Get(1)
 					filepath := cCtx.Args().Get(2)
+
+					if !zipper.IsValidZipFile(filepath) {
+						return fmt.Errorf("invalid zip file: %s", filepath)
+					}
 
 					bytecode, err := processFileForUpload(filepath)
 					if err != nil {

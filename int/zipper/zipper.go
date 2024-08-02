@@ -41,3 +41,21 @@ func ReadFileFromZip(zipFile []byte, fileName string) ([]byte, error) {
 func IsNotFoundError(err error, fileName string) bool {
 	return fmt.Sprintf(notFoundErrorTemplate, fileName) == err.Error()
 }
+
+func IsValidZip(zipFile []byte) bool {
+	reader := bytes.NewReader(zipFile)
+	_, err := zip.NewReader(reader, int64(reader.Len()))
+
+	return err == nil
+}
+
+func IsValidZipFile(fileName string) bool {
+	reader, err := zip.OpenReader(fileName)
+	if err != nil {
+		return false
+	}
+
+	_ = reader.Close()
+
+	return true
+}

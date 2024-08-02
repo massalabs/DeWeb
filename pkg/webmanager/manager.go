@@ -85,6 +85,10 @@ func fetchAndCache(networkInfo *msConfig.NetworkInfos, scAddress string, cache *
 
 	logger.Debugf("Website fetched successfully with size: %d bytes", len(websiteBytes))
 
+	if !zipper.IsValidZip(websiteBytes) {
+		return nil, fmt.Errorf("fetched website is not a valid zip")
+	}
+
 	if err := cache.Save(fileName, websiteBytes); err != nil {
 		return nil, fmt.Errorf("failed to save website to cache: %w", err)
 	}
