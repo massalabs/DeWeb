@@ -23,6 +23,8 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		if subdomain == "" {
 			logger.Debug("SubdomainMiddleware: No subdomain found. Proceeding with the next handler.")
 			handler.ServeHTTP(w, r)
+
+			return
 		}
 
 		path := cleanPath(r.URL.Path)
@@ -32,6 +34,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		address, err := resolveAddress(subdomain, conf.NetworkInfos)
 		if err != nil {
 			handleResolveError(w, subdomain, path, err)
+
 			return
 		}
 
