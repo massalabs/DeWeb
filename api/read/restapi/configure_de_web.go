@@ -36,6 +36,7 @@ func configureAPI(api *operations.DeWebAPI) http.Handler {
 			return middleware.NotImplemented("operation operations.DefaultPage has not yet been implemented")
 		})
 	}
+
 	if api.GetResourceHandler == nil {
 		api.GetResourceHandler = operations.GetResourceHandlerFunc(func(params operations.GetResourceParams) middleware.Responder {
 			return middleware.NotImplemented("operation operations.GetResource has not yet been implemented")

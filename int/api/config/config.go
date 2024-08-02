@@ -70,9 +70,11 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	if yamlConf.Domain == "" {
 		yamlConf.Domain = DefaultDomain
 	}
+
 	if yamlConf.NetworkNodeURL == "" {
 		yamlConf.NetworkNodeURL = DefaultNetworkNodeURL
 	}
+
 	if yamlConf.APIPort == 0 {
 		yamlConf.APIPort = DefaultAPIPort
 	}
