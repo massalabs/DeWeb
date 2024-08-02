@@ -13,7 +13,6 @@ import (
 // As websites are catched by the subdomain middleware, this handler is only called for the landing page resources.
 func getResourceHandler(params operations.GetResourceParams) middleware.Responder {
 	return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
-		logger.Debugf("GetResourceHandler")
 		logger.Debugf("GetResourceHandler: %s", params.Resource)
 
 		// Return a simple index.html for the root path with "Hello from DeWeb" message.

@@ -18,7 +18,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("SubdomainMiddleware: Handling request for %s", r.Host)
 
-		subdomain := extractSubdomain(r.Host, conf.Domain)
+		subdomain := extractSubdomain(r.Host)
 		if subdomain != "" {
 			path := cleanPath(r.URL.Path)
 
@@ -55,8 +55,8 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 }
 
 // extractSubdomain extracts the subdomain from the host.
-func extractSubdomain(host string, domain string) string {
-	subdomain := strings.Split(host, domain)[0]
+func extractSubdomain(host string) string {
+	subdomain := strings.Split(host, ".")[0]
 
 	return strings.TrimSuffix(subdomain, ".")
 }
@@ -106,20 +106,20 @@ func handleResolveError(w http.ResponseWriter, subdomain, path string, err error
 func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
-	content, not_found, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+	content, notFound, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
 	if err != nil {
-		if !not_found {
+		if !notFound {
 			return nil, "", fmt.Errorf("failed to get website: %w", err)
 		}
 
 		// Handling Single Page Apps
-		if not_found && resourceName != "index.html" {
+		if notFound && resourceName != "index.html" {
 			logger.Warnf("Failed to get file %s from zip: %v", resourceName, err)
 			resourceName = "index.html"
 
-			content, not_found, err = webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+			content, notFound, err = webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
 			if err != nil {
-				if not_found {
+				if notFound {
 					return nil, "", fmt.Errorf("could not find index.html in website: %w", err)
 				}
 

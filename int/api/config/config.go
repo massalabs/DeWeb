@@ -11,19 +11,16 @@ import (
 )
 
 const (
-	DefaultDomain         = "localhost"
 	DefaultNetworkNodeURL = "https://buildnet.massa.net/api/v2"
 	DefaultAPIPort        = 8080
 )
 
 type yamlServerConfig struct {
-	Domain         string `yaml:"domain"`
 	NetworkNodeURL string `yaml:"network_node_url"`
 	APIPort        int    `yaml:"api_port"`
 }
 
 type ServerConfig struct {
-	Domain       string
 	APIPort      int
 	NetworkInfos msConfig.NetworkInfos
 }
@@ -32,7 +29,6 @@ func DefaultConfig() *ServerConfig {
 	nodeConf := pkgConfig.DefaultConfig("", DefaultNetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       DefaultDomain,
 		APIPort:      DefaultAPIPort,
 		NetworkInfos: nodeConf.NetworkInfos,
 	}
@@ -60,10 +56,6 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		return nil, fmt.Errorf("failed to unmarshal YAML data: %w", err)
 	}
 
-	// Set default values if not specified in the YAML file
-	if yamlConf.Domain == "" {
-		yamlConf.Domain = DefaultDomain
-	}
 	if yamlConf.NetworkNodeURL == "" {
 		yamlConf.NetworkNodeURL = DefaultNetworkNodeURL
 	}
@@ -74,7 +66,6 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	nodeConf := pkgConfig.DefaultConfig("", yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       yamlConf.Domain,
 		APIPort:      yamlConf.APIPort,
 		NetworkInfos: nodeConf.NetworkInfos,
 	}, nil
