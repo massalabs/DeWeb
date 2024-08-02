@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/massalabs/DeWeb/int/api/config"
@@ -19,39 +20,49 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		logger.Debugf("SubdomainMiddleware: Handling request for %s", r.Host)
 
 		subdomain := extractSubdomain(r.Host, conf.Domain)
-		if subdomain != "" {
-			path := cleanPath(r.URL.Path)
+		if subdomain == "" {
+			logger.Debug("SubdomainMiddleware: No subdomain found. Proceeding with the next handler.")
+			handler.ServeHTTP(w, r)
+		}
 
-			logger.Debugf("SubdomainMiddleware: Subdomain %s found, resolving address", subdomain)
+		path := cleanPath(r.URL.Path)
 
-			address, err := resolveAddress(subdomain, conf.NetworkInfos)
-			if err != nil {
-				handleResolveError(w, subdomain, path, err)
-				return
-			}
+		logger.Debugf("SubdomainMiddleware: Subdomain %s found, resolving address", subdomain)
 
-			content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
-			if err != nil {
-				logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+		address, err := resolveAddress(subdomain, conf.NetworkInfos)
+		if err != nil {
+			handleResolveError(w, subdomain, path, err)
+			return
+		}
 
-				return
-			}
-
-			w.Header().Set("Content-Type", mimeType)
-
-			_, err = w.Write(content)
-			if err != nil {
-				logger.Errorf("Failed to write content: %v", err)
-				http.Error(w, "an error occurred while writing response", http.StatusInternalServerError)
-			}
+		if !isWebsiteAllowed(address, subdomain, conf.AllowList, conf.BlockList) {
+			logger.Warnf("Subdomain %s or address %s is not allowed", subdomain, address)
+			http.Error(w, "Subdomain is not accessible from this DeWeb instance", http.StatusForbidden)
 
 			return
 		}
 
-		logger.Debug("SubdomainMiddleware: No subdomain found. Proceeding with the next handler.")
-		handler.ServeHTTP(w, r)
+		serveContent(conf, address, path, w)
 	})
+}
+
+// serveContent serves the requested resource for the given website address.
+func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
+	content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
+	if err != nil {
+		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", mimeType)
+
+	_, err = w.Write(content)
+	if err != nil {
+		logger.Errorf("Failed to write content: %v", err)
+		http.Error(w, "an error occurred while writing response", http.StatusInternalServerError)
+	}
 }
 
 // extractSubdomain extracts the subdomain from the host.
@@ -138,4 +149,21 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 	}
 
 	return content, contentType, nil
+}
+
+// isWebsiteAllowed checks the allow and block lists and returns false if the address or domain is not allowed.
+// If the allow list is empty, all addresses and domains are allowed, except those in the block list.
+// Otherwise, only addresses and domains in the allow list are allowed.
+func isWebsiteAllowed(address string, domain string, allowList, blockList []string) bool {
+	if slices.Contains(blockList, address) || slices.Contains(blockList, domain) {
+		logger.Debugf("Address %s or domain %s is in the block list", address, domain)
+		return false
+	}
+
+	if len(allowList) > 0 && !slices.Contains(allowList, address) && !slices.Contains(allowList, domain) {
+		logger.Debugf("Address %s or domain %s is not in the allow list", address, domain)
+		return false
+	}
+
+	return true
 }
