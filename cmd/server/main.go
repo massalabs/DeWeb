@@ -3,9 +3,24 @@ package main
 import (
 	"log"
 
-	"github.com/massalabs/DeWeb/int/config"
+	"github.com/massalabs/DeWeb/int/api"
+	"github.com/massalabs/DeWeb/int/api/config"
+	"github.com/massalabs/station/pkg/logger"
 )
 
 func main() {
-	log.Println("Hello, World from DeWeb Server", config.Version, "!")
+	err := logger.InitializeGlobal("./deweb-server.log")
+	if err != nil {
+		log.Fatalf("failed to initialize logger: %v", err)
+	}
+
+	conf, err := config.LoadServerConfig("./deweb_server_config.yaml")
+	if err != nil {
+		log.Fatalf("failed to load server config: %v", err)
+	}
+
+	logger.Debugf("Loaded server config: %+v", conf)
+
+	api := api.NewAPI(conf)
+	api.Start()
 }

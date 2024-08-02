@@ -2,6 +2,10 @@ linters:
   enable:
     - wsl
 
+issues:
+  exclude-dirs:
+    - api/
+
 linters-settings:
   wsl:
     # See https://github.com/bombsimon/wsl/blob/master/doc/configuration.md for documentation of available settings.

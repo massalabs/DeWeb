@@ -1,0 +1,37 @@
+swagger: "2.0"
+info:
+  title: DeWeb Read API
+  description: DeWeb API used to browse decentralized websites
+  version: 0.1.0
+
+schemes:
+  - http
+paths:
+  /{resource}:
+    get:
+      operationId: getResource
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Successful response
+        "404":
+          description: Resource not found
+          schema:
+            $ref: "#/definitions/Error"
+  /:
+    get:
+      operationId: defaultPage
+      responses:
+        "200":
+          description: Shows the default page
+
+definitions:
+  Error:
+    type: object
+    properties:
+      message:
+        type: string
