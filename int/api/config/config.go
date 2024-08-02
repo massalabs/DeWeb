@@ -17,15 +17,19 @@ const (
 )
 
 type yamlServerConfig struct {
-	Domain         string `yaml:"domain"`
-	NetworkNodeURL string `yaml:"network_node_url"`
-	APIPort        int    `yaml:"api_port"`
+	Domain         string   `yaml:"domain"`
+	NetworkNodeURL string   `yaml:"network_node_url"`
+	APIPort        int      `yaml:"api_port"`
+	AllowList      []string `yaml:"allow_list"`
+	BlockList      []string `yaml:"block_list"`
 }
 
 type ServerConfig struct {
 	Domain       string
 	APIPort      int
 	NetworkInfos msConfig.NetworkInfos
+	AllowList    []string
+	BlockList    []string
 }
 
 func DefaultConfig() *ServerConfig {
@@ -35,6 +39,8 @@ func DefaultConfig() *ServerConfig {
 		Domain:       DefaultDomain,
 		APIPort:      DefaultAPIPort,
 		NetworkInfos: nodeConf.NetworkInfos,
+		AllowList:    []string{},
+		BlockList:    []string{},
 	}
 }
 
@@ -77,5 +83,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		Domain:       yamlConf.Domain,
 		APIPort:      yamlConf.APIPort,
 		NetworkInfos: nodeConf.NetworkInfos,
+		AllowList:    yamlConf.AllowList,
+		BlockList:    yamlConf.BlockList,
 	}, nil
 }
