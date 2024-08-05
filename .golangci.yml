@@ -4,7 +4,6 @@ linters:
 
 issues:
   exclude-dirs:
-    - api/
 
 linters-settings:
   wsl:
