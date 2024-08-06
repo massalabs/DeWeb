@@ -4,7 +4,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/massalabs/DeWeb/pkg/config"
+	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/node/sendoperation"
 	"github.com/massalabs/station/pkg/node/sendoperation/signer"
 	"github.com/massalabs/station/pkg/onchain"
@@ -18,14 +19,14 @@ type DeploymentResult struct {
 	OperationID string
 }
 
-func Deploy(config *config.Config) (*DeploymentResult, error) {
+func Deploy(walletNickname string, networkInfos *msConfig.NetworkInfos, scConfig *pkgConfig.SCConfig) (*DeploymentResult, error) {
 	res, evt, err := onchain.DeploySC(
-		&config.NetworkInfos,
-		config.WalletNickname,
-		config.MaxGas,
-		config.MaxCoins,
-		config.MinimalFees,
-		config.Expiry,
+		networkInfos,
+		walletNickname,
+		scConfig.MaxGas,
+		scConfig.MaxCoins,
+		scConfig.MinimalFees,
+		scConfig.Expiry,
 		sc,
 		nil,
 		sendoperation.OperationBatch{},

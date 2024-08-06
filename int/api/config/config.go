@@ -16,6 +16,14 @@ const (
 	DefaultAPIPort        = 8080
 )
 
+type ServerConfig struct {
+	Domain       string
+	APIPort      int
+	NetworkInfos *msConfig.NetworkInfos
+	AllowList    []string
+	BlockList    []string
+}
+
 type yamlServerConfig struct {
 	Domain         string   `yaml:"domain"`
 	NetworkNodeURL string   `yaml:"network_node_url"`
@@ -24,21 +32,13 @@ type yamlServerConfig struct {
 	BlockList      []string `yaml:"block_list"`
 }
 
-type ServerConfig struct {
-	Domain       string
-	APIPort      int
-	NetworkInfos msConfig.NetworkInfos
-	AllowList    []string
-	BlockList    []string
-}
-
 func DefaultConfig() *ServerConfig {
-	nodeConf := pkgConfig.DefaultConfig("", DefaultNetworkNodeURL)
+	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 
 	return &ServerConfig{
 		Domain:       DefaultDomain,
 		APIPort:      DefaultAPIPort,
-		NetworkInfos: nodeConf.NetworkInfos,
+		NetworkInfos: networkInfos,
 		AllowList:    []string{},
 		BlockList:    []string{},
 	}
@@ -46,6 +46,8 @@ func DefaultConfig() *ServerConfig {
 
 // LoadServerConfig loads the server configuration from the given path, or returns the default configuration
 func LoadServerConfig(configPath string) (*ServerConfig, error) {
+	var networkInfos *msConfig.NetworkInfos
+
 	if configPath == "" {
 		return nil, fmt.Errorf("config path is empty")
 	}
@@ -73,18 +75,20 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 
 	if yamlConf.NetworkNodeURL == "" {
 		yamlConf.NetworkNodeURL = DefaultNetworkNodeURL
+
+		networkInfos = pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
+	} else {
+		networkInfos = pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 	}
 
 	if yamlConf.APIPort == 0 {
 		yamlConf.APIPort = DefaultAPIPort
 	}
 
-	nodeConf := pkgConfig.DefaultConfig("", yamlConf.NetworkNodeURL)
-
 	return &ServerConfig{
 		Domain:       yamlConf.Domain,
 		APIPort:      yamlConf.APIPort,
-		NetworkInfos: nodeConf.NetworkInfos,
+		NetworkInfos: networkInfos,
 		AllowList:    yamlConf.AllowList,
 		BlockList:    yamlConf.BlockList,
 	}, nil
