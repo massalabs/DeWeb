@@ -54,6 +54,8 @@ zip {name}.zip -r ./*
 ```
 This should result in a zip file with all the files from the output directory, with the `index.html` at its root.
 
+> Note: Server Side Rendering (SSR) is not supported at this time. Ensure your website is fully client-side rendered.
+
 ### Edit a Website
 
 To edit an existing website on the blockchain:
