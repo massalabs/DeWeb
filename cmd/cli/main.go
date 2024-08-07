@@ -22,7 +22,7 @@ const defaultYamlConfigPath = "./deweb_cli_config.yaml"
 func main() {
 	var nickname string
 
-	var node_url string
+	var nodeURL string
 
 	var configPath string
 
@@ -37,7 +37,7 @@ func main() {
 			Name:        "node_url",
 			Usage:       "selected wallet `node_url`",
 			Aliases:     []string{"u"},
-			Destination: &node_url,
+			Destination: &nodeURL,
 		},
 		&cli.StringFlag{
 			Name:        "config",
@@ -68,7 +68,7 @@ func main() {
 				Name:      "upload",
 				Aliases:   []string{"u"},
 				Usage:     "Upload a website",
-				ArgsUsage: "<website zip file path>",
+				ArgsUsage: "<website_zip_file_path>",
 				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 1 {
@@ -84,8 +84,8 @@ func main() {
 						config.WalletConfig.WalletNickname = nickname
 					}
 
-					if node_url == "" {
-						config.WalletConfig.NodeUrl = node_url
+					if nodeURL == "" {
+						config.WalletConfig.NodeUrl = nodeURL
 					}
 
 					filepath := cCtx.Args().Get(0)
@@ -107,7 +107,7 @@ func main() {
 				Name:      "edit",
 				Aliases:   []string{"e"},
 				Usage:     "Edit website",
-				ArgsUsage: "<website sc address> <website zip file path>",
+				ArgsUsage: "<website_sc_address> <website_zip_file_path>",
 				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 2 {
@@ -123,8 +123,8 @@ func main() {
 						config.WalletConfig.WalletNickname = nickname
 					}
 
-					if node_url == "" {
-						config.WalletConfig.NodeUrl = node_url
+					if nodeURL == "" {
+						config.WalletConfig.NodeUrl = nodeURL
 					}
 
 					siteAddress := cCtx.Args().Get(0)
@@ -153,7 +153,7 @@ func main() {
 				Name:      "view",
 				Aliases:   []string{"v"},
 				Usage:     "View  html content",
-				ArgsUsage: "<website sc address>",
+				ArgsUsage: "<website_sc_address>",
 				Hidden:    true,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 1 {
@@ -177,7 +177,7 @@ func main() {
 				Name:      "delete",
 				Aliases:   []string{"d"},
 				Usage:     "Delete a website",
-				ArgsUsage: "<website sc address>",
+				ArgsUsage: "<website_sc_address>",
 				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 1 {
@@ -193,8 +193,8 @@ func main() {
 						config.WalletConfig.WalletNickname = nickname
 					}
 
-					if node_url == "" {
-						config.WalletConfig.NodeUrl = node_url
+					if nodeURL == "" {
+						config.WalletConfig.NodeUrl = nodeURL
 					}
 
 					siteAddress := cCtx.Args().Get(0)
@@ -306,7 +306,6 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 	return nil
 }
 
-// TODO: delete website from cache if it is deleted from the blockchain
 func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
 	operationID, err := website.Delete(config.SCConfig, config.WalletConfig, config.NetworkConfig, siteAddress)
 	if err != nil {
