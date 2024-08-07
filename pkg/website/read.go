@@ -95,7 +95,7 @@ func GetFirstCreationTimestamp(network *config.NetworkInfos, websiteAddress stri
 func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
 	client := node.NewClient(network.NodeURL)
 
-	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
+	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(lastUpdateTimestampKey))
 	if err != nil {
 		return 0, fmt.Errorf("fetching website last update timestamp: %w", err)
 	}
