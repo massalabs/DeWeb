@@ -20,6 +20,8 @@ import (
 
 // TODO: add node url global flag
 // TODO: add wallet nickname global flag
+
+// TODO: change confgi return type to Config + add network infos in config return
 func main() {
 	app := &cli.App{
 		Name:      "DeWeb CLI",
@@ -41,7 +43,7 @@ func main() {
 				Usage:     "Upload a website",
 				ArgsUsage: "<website zip file path>",
 				Action: func(cCtx *cli.Context) error {
-					walletConfig, scConfig, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
@@ -55,11 +57,7 @@ func main() {
 						return fmt.Errorf("invalid zip file: %s", filepath)
 					}
 
-					networkInfos := pkgConfig.NewNetworkConfig(walletConfig.NodeUrl)
-
-					fmt.Printf("Deploying website with config: %+v\n", walletConfig)
-
-					siteAddress, err := deployWebsite(walletConfig, networkInfos, scConfig, filepath)
+					siteAddress, err := deployWebsite(config, filepath)
 					if err != nil {
 						logger.Fatalf("failed to deploy website: %v", err)
 					}
@@ -79,7 +77,7 @@ func main() {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					walletConfig, scConfig, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
@@ -96,9 +94,7 @@ func main() {
 						logger.Fatalf("failed to process file for upload: %v", err)
 					}
 
-					networkInfos := pkgConfig.NewNetworkConfig(walletConfig.NodeUrl)
-
-					err = uploadChunks(bytecode, siteAddress, walletConfig, networkInfos, scConfig)
+					err = uploadChunks(bytecode, siteAddress, config)
 					if err != nil {
 						logger.Fatalf("failed to upload chunks: %v", err)
 					}
@@ -141,15 +137,14 @@ func main() {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					walletConfig, scConfig, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
 					siteAddress := cCtx.Args().Get(1)
-					networkInfos := pkgConfig.NewNetworkConfig(walletConfig.NodeUrl)
 
-					if err := deleteWebsite(siteAddress, scConfig, walletConfig, networkInfos); err != nil {
+					if err := deleteWebsite(siteAddress, config); err != nil {
 						logger.Fatalf("An error occurred while attempting to delete website %s: %v", siteAddress, err)
 					}
 					return nil
@@ -168,10 +163,10 @@ func main() {
 	}
 }
 
-func deployWebsite(walletConfig *pkgConfig.WalletConfig, networkInfos *msConfig.NetworkInfos, scConfig *pkgConfig.SCConfig, filepath string) (string, error) {
-	logger.Debugf("Deploying website contract with config: %+v", scConfig)
+func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
+	logger.Debugf("Deploying website contract with config: %+v", config.SCConfig)
 
-	deploymentResult, err := website.Deploy(walletConfig.WalletNickname, networkInfos, scConfig)
+	deploymentResult, err := website.Deploy(config.WalletConfig.WalletNickname, config.NetworkConfig, config.SCConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to deploy website contract: %v", err)
 	}
@@ -185,7 +180,7 @@ func deployWebsite(walletConfig *pkgConfig.WalletConfig, networkInfos *msConfig.
 
 	logger.Debugf("Uploading %d chunks to website at address: %s", len(chunks), deploymentResult.Address)
 
-	err = uploadChunks(chunks, deploymentResult.Address, walletConfig, networkInfos, scConfig)
+	err = uploadChunks(chunks, deploymentResult.Address, config)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload chunks: %v", err)
 	}
@@ -193,11 +188,11 @@ func deployWebsite(walletConfig *pkgConfig.WalletConfig, networkInfos *msConfig.
 	return deploymentResult.Address, nil
 }
 
-func uploadChunks(chunks [][]byte, address string, walletConfig *pkgConfig.WalletConfig, networkInfos *msConfig.NetworkInfos, scConfig *pkgConfig.SCConfig) error {
+func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) error {
 	for i, chunk := range chunks {
 		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
 
-		operationID, err := website.UploadChunk(address, walletConfig, networkInfos, scConfig, chunk, i)
+		operationID, err := website.UploadChunk(address, config.WalletConfig, config.NetworkConfig, config.SCConfig, chunk, i)
 		if err != nil {
 			return fmt.Errorf("failed to upload chunk %d: %v", i, err)
 		}
@@ -254,8 +249,8 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 	return nil
 }
 
-func deleteWebsite(siteAddress string, scConfig *pkgConfig.SCConfig, walletConfig *pkgConfig.WalletConfig, networkInfos *msConfig.NetworkInfos) error {
-	operationID, err := website.Delete(scConfig, walletConfig, networkInfos, siteAddress)
+func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
+	operationID, err := website.Delete(config.SCConfig, config.WalletConfig, config.NetworkConfig, siteAddress)
 	if err != nil {
 		return fmt.Errorf("error while deleting website %s: %v", siteAddress, err)
 	}

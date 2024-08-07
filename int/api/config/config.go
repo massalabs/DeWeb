@@ -46,8 +46,6 @@ func DefaultConfig() *ServerConfig {
 
 // LoadServerConfig loads the server configuration from the given path, or returns the default configuration
 func LoadServerConfig(configPath string) (*ServerConfig, error) {
-	var networkInfos *msConfig.NetworkInfos
-
 	if configPath == "" {
 		return nil, fmt.Errorf("config path is empty")
 	}
@@ -75,15 +73,13 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 
 	if yamlConf.NetworkNodeURL == "" {
 		yamlConf.NetworkNodeURL = DefaultNetworkNodeURL
-
-		networkInfos = pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
-	} else {
-		networkInfos = pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 	}
 
 	if yamlConf.APIPort == 0 {
 		yamlConf.APIPort = DefaultAPIPort
 	}
+
+	networkInfos := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
 		Domain:       yamlConf.Domain,
