@@ -11,23 +11,52 @@ import (
 	"github.com/massalabs/DeWeb/int/utils"
 	"github.com/massalabs/DeWeb/int/zipper"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
-	"github.com/massalabs/DeWeb/pkg/webmanager"
 	"github.com/massalabs/DeWeb/pkg/website"
 	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/urfave/cli/v2"
 )
 
-// TODO: add node url global flag
-// TODO: add wallet nickname global flag
+const defaultYamlConfigPath = "./deweb_cli_config.yaml"
 
-// TODO: change confgi return type to Config + add network infos in config return
+// TODO add config filepath as flag
 func main() {
+
+	var nickname string
+
+	var node_url string
+
+	var configPath string
+
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:        "nickname",
+			Usage:       "selected wallet `wallet_nickname`",
+			Aliases:     []string{"wn"},
+			Destination: &nickname,
+		},
+		&cli.StringFlag{
+			Name:        "node_url",
+			Usage:       "selected wallet `node_url`",
+			Aliases:     []string{"n"},
+			Destination: &node_url,
+		},
+		&cli.StringFlag{
+			Name:        "config",
+			Aliases:     []string{"c"},
+			Usage:       "Load configuration from `file_path`",
+			Value:       defaultYamlConfigPath,
+			DefaultText: defaultYamlConfigPath,
+			Destination: &configPath,
+		},
+	}
+
 	app := &cli.App{
 		Name:      "DeWeb CLI",
 		Usage:     "CLI app for deploying websites",
 		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
+		Flags:     flags,
 		Action: func(cCtx *cli.Context) error {
 			err := cli.ShowAppHelp(cCtx)
 			if err != nil {
@@ -42,14 +71,23 @@ func main() {
 				Aliases:   []string{"u"},
 				Usage:     "Upload a website",
 				ArgsUsage: "<website zip file path>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
-					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					if cCtx.Args().Len() < 1 {
+						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
+					}
+
+					config, err := yamlConfig.LoadYamlCliConfig(configPath)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
-					if cCtx.Args().Len() < 1 {
-						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
+					if nickname != "" {
+						config.WalletConfig.WalletNickname = nickname
+					}
+
+					if node_url == "" {
+						config.WalletConfig.NodeUrl = node_url
 					}
 
 					filepath := cCtx.Args().Get(0)
@@ -72,18 +110,27 @@ func main() {
 				Aliases:   []string{"e"},
 				Usage:     "Edit website",
 				ArgsUsage: "<website sc address> <website zip file path>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 2 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					config, err := yamlConfig.LoadYamlCliConfig(configPath)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
-					siteAddress := cCtx.Args().Get(1)
-					filepath := cCtx.Args().Get(2)
+					if nickname != "" {
+						config.WalletConfig.WalletNickname = nickname
+					}
+
+					if node_url == "" {
+						config.WalletConfig.NodeUrl = node_url
+					}
+
+					siteAddress := cCtx.Args().Get(0)
+					filepath := cCtx.Args().Get(1)
 
 					if !zipper.IsValidZipFile(filepath) {
 						return fmt.Errorf("invalid zip file: %s", filepath)
@@ -109,6 +156,7 @@ func main() {
 				Aliases:   []string{"v"},
 				Usage:     "View  html content",
 				ArgsUsage: "<website sc address>",
+				Hidden:    true,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 1 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
@@ -117,7 +165,7 @@ func main() {
 					// since we don't check for yaml config, we can use the default node url
 					// this fn might actually not be used down the line
 					networkInfos := pkgConfig.NewNetworkConfig(pkgConfig.DefaultNodeURL)
-					siteAddress := cCtx.Args().Get(1)
+					siteAddress := cCtx.Args().Get(0)
 
 					err := viewWebsite(siteAddress, networkInfos)
 					if err != nil {
@@ -132,17 +180,26 @@ func main() {
 				Aliases:   []string{"d"},
 				Usage:     "Delete a website",
 				ArgsUsage: "<website sc address>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
 					if cCtx.Args().Len() < 1 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config, err := yamlConfig.LoadYamlCliConfig("./deweb_cli_config.yaml")
+					config, err := yamlConfig.LoadYamlCliConfig(configPath)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
-					siteAddress := cCtx.Args().Get(1)
+					if nickname != "" {
+						config.WalletConfig.WalletNickname = nickname
+					}
+
+					if node_url == "" {
+						config.WalletConfig.NodeUrl = node_url
+					}
+
+					siteAddress := cCtx.Args().Get(0)
 
 					if err := deleteWebsite(siteAddress, config); err != nil {
 						logger.Fatalf("An error occurred while attempting to delete website %s: %v", siteAddress, err)
@@ -220,7 +277,9 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 
 	logger.Infof("Website owner: %s", owner)
 
-	zipFile, err := webmanager.RequestWebsite(scAddress, networkInfos)
+	// For debugging  cache purposes:
+	// zipFile, err := webmanager.RequestWebsite(scAddress, networkInfos)
+	zipFile, err := website.Fetch(networkInfos, scAddress)
 	if err != nil {
 		return fmt.Errorf("failed to request website: %v", err)
 	}
@@ -249,6 +308,7 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 	return nil
 }
 
+// TODO: delete website from cache if it is deleted from the blockchain
 func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
 	operationID, err := website.Delete(config.SCConfig, config.WalletConfig, config.NetworkConfig, siteAddress)
 	if err != nil {
