@@ -19,7 +19,6 @@ import (
 
 const defaultYamlConfigPath = "./deweb_cli_config.yaml"
 
-// TODO add config filepath as flag
 func main() {
 	var nickname string
 
@@ -31,13 +30,13 @@ func main() {
 		&cli.StringFlag{
 			Name:        "nickname",
 			Usage:       "selected wallet `wallet_nickname`",
-			Aliases:     []string{"wn"},
+			Aliases:     []string{"n"},
 			Destination: &nickname,
 		},
 		&cli.StringFlag{
 			Name:        "node_url",
 			Usage:       "selected wallet `node_url`",
-			Aliases:     []string{"n"},
+			Aliases:     []string{"u"},
 			Destination: &node_url,
 		},
 		&cli.StringFlag{
