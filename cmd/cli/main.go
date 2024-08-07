@@ -21,7 +21,6 @@ const defaultYamlConfigPath = "./deweb_cli_config.yaml"
 
 // TODO add config filepath as flag
 func main() {
-
 	var nickname string
 
 	var node_url string
