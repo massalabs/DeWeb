@@ -14,7 +14,7 @@ const (
 	BuildnetChainID = 77658366
 )
 
-func NewNetworkConfig(NodeURL string) *msConfig.NetworkInfos {
+func NewNetworkConfig(NodeURL string) msConfig.NetworkInfos {
 	client := node.NewClient(NodeURL)
 
 	chainID := uint64(0)
@@ -30,7 +30,7 @@ func NewNetworkConfig(NodeURL string) *msConfig.NetworkInfos {
 		nodeVersion = getNodeVersion(status)
 	}
 
-	return &msConfig.NetworkInfos{
+	return msConfig.NetworkInfos{
 		Network: networkName,
 		NodeURL: NodeURL,
 		Version: nodeVersion,

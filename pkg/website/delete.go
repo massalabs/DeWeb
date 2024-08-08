@@ -11,9 +11,8 @@ import (
 	"github.com/massalabs/station/pkg/onchain"
 )
 
-// TODO: delete website from cache if it is deleted from the blockchain
 func Delete(scConfig *config.SCConfig,
-	walletConfig *config.WalletConfig,
+	walletConfig config.WalletConfig,
 	networkInfos *msConfig.NetworkInfos, address string,
 ) (*string, error) {
 	res, err := onchain.CallFunction(

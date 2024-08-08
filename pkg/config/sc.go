@@ -22,7 +22,7 @@ const (
 )
 
 // Returns a new Config for call sc's
-func NewSCConfig(NodeURL string) *SCConfig {
+func NewSCConfig(NodeURL string) SCConfig {
 	client := node.NewClient(NodeURL)
 
 	var minimalFees uint64
@@ -34,7 +34,7 @@ func NewSCConfig(NodeURL string) *SCConfig {
 
 	minimalFees = getMinimalFees(status)
 
-	return &SCConfig{
+	return SCConfig{
 		MinimalFees: minimalFees,
 		MaxGas:      DefaultMaxGas,
 		MaxCoins:    DefaultMaxCoins,

@@ -19,7 +19,7 @@ const (
 
 func UploadChunk(
 	websiteAddress string,
-	walletConfig *pkgConfig.WalletConfig,
+	walletConfig pkgConfig.WalletConfig,
 	networkInfos *msConfig.NetworkInfos,
 	scConfig *pkgConfig.SCConfig,
 	chunk []byte,
@@ -55,7 +55,7 @@ func prepareUploadParams(chunk []byte, chunkIndex int) []byte {
 
 func performUpload(
 	scConfig *pkgConfig.SCConfig,
-	walletConfig *pkgConfig.WalletConfig,
+	walletConfig pkgConfig.WalletConfig,
 	networkInfos *msConfig.NetworkInfos,
 	websiteAddress string,
 	params []byte,

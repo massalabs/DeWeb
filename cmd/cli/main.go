@@ -165,7 +165,7 @@ func main() {
 					networkInfos := pkgConfig.NewNetworkConfig(pkgConfig.DefaultNodeURL)
 					siteAddress := cCtx.Args().Get(0)
 
-					err := viewWebsite(siteAddress, networkInfos)
+					err := viewWebsite(siteAddress, &networkInfos)
 					if err != nil {
 						logger.Fatalf("An error occured while attempting to view website %s: %v", siteAddress, err)
 					}
@@ -221,7 +221,7 @@ func main() {
 func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
 	logger.Debugf("Deploying website contract with config: %+v", config.SCConfig)
 
-	deploymentResult, err := website.Deploy(config.WalletConfig.WalletNickname, config.NetworkConfig, config.SCConfig)
+	deploymentResult, err := website.Deploy(config.WalletConfig.WalletNickname, &config.NetworkConfig, &config.SCConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to deploy website contract: %v", err)
 	}
@@ -247,7 +247,7 @@ func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) er
 	for i, chunk := range chunks {
 		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
 
-		operationID, err := website.UploadChunk(address, config.WalletConfig, config.NetworkConfig, config.SCConfig, chunk, i)
+		operationID, err := website.UploadChunk(address, config.WalletConfig, &config.NetworkConfig, &config.SCConfig, chunk, i)
 		if err != nil {
 			return fmt.Errorf("failed to upload chunk %d: %v", i, err)
 		}
@@ -306,8 +306,9 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 	return nil
 }
 
+// TODO: delete website from cache if it is deleted from the blockchain
 func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
-	operationID, err := website.Delete(config.SCConfig, config.WalletConfig, config.NetworkConfig, siteAddress)
+	operationID, err := website.Delete(&config.SCConfig, config.WalletConfig, &config.NetworkConfig, siteAddress)
 	if err != nil {
 		return fmt.Errorf("error while deleting website %s: %v", siteAddress, err)
 	}

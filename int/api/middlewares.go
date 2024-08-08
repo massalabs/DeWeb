@@ -31,7 +31,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 		logger.Debugf("SubdomainMiddleware: Subdomain %s found, resolving address", subdomain)
 
-		address, err := resolveAddress(subdomain, *conf.NetworkInfos)
+		address, err := resolveAddress(subdomain, conf.NetworkInfos)
 		if err != nil {
 			handleResolveError(w, subdomain, path, err)
 
@@ -51,7 +51,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 // serveContent serves the requested resource for the given website address.
 func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
-	content, mimeType, err := getWebsiteResource(conf.NetworkInfos, address, path)
+	content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

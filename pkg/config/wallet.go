@@ -7,9 +7,9 @@ type WalletConfig struct {
 
 const DefaultNodeURL = "https://buildnet.massa.net/api/v2"
 
-func DefaultWalletConfig() *WalletConfig {
-	return &WalletConfig{
-		WalletNickname: "",
-		NodeUrl:        DefaultNodeURL,
+func NewWalletConfig(walletNickname string, nodeURL string) WalletConfig {
+	return WalletConfig{
+		WalletNickname: walletNickname,
+		NodeUrl:        nodeURL,
 	}
 }

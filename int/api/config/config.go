@@ -19,7 +19,7 @@ const (
 type ServerConfig struct {
 	Domain       string
 	APIPort      int
-	NetworkInfos *msConfig.NetworkInfos
+	NetworkInfos msConfig.NetworkInfos
 	AllowList    []string
 	BlockList    []string
 }

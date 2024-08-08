@@ -17,10 +17,9 @@ type yamlWalletConfig struct {
 }
 
 type yamlScConfig struct {
-	MinimalFees uint64 `yaml:"minimal_fees"`
-	MaxGas      uint64 `yaml:"max_gas"`
-	MaxCoins    uint64 `yaml:"max_coins"`
-	Expiry      uint64 `yaml:"expiry"`
+	MaxGas   uint64 `yaml:"max_gas"`
+	MaxCoins uint64 `yaml:"max_coins"`
+	Expiry   uint64 `yaml:"expiry"`
 }
 
 type yamlConfig struct {
@@ -28,9 +27,9 @@ type yamlConfig struct {
 	ScConfig     *yamlScConfig     `yaml:"sc_config"`
 }
 type Config struct {
-	WalletConfig  *CLIConfig.WalletConfig
-	SCConfig      *CLIConfig.SCConfig
-	NetworkConfig *msConfig.NetworkInfos
+	WalletConfig  CLIConfig.WalletConfig
+	SCConfig      CLIConfig.SCConfig
+	NetworkConfig msConfig.NetworkInfos
 }
 
 // Load yaml cli config
@@ -41,7 +40,7 @@ func LoadYamlCliConfig(configPath string) (*Config, error) {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Warnf("Config file does not exist, using default values")
-		walletConfig := CLIConfig.DefaultWalletConfig()
+		walletConfig := CLIConfig.NewWalletConfig("", CLIConfig.DefaultNodeURL) // TODO change this
 		scConfig := CLIConfig.NewSCConfig(CLIConfig.DefaultNodeURL)
 		networkInfos := CLIConfig.NewNetworkConfig(CLIConfig.DefaultNodeURL)
 
@@ -76,28 +75,30 @@ func LoadYamlCliConfig(configPath string) (*Config, error) {
 		yamlConf.WalletConfig.NodeUrl = CLIConfig.DefaultNodeURL
 	}
 
+	newScConfig := CLIConfig.NewSCConfig(yamlConf.WalletConfig.NodeUrl)
+
 	if yamlConf.ScConfig.MaxGas == 0 {
 		logger.Warnf("Max gas is empty, using default value")
-		yamlConf.ScConfig.MaxGas = CLIConfig.DefaultMaxGas
+		yamlConf.ScConfig.MaxGas = newScConfig.MaxGas
 	}
 
 	if yamlConf.ScConfig.MaxCoins == 0 {
 		logger.Warnf("Max coins is empty, using default value")
-		yamlConf.ScConfig.MaxCoins = CLIConfig.DefaultMaxCoins
+		yamlConf.ScConfig.MaxCoins = newScConfig.MaxCoins
 	}
 
 	if yamlConf.ScConfig.Expiry == 0 {
 		logger.Warnf("Expiry is empty, using default value")
-		yamlConf.ScConfig.Expiry = CLIConfig.DefaultExpiry
+		yamlConf.ScConfig.Expiry = newScConfig.Expiry
 	}
 
-	walletConfig := &CLIConfig.WalletConfig{
+	walletConfig := CLIConfig.WalletConfig{
 		WalletNickname: yamlConf.WalletConfig.WalletNickname,
 		NodeUrl:        yamlConf.WalletConfig.NodeUrl,
 	}
 
-	scConfig := &CLIConfig.SCConfig{
-		MinimalFees: yamlConf.ScConfig.MinimalFees,
+	scConfig := CLIConfig.SCConfig{
+		MinimalFees: newScConfig.MinimalFees,
 		MaxGas:      yamlConf.ScConfig.MaxGas,
 		MaxCoins:    yamlConf.ScConfig.MaxCoins,
 		Expiry:      yamlConf.ScConfig.Expiry,
