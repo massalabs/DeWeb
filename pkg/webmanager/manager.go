@@ -12,7 +12,7 @@ import (
 	"github.com/massalabs/station/pkg/logger"
 )
 
-const cacheDir = "./websitesCache/"
+const CacheDir = "./websitesCache/"
 
 // getWebsiteResource fetches a resource from a website and returns its content.
 func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, bool, error) {
@@ -100,7 +100,7 @@ func fetchAndCache(networkInfo *msConfig.NetworkInfos, scAddress string, cache *
 
 // Compares the last updated timestamp to the file's last modified timestamp.
 func isFileOutdated(fileName string, lastUpdated time.Time) (bool, error) {
-	fi, err := os.Stat(cacheDir + fileName)
+	fi, err := os.Stat(CacheDir + fileName)
 	if err != nil {
 		return false, fmt.Errorf("failed to get file info: %w", err)
 	}
