@@ -228,7 +228,7 @@ func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) er
 			return fmt.Errorf("failed to upload chunk %d: %v", i, err)
 		}
 
-		logger.Infof("Chunk %d uploaded with operation ID: %s", i, operationID)
+		logger.Infof("Chunk %d out of %d uploaded with operation ID: %s", i, len(chunks), operationID)
 	}
 
 	return nil
