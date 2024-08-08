@@ -32,24 +32,39 @@ type Config struct {
 	NetworkConfig msConfig.NetworkInfos
 }
 
-// Load yaml cli config
-func LoadYamlCliConfig(configPath string) (*Config, error) {
-	if configPath == "" {
-		return nil, fmt.Errorf("config path is empty")
+func LoadConfig(configPath string, nodeURL string, nickname string) (*Config, error) {
+
+	if nodeURL == "" {
+		logger.Warnf("Node URL is empty, using default value")
+		nodeURL = CLIConfig.DefaultNodeURL
 	}
 
+	if configPath != "" {
+		logger.Infof("Loading config from file: %s", configPath)
+		return loadYamlCliConfig(configPath, nodeURL, nickname)
+	}
+
+	logger.Infof("No config file specified, using default values")
+
+	return defaultCliConfig(nodeURL, nickname)
+}
+
+func defaultCliConfig(nodeURL string, nickname string) (*Config, error) {
+	walletConfig := CLIConfig.NewWalletConfig(nickname, nodeURL)
+	scConfig := CLIConfig.NewSCConfig(nodeURL)
+	networkInfos := CLIConfig.NewNetworkConfig(nodeURL)
+
+	return &Config{
+		WalletConfig:  walletConfig,
+		SCConfig:      scConfig,
+		NetworkConfig: networkInfos,
+	}, nil
+}
+
+func loadYamlCliConfig(configPath string, nodeURL string, nickname string) (*Config, error) {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		logger.Warnf("Config file does not exist, using default values")
-		walletConfig := CLIConfig.NewWalletConfig("", CLIConfig.DefaultNodeURL) // TODO change this
-		scConfig := CLIConfig.NewSCConfig(CLIConfig.DefaultNodeURL)
-		networkInfos := CLIConfig.NewNetworkConfig(CLIConfig.DefaultNodeURL)
-
-		return &Config{
-			WalletConfig:  walletConfig,
-			SCConfig:      scConfig,
-			NetworkConfig: networkInfos,
-		}, nil
-
+		return defaultCliConfig(nodeURL, nickname)
 	}
 
 	filebytes, err := dewebUtils.ReadFileBytes(configPath)
@@ -65,14 +80,15 @@ func LoadYamlCliConfig(configPath string) (*Config, error) {
 	}
 
 	// Set default values if not specified in the YAML file
-	if yamlConf.WalletConfig.WalletNickname == "" {
-		logger.Warnf("Wallet nickname is empty, using default value")
-		yamlConf.WalletConfig.WalletNickname = ""
+
+	if nickname != "" {
+		logger.Warnf("Setting wallet nickname to: %s", nickname)
+		yamlConf.WalletConfig.WalletNickname = nickname
 	}
 
-	if yamlConf.WalletConfig.NodeUrl == "" {
-		logger.Warnf("Node URL is empty, using default value")
-		yamlConf.WalletConfig.NodeUrl = CLIConfig.DefaultNodeURL
+	if nodeURL != "" {
+		logger.Warnf("Setting config node url to: %s", nodeURL)
+		yamlConf.WalletConfig.NodeUrl = nodeURL
 	}
 
 	newScConfig := CLIConfig.NewSCConfig(yamlConf.WalletConfig.NodeUrl)
@@ -98,7 +114,7 @@ func LoadYamlCliConfig(configPath string) (*Config, error) {
 	}
 
 	scConfig := CLIConfig.SCConfig{
-		MinimalFees: newScConfig.MinimalFees,
+		MinimalFees: newScConfig.MinimalFees, // minimal fees is not in the yaml file
 		MaxGas:      yamlConf.ScConfig.MaxGas,
 		MaxCoins:    yamlConf.ScConfig.MaxCoins,
 		Expiry:      yamlConf.ScConfig.Expiry,

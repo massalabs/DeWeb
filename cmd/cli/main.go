@@ -28,15 +28,15 @@ func main() {
 
 	flags := []cli.Flag{
 		&cli.StringFlag{
-			Name:        "nickname",
+			Name:        "wallet_nickname",
 			Usage:       "selected wallet `wallet_nickname`",
-			Aliases:     []string{"n"},
+			Aliases:     []string{"w"},
 			Destination: &nickname,
 		},
 		&cli.StringFlag{
 			Name:        "node_url",
 			Usage:       "selected wallet `node_url`",
-			Aliases:     []string{"u"},
+			Aliases:     []string{"n"},
 			Destination: &nodeURL,
 		},
 		&cli.StringFlag{
@@ -75,17 +75,9 @@ func main() {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config, err := yamlConfig.LoadYamlCliConfig(configPath)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
-					}
-
-					if nickname != "" {
-						config.WalletConfig.WalletNickname = nickname
-					}
-
-					if nodeURL == "" {
-						config.WalletConfig.NodeUrl = nodeURL
 					}
 
 					filepath := cCtx.Args().Get(0)
@@ -114,7 +106,7 @@ func main() {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config, err := yamlConfig.LoadYamlCliConfig(configPath)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
@@ -184,7 +176,7 @@ func main() {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config, err := yamlConfig.LoadYamlCliConfig(configPath)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
