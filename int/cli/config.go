@@ -33,7 +33,6 @@ type Config struct {
 }
 
 func LoadConfig(configPath string, nodeURL string, nickname string) (*Config, error) {
-
 	if nodeURL == "" {
 		logger.Warnf("Node URL is empty, using default value")
 		nodeURL = CLIConfig.DefaultNodeURL

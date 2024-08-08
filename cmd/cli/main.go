@@ -111,14 +111,6 @@ func main() {
 						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
-					if nickname != "" {
-						config.WalletConfig.WalletNickname = nickname
-					}
-
-					if nodeURL == "" {
-						config.WalletConfig.NodeUrl = nodeURL
-					}
-
 					siteAddress := cCtx.Args().Get(0)
 					filepath := cCtx.Args().Get(1)
 
@@ -179,14 +171,6 @@ func main() {
 					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
 					if err != nil {
 						return fmt.Errorf("failed to load yaml config: %v", err)
-					}
-
-					if nickname != "" {
-						config.WalletConfig.WalletNickname = nickname
-					}
-
-					if nodeURL == "" {
-						config.WalletConfig.NodeUrl = nodeURL
 					}
 
 					siteAddress := cCtx.Args().Get(0)

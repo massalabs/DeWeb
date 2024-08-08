@@ -54,7 +54,6 @@ DeWeb CLI is a command-line tool designed for deploying, editing, and deleting d
 - [Logging](#logging)
 - [License](#license)
 
-
 ## Usage
 
 Once installed, you can use the `deweb-cli` command to interact with DeWeb. Below is the basic usage syntax:
@@ -88,6 +87,16 @@ deweb-cli upload [global options] <website_zip_file_path>
 ```bash
 deweb-cli upload -w myWallet -n https://mainnet.massa.net/api/v2 ./website.zip
 ```
+
+The zip file should contain an `index.html` at its root. For example, if you build an app and the output is in a directory (usually `build` or `dist`), you can zip it using the following command from the output directory:
+
+```bash
+zip {name}.zip -r ./*
+```
+
+This should result in a zip file with all the files from the output directory, with the `index.html` at its root.
+
+> Note: Server Side Rendering (SSR) is not supported at this time. Ensure your website is fully client-side rendered.
 
 ### edit
 
