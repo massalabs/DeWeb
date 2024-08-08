@@ -12,6 +12,8 @@ const (
 
 	MainnetChainID  = 77658377
 	BuildnetChainID = 77658366
+
+	DefaultNodeURL = "https://buildnet.massa.net/api/v2"
 )
 
 func NewNetworkConfig(NodeURL string) msConfig.NetworkInfos {

@@ -11,10 +11,8 @@ import (
 	"github.com/massalabs/DeWeb/int/utils"
 	"github.com/massalabs/DeWeb/int/zipper"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
-	"github.com/massalabs/DeWeb/pkg/webmanager"
 	"github.com/massalabs/DeWeb/pkg/website"
 	msConfig "github.com/massalabs/station/int/config"
-	"github.com/massalabs/station/pkg/cache"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/urfave/cli/v2"
 )
@@ -254,7 +252,6 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 	logger.Infof("Website owner: %s", owner)
 
 	// For debugging  cache purposes:
-
 	// zipFile, err := webmanager.RequestWebsite(scAddress, networkInfos)
 	zipFile, err := website.Fetch(networkInfos, scAddress)
 	if err != nil {
@@ -293,27 +290,6 @@ func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
 	}
 
 	logger.Infof("Website %s deleted with operation ID: %s", siteAddress, *operationID)
-
-	err = deleteFromCache(siteAddress)
-	if err != nil {
-		return fmt.Errorf("failed to delete %s from cache: %v", siteAddress, err)
-	}
-
-	logger.Infof("Website %s deleted from cache", siteAddress)
-
-	return nil
-}
-
-func deleteFromCache(scAddress string) error {
-	cache := new(cache.Cache)
-	fileName := fmt.Sprintf("website_%s.zip", scAddress)
-
-	if cache.IsPresent(fileName) {
-		err := os.Remove(webmanager.CacheDir + fileName)
-		if err != nil {
-			return fmt.Errorf("failed to delete from cache: %v", err)
-		}
-	}
 
 	return nil
 }

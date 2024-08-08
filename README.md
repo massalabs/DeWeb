@@ -42,18 +42,6 @@ Ensure you have `task` installed. Follow the instructions [here](https://taskfil
 
 DeWeb CLI is a command-line tool designed for deploying, editing, and deleting decentralized websites on the DeWeb platform.
 
-## Table of Contents
-
-- [Usage](#usage)
-- [Commands](#commands)
-  - [upload](#upload)
-  - [edit](#edit)
-  - [view](#view)
-  - [delete](#delete)
-- [Configuration](#configuration)
-- [Logging](#logging)
-- [License](#license)
-
 ## Usage
 
 Once installed, you can use the `deweb-cli` command to interact with DeWeb. Below is the basic usage syntax:
@@ -156,7 +144,3 @@ sc_config:
 ## Logging
 
 The CLI logs its output to `./deweb-cli.log`. Logging is initialized automatically when the application starts.
-
-## License
-
-DeWeb CLI is licensed under the MIT License. See the `LICENSE` file for more information.
