@@ -16,14 +16,6 @@ const (
 	DefaultAPIPort        = 8080
 )
 
-type yamlServerConfig struct {
-	Domain         string   `yaml:"domain"`
-	NetworkNodeURL string   `yaml:"network_node_url"`
-	APIPort        int      `yaml:"api_port"`
-	AllowList      []string `yaml:"allow_list"`
-	BlockList      []string `yaml:"block_list"`
-}
-
 type ServerConfig struct {
 	Domain       string
 	APIPort      int
@@ -32,13 +24,21 @@ type ServerConfig struct {
 	BlockList    []string
 }
 
+type yamlServerConfig struct {
+	Domain         string   `yaml:"domain"`
+	NetworkNodeURL string   `yaml:"network_node_url"`
+	APIPort        int      `yaml:"api_port"`
+	AllowList      []string `yaml:"allow_list"`
+	BlockList      []string `yaml:"block_list"`
+}
+
 func DefaultConfig() *ServerConfig {
-	nodeConf := pkgConfig.DefaultConfig("", DefaultNetworkNodeURL)
+	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 
 	return &ServerConfig{
 		Domain:       DefaultDomain,
 		APIPort:      DefaultAPIPort,
-		NetworkInfos: nodeConf.NetworkInfos,
+		NetworkInfos: networkInfos,
 		AllowList:    []string{},
 		BlockList:    []string{},
 	}
@@ -79,12 +79,12 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		yamlConf.APIPort = DefaultAPIPort
 	}
 
-	nodeConf := pkgConfig.DefaultConfig("", yamlConf.NetworkNodeURL)
+	networkInfos := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
 		Domain:       yamlConf.Domain,
 		APIPort:      yamlConf.APIPort,
-		NetworkInfos: nodeConf.NetworkInfos,
+		NetworkInfos: networkInfos,
 		AllowList:    yamlConf.AllowList,
 		BlockList:    yamlConf.BlockList,
 	}, nil

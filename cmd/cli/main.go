@@ -6,22 +6,55 @@ import (
 	"os"
 	"time"
 
+	yamlConfig "github.com/massalabs/DeWeb/int/cli"
 	"github.com/massalabs/DeWeb/int/config"
 	"github.com/massalabs/DeWeb/int/utils"
 	"github.com/massalabs/DeWeb/int/zipper"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
-	"github.com/massalabs/DeWeb/pkg/webmanager"
 	"github.com/massalabs/DeWeb/pkg/website"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/urfave/cli/v2"
 )
 
+const defaultYamlConfigPath = "./deweb_cli_config.yaml"
+
 func main() {
+	var nickname string
+
+	var nodeURL string
+
+	var configPath string
+
+	flags := []cli.Flag{
+		&cli.StringFlag{
+			Name:        "wallet_nickname",
+			Usage:       "selected wallet `wallet_nickname`",
+			Aliases:     []string{"w"},
+			Destination: &nickname,
+		},
+		&cli.StringFlag{
+			Name:        "node_url",
+			Usage:       "selected wallet `node_url`",
+			Aliases:     []string{"n"},
+			Destination: &nodeURL,
+		},
+		&cli.StringFlag{
+			Name:        "config",
+			Aliases:     []string{"c"},
+			Usage:       "Load configuration from `file_path`",
+			Value:       defaultYamlConfigPath,
+			DefaultText: defaultYamlConfigPath,
+			Destination: &configPath,
+		},
+	}
+
 	app := &cli.App{
 		Name:      "DeWeb CLI",
 		Usage:     "CLI app for deploying websites",
 		UsageText: "Upload, delete & edit DeWeb site from the terminal",
 		Version:   config.Version,
+		Flags:     flags,
 		Action: func(cCtx *cli.Context) error {
 			err := cli.ShowAppHelp(cCtx)
 			if err != nil {
@@ -35,18 +68,22 @@ func main() {
 				Name:      "upload",
 				Aliases:   []string{"u"},
 				Usage:     "Upload a website",
-				ArgsUsage: "<wallet nickname> <website zip file path>",
+				ArgsUsage: "<website_zip_file_path>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Len() < 2 {
+					if cCtx.Args().Len() < 1 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					filepath := cCtx.Args().Get(1)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
+					if err != nil {
+						return fmt.Errorf("failed to load yaml config: %v", err)
+					}
+
+					filepath := cCtx.Args().Get(0)
 					if !zipper.IsValidZipFile(filepath) {
 						return fmt.Errorf("invalid zip file: %s", filepath)
 					}
-
-					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
 
 					siteAddress, err := deployWebsite(config, filepath)
 					if err != nil {
@@ -62,15 +99,20 @@ func main() {
 				Name:      "edit",
 				Aliases:   []string{"e"},
 				Usage:     "Edit website",
-				ArgsUsage: "<wallet nickname> <website sc address> <website zip file path>",
+				ArgsUsage: "<website_sc_address> <website_zip_file_path>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Len() < 3 {
+					if cCtx.Args().Len() < 2 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
-					siteAddress := cCtx.Args().Get(1)
-					filepath := cCtx.Args().Get(2)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
+					if err != nil {
+						return fmt.Errorf("failed to load yaml config: %v", err)
+					}
+
+					siteAddress := cCtx.Args().Get(0)
+					filepath := cCtx.Args().Get(1)
 
 					if !zipper.IsValidZipFile(filepath) {
 						return fmt.Errorf("invalid zip file: %s", filepath)
@@ -95,16 +137,19 @@ func main() {
 				Name:      "view",
 				Aliases:   []string{"v"},
 				Usage:     "View  html content",
-				ArgsUsage: "<nickname> <website sc address>",
+				ArgsUsage: "<website_sc_address>",
+				Hidden:    true,
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Len() < 2 {
+					if cCtx.Args().Len() < 1 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
-					siteAddress := cCtx.Args().Get(1)
+					// since we don't check for yaml config, we can use the default node url
+					// this fn might actually not be used down the line
+					networkInfos := pkgConfig.NewNetworkConfig(pkgConfig.DefaultNodeURL)
+					siteAddress := cCtx.Args().Get(0)
 
-					err := viewWebsite(siteAddress, config)
+					err := viewWebsite(siteAddress, &networkInfos)
 					if err != nil {
 						logger.Fatalf("An error occured while attempting to view website %s: %v", siteAddress, err)
 					}
@@ -116,20 +161,23 @@ func main() {
 				Name:      "delete",
 				Aliases:   []string{"d"},
 				Usage:     "Delete a website",
-				ArgsUsage: "<wallet nickname> <website sc address>",
+				ArgsUsage: "<website_sc_address>",
+				Flags:     flags,
 				Action: func(cCtx *cli.Context) error {
-					if cCtx.Args().Len() < 2 {
+					if cCtx.Args().Len() < 1 {
 						return fmt.Errorf("invalid number of arguments\nUsage: %s %s", cCtx.App.Name, cCtx.Command.ArgsUsage)
 					}
 
-					config := pkgConfig.DefaultConfig(cCtx.Args().Get(0), "https://buildnet.massa.net/api/v2")
-					siteAddress := cCtx.Args().Get(1)
-
-					err := deleteWebsite(siteAddress, config)
+					config, err := yamlConfig.LoadConfig(configPath, nodeURL, nickname)
 					if err != nil {
-						logger.Fatalf("An error occured while attempting to delete website %s: %v", siteAddress, err)
+						return fmt.Errorf("failed to load yaml config: %v", err)
 					}
 
+					siteAddress := cCtx.Args().Get(0)
+
+					if err := deleteWebsite(siteAddress, config); err != nil {
+						logger.Fatalf("An error occurred while attempting to delete website %s: %v", siteAddress, err)
+					}
 					return nil
 				},
 			},
@@ -146,10 +194,10 @@ func main() {
 	}
 }
 
-func deployWebsite(config *pkgConfig.Config, filepath string) (string, error) {
-	logger.Debugf("Deploying website contract with config: %+v", config)
+func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
+	logger.Debugf("Deploying website contract with config: %+v", config.SCConfig)
 
-	deploymentResult, err := website.Deploy(config)
+	deploymentResult, err := website.Deploy(config.WalletConfig.WalletNickname, &config.NetworkConfig, &config.SCConfig)
 	if err != nil {
 		return "", fmt.Errorf("failed to deploy website contract: %v", err)
 	}
@@ -171,16 +219,16 @@ func deployWebsite(config *pkgConfig.Config, filepath string) (string, error) {
 	return deploymentResult.Address, nil
 }
 
-func uploadChunks(chunks [][]byte, address string, config *pkgConfig.Config) error {
+func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) error {
 	for i, chunk := range chunks {
 		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
 
-		operationID, err := website.UploadChunk(address, config, chunk, i)
+		operationID, err := website.UploadChunk(address, config.WalletConfig, &config.NetworkConfig, &config.SCConfig, chunk, i)
 		if err != nil {
 			return fmt.Errorf("failed to upload chunk %d: %v", i, err)
 		}
 
-		logger.Infof("Chunk %d uploaded with operation ID: %s", i, operationID)
+		logger.Infof("Chunk %d out of %d uploaded with operation ID: %s", i, len(chunks), operationID)
 	}
 
 	return nil
@@ -195,25 +243,27 @@ func processFileForUpload(filepath string) ([][]byte, error) {
 	return website.DivideIntoChunks(websiteBytes, website.ChunkSize), nil
 }
 
-func viewWebsite(scAddress string, config *pkgConfig.Config) error {
-	owner, err := website.GetOwner(&config.NetworkInfos, scAddress)
+func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
+	owner, err := website.GetOwner(networkInfos, scAddress)
 	if err != nil {
 		logger.Warnf("failed to get owner of %s: %v", scAddress, err)
 	}
 
 	logger.Infof("Website owner: %s", owner)
 
-	zipFile, err := webmanager.RequestWebsite(scAddress, &config.NetworkInfos)
+	// For debugging  cache purposes:
+	// zipFile, err := webmanager.RequestWebsite(scAddress, networkInfos)
+	zipFile, err := website.Fetch(networkInfos, scAddress)
 	if err != nil {
 		return fmt.Errorf("failed to request website: %v", err)
 	}
 
-	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(&config.NetworkInfos, scAddress)
+	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(networkInfos, scAddress)
 	if err != nil {
 		logger.Warnf("failed to get first creation timestamp of %s: %v", scAddress, err)
 	}
 
-	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(&config.NetworkInfos, scAddress)
+	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(networkInfos, scAddress)
 	if err != nil {
 		logger.Warnf("failed to get last update timestamp of %s: %v", scAddress, err)
 	}
@@ -232,8 +282,9 @@ func viewWebsite(scAddress string, config *pkgConfig.Config) error {
 	return nil
 }
 
-func deleteWebsite(siteAddress string, config *pkgConfig.Config) error {
-	operationID, err := website.Delete(config, siteAddress)
+// TODO: delete website from cache if it is deleted from the blockchain
+func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
+	operationID, err := website.Delete(&config.SCConfig, config.WalletConfig, &config.NetworkConfig, siteAddress)
 	if err != nil {
 		return fmt.Errorf("error while deleting website %s: %v", siteAddress, err)
 	}

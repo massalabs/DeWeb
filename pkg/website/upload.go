@@ -3,8 +3,9 @@ package website
 import (
 	"fmt"
 
-	"github.com/massalabs/DeWeb/pkg/config"
+	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node/sendoperation"
@@ -18,7 +19,9 @@ const (
 
 func UploadChunk(
 	websiteAddress string,
-	config *config.Config,
+	walletConfig pkgConfig.WalletConfig,
+	networkInfos *msConfig.NetworkInfos,
+	scConfig *pkgConfig.SCConfig,
 	chunk []byte,
 	chunkIndex int,
 ) (operationID string, err error) {
@@ -39,7 +42,7 @@ func UploadChunk(
 
 	logger.Debugf("Uploading chunk %d to website at address %s with %d nMAS", chunkIndex, websiteAddress, uploadCost)
 
-	return performUpload(config, websiteAddress, params, uploadCost, chunkIndex)
+	return performUpload(scConfig, walletConfig, networkInfos, websiteAddress, params, uploadCost, chunkIndex)
 }
 
 func prepareUploadParams(chunk []byte, chunkIndex int) []byte {
@@ -51,22 +54,24 @@ func prepareUploadParams(chunk []byte, chunkIndex int) []byte {
 }
 
 func performUpload(
-	config *config.Config,
+	scConfig *pkgConfig.SCConfig,
+	walletConfig pkgConfig.WalletConfig,
+	networkInfos *msConfig.NetworkInfos,
 	websiteAddress string,
 	params []byte,
 	uploadCost int,
 	chunkIndex int,
 ) (string, error) {
 	res, err := onchain.CallFunction(
-		&config.NetworkInfos,
-		config.WalletNickname,
+		networkInfos,
+		walletConfig.WalletNickname,
 		websiteAddress,
 		appendFunction,
 		params,
-		config.MinimalFees,
-		config.MaxGas,
+		scConfig.MinimalFees,
+		scConfig.MaxGas,
 		uint64(uploadCost),
-		config.Expiry,
+		scConfig.Expiry,
 		false,
 		sendoperation.OperationBatch{},
 		&signer.WalletPlugin{},

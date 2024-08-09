@@ -5,22 +5,26 @@ import (
 	"fmt"
 
 	"github.com/massalabs/DeWeb/pkg/config"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/node/sendoperation"
 	"github.com/massalabs/station/pkg/node/sendoperation/signer"
 	"github.com/massalabs/station/pkg/onchain"
 )
 
-func Delete(conf *config.Config, address string) (*string, error) {
+func Delete(scConfig *config.SCConfig,
+	walletConfig config.WalletConfig,
+	networkInfos *msConfig.NetworkInfos, address string,
+) (*string, error) {
 	res, err := onchain.CallFunction(
-		&conf.NetworkInfos,
-		conf.WalletNickname,
+		networkInfos,
+		walletConfig.WalletNickname,
 		address,
 		"deleteWebsite",
 		[]byte{},
-		conf.MinimalFees,
-		conf.MaxGas,
+		scConfig.MinimalFees,
+		scConfig.MaxGas,
 		config.NoCoins,
-		conf.Expiry,
+		scConfig.Expiry,
 		false,
 		sendoperation.OperationBatch{},
 		&signer.WalletPlugin{},
