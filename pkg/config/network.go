@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	mainnetName  = "mainnet"
-	buildnetName = "buildnet"
+	MainnetName  = "mainnet"
+	BuildnetName = "buildnet"
 
 	MainnetChainID  = 77658377
 	BuildnetChainID = 77658366
@@ -62,9 +62,9 @@ func getChainIDAndNetworkName(status *node.State) (uint64, string) {
 		chainID = uint64(*status.ChainID)
 		switch chainID {
 		case MainnetChainID:
-			networkName = mainnetName
+			networkName = MainnetName
 		case BuildnetChainID:
-			networkName = buildnetName
+			networkName = BuildnetName
 		default:
 			logger.Warnf("Unknown chain ID: %d", chainID)
 		}
