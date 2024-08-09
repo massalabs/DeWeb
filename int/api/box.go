@@ -9,9 +9,7 @@ import (
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 )
 
-var (
-	networkDocURL = "https://docs.massa.net/docs/build/networks-faucets/public-networks"
-)
+var networkDocURL = "https://docs.massa.net/docs/build/networks-faucets/public-networks"
 
 //go:embed massa_logomark.svg
 var massaLogomark []byte
