@@ -60,6 +60,11 @@ jobs:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
 
+      - name: Set execute permissions for CLI (Unix-like OS)
+        if: ${{ matrix.target != 'windows' }}
+        shell: bash
+        run: chmod +x build/deweb-cli${{ matrix.ext }}
+
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +77,11 @@ jobs:
         env:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
+
+      - name: Set execute permissions for Server (Unix-like OS)
+        if: ${{ matrix.target != 'windows' }}
+        shell: bash
+        run: chmod +x build/deweb-server${{ matrix.ext }}
 
       - name: Upload Server artifact
         uses: actions/upload-artifact@v4
