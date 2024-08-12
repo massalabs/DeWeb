@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deweb_cli-${{ matrix.target }}-${{ matrix.arch }}
-          path: build/deweb-cli${{ matrix.ext }}
+          path: build/deweb-cli_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
       - name: Build Server
         shell: bash
@@ -77,4 +77,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deweb_server-${{ matrix.target }}-${{ matrix.arch }}
-          path: build/deweb-server${{ matrix.ext }}
+          path: build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
