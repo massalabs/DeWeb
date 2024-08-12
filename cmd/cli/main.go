@@ -14,6 +14,7 @@ import (
 	"github.com/massalabs/DeWeb/pkg/website"
 	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
+	"github.com/massalabs/station/pkg/node"
 	"github.com/urfave/cli/v2"
 )
 
@@ -123,6 +124,12 @@ func main() {
 						logger.Fatalf("failed to process file for upload: %v", err)
 					}
 
+					err = deleteIfRequired(config, siteAddress, len(bytecode))
+					if err != nil {
+						logger.Errorf("failed to check if delete is required: %v", err)
+						logger.Warnf("continuing with edit operation for website %s", siteAddress)
+					}
+
 					err = uploadChunks(bytecode, siteAddress, config)
 					if err != nil {
 						logger.Fatalf("failed to upload chunks: %v", err)
@@ -221,6 +228,7 @@ func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
 
 func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) error {
 	for i, chunk := range chunks {
+		logger.Infof("Uploading chunk %d out of %d...", i+1, len(chunks))
 		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
 
 		operationID, err := website.UploadChunk(address, config.WalletConfig, &config.NetworkConfig, &config.SCConfig, chunk, i)
@@ -228,7 +236,29 @@ func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) er
 			return fmt.Errorf("failed to upload chunk %d: %v", i, err)
 		}
 
-		logger.Infof("Chunk %d out of %d uploaded with operation ID: %s", i, len(chunks), operationID)
+		logger.Infof("Chunk %d out of %d uploaded with operation ID: %s", i+1, len(chunks), operationID)
+	}
+
+	return nil
+}
+
+// deleteIfRequired checks if the website has more chunks than the new website
+func deleteIfRequired(config *yamlConfig.Config, siteAddress string, editChunksNbr int) error {
+	client := node.NewClient(config.NetworkConfig.NodeURL)
+
+	deployedChunks, err := website.GetNumberOfChunks(client, siteAddress)
+	if err != nil {
+		return fmt.Errorf("failed to get number of chunks for website %s: %v", siteAddress, err)
+	}
+
+	logger.Debugf("Website %s has %d deployed chunks", siteAddress, deployedChunks)
+
+	if deployedChunks > int32(editChunksNbr) {
+		logger.Infof("Website %s has more chunks than the new website, deleting and redeploying", siteAddress)
+
+		if err = deleteWebsite(siteAddress, config); err != nil {
+			return fmt.Errorf("failed to delete website %s: %v", siteAddress, err)
+		}
 	}
 
 	return nil
