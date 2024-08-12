@@ -9,7 +9,10 @@ import (
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
 )
 
-var networkDocURL = "https://docs.massa.net/docs/build/networks-faucets/public-networks"
+const (
+	UnknownNetwork = "Unknown"
+	networkDocURL  = "https://docs.massa.net/docs/build/networks-faucets/public-networks"
+)
 
 //go:embed massa_logomark.svg
 var massaLogomark []byte
@@ -84,8 +87,10 @@ func getChainName(chainID uint64) string {
 	switch chainID {
 	case pkgConfig.BuildnetChainID:
 		return pkgConfig.BuildnetName
-	default:
+	case pkgConfig.MainnetChainID:
 		return pkgConfig.MainnetName
+	default:
+		return UnknownNetwork
 	}
 }
 
@@ -94,7 +99,9 @@ func getChainDocURL(chainID uint64) string {
 	switch chainID {
 	case pkgConfig.BuildnetChainID:
 		return networkDocURL + "#buildnet"
-	default:
+	case pkgConfig.MainnetChainID:
 		return networkDocURL + "#mainnet"
+	default:
+		return networkDocURL
 	}
 }
