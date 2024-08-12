@@ -66,7 +66,7 @@ jobs:
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deweb_cli-${{ matrix.target }}-${{ matrix.arch }}
+          name: deweb-cli_${{ matrix.target }}_${{ matrix.arch }}
           path: build/deweb-cli_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
       - name: Build Server
@@ -82,5 +82,5 @@ jobs:
       - name: Upload Server artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deweb_server-${{ matrix.target }}-${{ matrix.arch }}
+          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
           path: build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
