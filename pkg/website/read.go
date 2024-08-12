@@ -12,7 +12,7 @@ import (
 func Fetch(network *config.NetworkInfos, websiteAddress string) ([]byte, error) {
 	client := node.NewClient(network.NodeURL)
 
-	chunkNumber, err := getNumberOfChunks(client, websiteAddress)
+	chunkNumber, err := GetNumberOfChunks(client, websiteAddress)
 	if err != nil {
 		return nil, fmt.Errorf("fetching number of chunks: %w", err)
 	}
@@ -25,11 +25,15 @@ func Fetch(network *config.NetworkInfos, websiteAddress string) ([]byte, error) 
 	return dataStore, nil
 }
 
-// getNumberOfChunks fetches and returns the number of chunks for the website.
-func getNumberOfChunks(client *node.Client, websiteAddress string) (int32, error) {
+// GetNumberOfChunks fetches and returns the number of chunks for the website.
+func GetNumberOfChunks(client *node.Client, websiteAddress string) (int32, error) {
 	nbChunkResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(nbChunkKey))
 	if err != nil {
 		return 0, fmt.Errorf("fetching website number of chunks: %w", err)
+	}
+
+	if nbChunkResponse.FinalValue == nil {
+		return 0, nil
 	}
 
 	chunkNumber, err := convert.BytesToI32(nbChunkResponse.FinalValue)
@@ -84,6 +88,10 @@ func GetFirstCreationTimestamp(network *config.NetworkInfos, websiteAddress stri
 		return 0, fmt.Errorf("fetching website first creation timestamp: %w", err)
 	}
 
+	if firstCreationTimestampResponse.FinalValue == nil {
+		return 0, nil
+	}
+
 	castedFCTimestamp, err := convert.BytesToU64(firstCreationTimestampResponse.FinalValue)
 	if err != nil {
 		return 0, fmt.Errorf("converting website first creation timestamp: %w", err)
@@ -98,6 +106,10 @@ func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string)
 	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(lastUpdateTimestampKey))
 	if err != nil {
 		return 0, fmt.Errorf("fetching website last update timestamp: %w", err)
+	}
+
+	if lastUpdateTimestampResponse.FinalValue == nil {
+		return 0, nil
 	}
 
 	castedLUTimestamp, err := convert.BytesToU64(lastUpdateTimestampResponse.FinalValue)
