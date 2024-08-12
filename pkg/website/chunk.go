@@ -46,6 +46,13 @@ func ComputeChunkCost(chunkIndex int, chunkSize int) (int, error) {
 		}
 
 		uploadCost += chunkKeyCost
+
+		lastUpdateKeyCost, err := sendoperation.StorageCostForEntry(len([]byte(lastUpdateTimestampKey)), convert.BytesPerUint64)
+		if err != nil {
+			return 0, fmt.Errorf("unable to compute storage cost for lastUpdate key creation: %w", err)
+		}
+
+		uploadCost += lastUpdateKeyCost
 	}
 
 	return uploadCost, nil
