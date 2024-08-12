@@ -60,11 +60,14 @@ jobs:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
 
+      - name: Rename CLI artifact
+        run: mv build/deweb-cli${{ matrix.ext }} build/deweb-cli_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+
       - name: Upload CLI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deweb_cli-${{ matrix.target }}-${{ matrix.arch }}
-          path: build/deweb-cli${{ matrix.ext }}
+          name: deweb-cli_${{ matrix.target }}_${{ matrix.arch }}
+          path: build/deweb-cli_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
       - name: Build Server
         shell: bash
@@ -73,8 +76,11 @@ jobs:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
 
+      - name: Rename Server artifact
+        run: mv build/deweb-server${{ matrix.ext }} build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+
       - name: Upload Server artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deweb_server-${{ matrix.target }}-${{ matrix.arch }}
-          path: build/deweb-server${{ matrix.ext }}
+          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
+          path: build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
