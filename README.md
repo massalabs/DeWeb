@@ -132,7 +132,8 @@ The CLI can be configured using a YAML file. By default, it looks for `deweb_cli
 ```yaml
 wallet_config:
   wallet_nickname: "alice"
-  node_url: "https://buildnet.massa.net/api/v2"
+
+node_url: "https://buildnet.massa.net/api/v2"
 
 sc_config:
   minimal_fees: 0
