@@ -49,13 +49,18 @@ func IsValidZip(zipFile []byte) bool {
 	return err == nil
 }
 
-func IsValidZipFile(fileName string) bool {
-	reader, err := zip.OpenReader(fileName)
+func VerifyFilePresence(filePath string, fileName string) (bool, error) {
+	reader, err := zip.OpenReader(filePath)
 	if err != nil {
-		return false
+		return false, fmt.Errorf("provided filepath is not a valid zip file: %w", err)
+	}
+	defer reader.Close()
+
+	for _, file := range reader.File {
+		if file.Name == fileName {
+			return true, nil
+		}
 	}
 
-	_ = reader.Close()
-
-	return true
+	return false, fmt.Errorf("%s not found in zip file", fileName)
 }

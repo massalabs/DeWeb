@@ -89,8 +89,9 @@ func main() {
 					}
 
 					filepath := cCtx.Args().Get(0)
-					if !zipper.IsValidZipFile(filepath) {
-						return fmt.Errorf("invalid zip file: %s", filepath)
+					isValidFile, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isValidFile {
+						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
 					siteAddress, err := deployWebsite(config, filepath)
@@ -129,8 +130,9 @@ func main() {
 					siteAddress := cCtx.Args().Get(0)
 					filepath := cCtx.Args().Get(1)
 
-					if !zipper.IsValidZipFile(filepath) {
-						return fmt.Errorf("invalid zip file: %s", filepath)
+					isValidFile, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isValidFile {
+						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
 					bytecode, err := processFileForUpload(filepath)
@@ -266,6 +268,8 @@ func waitForUploadFinality(networkInfos msConfig.NetworkInfos, scAddress string)
 	ticker := time.NewTicker(finalityTickerInterval)
 
 	defer ticker.Stop()
+
+	logger.Infof("waiting for upload finality for address %s", scAddress)
 
 	for {
 		select {
