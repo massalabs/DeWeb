@@ -24,9 +24,6 @@ const (
 	finalityTickerInterval = 4 * time.Second
 )
 
-// TODO: check that massastation is open
-// TODO: improve signer flexibility
-
 func main() {
 	var nickname string
 
@@ -89,8 +86,8 @@ func main() {
 					}
 
 					filepath := cCtx.Args().Get(0)
-					isValidFile, err := zipper.VerifyFilePresence(filepath, "index.html")
-					if !isValidFile {
+					isFilePresent, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isFilePresent {
 						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
@@ -130,8 +127,8 @@ func main() {
 					siteAddress := cCtx.Args().Get(0)
 					filepath := cCtx.Args().Get(1)
 
-					isValidFile, err := zipper.VerifyFilePresence(filepath, "index.html")
-					if !isValidFile {
+					isFilePresent, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isFilePresent {
 						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
