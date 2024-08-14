@@ -18,7 +18,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const defaultYamlConfigPath = "./deweb_cli_config.yaml"
+const (
+	defaultYamlConfigPath  = "./deweb_cli_config.yaml"
+	finalityTimeout        = 60 * time.Second
+	finalityTickerInterval = 4 * time.Second
+)
 
 func main() {
 	var nickname string
@@ -82,13 +86,21 @@ func main() {
 					}
 
 					filepath := cCtx.Args().Get(0)
-					if !zipper.IsValidZipFile(filepath) {
-						return fmt.Errorf("invalid zip file: %s", filepath)
+					isFilePresent, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isFilePresent {
+						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
 					siteAddress, err := deployWebsite(config, filepath)
 					if err != nil {
 						logger.Fatalf("failed to deploy website: %v", err)
+					}
+
+					isFinal, err := waitForUploadFinality(config.NetworkConfig, siteAddress)
+					if err != nil {
+						logger.Errorf("failed while waiting for finality: %v\n", err)
+					} else if !isFinal {
+						logger.Warnf("upload did not finalize within the given time for addess %s.", siteAddress)
 					}
 
 					logger.Infof("successfully uploaded a website at %s", siteAddress)
@@ -115,8 +127,9 @@ func main() {
 					siteAddress := cCtx.Args().Get(0)
 					filepath := cCtx.Args().Get(1)
 
-					if !zipper.IsValidZipFile(filepath) {
-						return fmt.Errorf("invalid zip file: %s", filepath)
+					isFilePresent, err := zipper.VerifyFilePresence(filepath, "index.html")
+					if !isFilePresent {
+						return fmt.Errorf("invalid zip file: %v", err)
 					}
 
 					bytecode, err := processFileForUpload(filepath)
@@ -135,7 +148,14 @@ func main() {
 						logger.Fatalf("failed to upload chunks: %v", err)
 					}
 
-					logger.Infof("%s was succesfully updated", siteAddress)
+					isFinal, err := waitForUploadFinality(config.NetworkConfig, siteAddress)
+					if err != nil {
+						logger.Errorf("failed while waiting for finality: %v\n", err)
+					} else if !isFinal {
+						logger.Warnf("upload did not finalize within the given time for addess %s.", siteAddress)
+					}
+
+					logger.Infof("successfully uploaded a website at %s", siteAddress)
 
 					return nil
 				},
@@ -226,10 +246,50 @@ func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
 	return deploymentResult.Address, nil
 }
 
+func confirmUploadFinality(networkInfos msConfig.NetworkInfos, scAddress string) (bool, error) {
+	websiteBytes, err := website.Fetch(&networkInfos, scAddress)
+	if err != nil {
+		return false, fmt.Errorf("failed to fetch website: %v", err)
+	}
+
+	if len(websiteBytes) == 0 {
+		logger.Debugf("upload not final for address %v", scAddress)
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func waitForUploadFinality(networkInfos msConfig.NetworkInfos, scAddress string) (bool, error) {
+	timeout := time.After(finalityTimeout)
+	ticker := time.NewTicker(finalityTickerInterval)
+
+	defer ticker.Stop()
+
+	logger.Infof("waiting for upload finality for address %s", scAddress)
+
+	for {
+		select {
+		case <-timeout:
+			return false, fmt.Errorf("timeout reached: upload did not finalize within %d seconds", finalityTimeout)
+
+		case <-ticker.C:
+			final, err := confirmUploadFinality(networkInfos, scAddress)
+			if err != nil {
+				return false, err
+			}
+
+			if final {
+				return true, nil
+			}
+		}
+	}
+}
+
 func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) error {
 	for i, chunk := range chunks {
 		logger.Infof("Uploading chunk %d out of %d...", i+1, len(chunks))
-		logger.Debugf("Uploading chunk %d with size: %d", i, len(chunk))
+		logger.Debugf("Uploading chunk %d with size: %d", i+1, len(chunk))
 
 		operationID, err := website.UploadChunk(address, config.WalletConfig, &config.NetworkConfig, &config.SCConfig, chunk, i)
 		if err != nil {

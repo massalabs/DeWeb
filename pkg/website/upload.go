@@ -40,7 +40,7 @@ func UploadChunk(
 		return "", fmt.Errorf("computing chunk cost: %w", err)
 	}
 
-	logger.Debugf("Uploading chunk %d to website at address %s with %d nMAS", chunkIndex, websiteAddress, uploadCost)
+	logger.Debugf("Uploading chunk %d to website at address %s with %d nMAS", chunkIndex+1, websiteAddress, uploadCost)
 
 	return performUpload(scConfig, walletConfig, networkInfos, websiteAddress, params, uploadCost, chunkIndex)
 }

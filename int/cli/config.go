@@ -13,7 +13,6 @@ import (
 
 type yamlWalletConfig struct {
 	WalletNickname string `yaml:"wallet_nickname"`
-	NodeUrl        string `yaml:"node_url"`
 }
 
 type yamlScConfig struct {
@@ -25,7 +24,9 @@ type yamlScConfig struct {
 type yamlConfig struct {
 	WalletConfig *yamlWalletConfig `yaml:"wallet_config"`
 	ScConfig     *yamlScConfig     `yaml:"sc_config"`
+	NodeUrl      string            `yaml:"node_url"`
 }
+
 type Config struct {
 	WalletConfig  CLIConfig.WalletConfig
 	SCConfig      CLIConfig.SCConfig
@@ -87,10 +88,10 @@ func loadYamlCliConfig(configPath string, nodeURL string, nickname string) (*Con
 
 	if nodeURL != "" {
 		logger.Warnf("Setting config node url to: %s", nodeURL)
-		yamlConf.WalletConfig.NodeUrl = nodeURL
+		yamlConf.NodeUrl = nodeURL
 	}
 
-	newScConfig := CLIConfig.NewSCConfig(yamlConf.WalletConfig.NodeUrl)
+	newScConfig := CLIConfig.NewSCConfig(yamlConf.NodeUrl)
 
 	if yamlConf.ScConfig.MaxGas == 0 {
 		logger.Warnf("Max gas is empty, using default value")
@@ -109,7 +110,6 @@ func loadYamlCliConfig(configPath string, nodeURL string, nickname string) (*Con
 
 	walletConfig := CLIConfig.WalletConfig{
 		WalletNickname: yamlConf.WalletConfig.WalletNickname,
-		NodeUrl:        yamlConf.WalletConfig.NodeUrl,
 	}
 
 	scConfig := CLIConfig.SCConfig{
@@ -119,7 +119,7 @@ func loadYamlCliConfig(configPath string, nodeURL string, nickname string) (*Con
 		Expiry:      yamlConf.ScConfig.Expiry,
 	}
 
-	networkInfos := CLIConfig.NewNetworkConfig(yamlConf.WalletConfig.NodeUrl)
+	networkInfos := CLIConfig.NewNetworkConfig(yamlConf.NodeUrl)
 
 	return &Config{
 		WalletConfig:  walletConfig,
