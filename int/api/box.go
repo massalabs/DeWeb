@@ -14,7 +14,7 @@ const (
 	networkDocURL  = "https://docs.massa.net/docs/build/networks-faucets/public-networks"
 )
 
-//go:embed massa_logomark.svg
+//go:embed resources/massa_logomark.svg
 var massaLogomark []byte
 
 // InjectHostedByMassaBox injects a "Hosted by Massa" box into the HTML content
