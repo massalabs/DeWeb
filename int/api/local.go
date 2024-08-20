@@ -19,6 +19,7 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 	if err != nil {
 		logger.Warnf("Filenot found: %b", zipper.IsNotFoundError(err, resourceName))
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 
@@ -27,5 +28,8 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(http.StatusOK)
-	w.Write(content)
+
+	if _, err := w.Write(content); err != nil {
+		logger.Errorf("localHandler: %v", err)
+	}
 }
