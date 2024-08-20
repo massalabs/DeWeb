@@ -9,18 +9,23 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: installing dependencies
+        uses: ./.github/actions/install
         with:
-          go-version: 1.22
-          cache: true
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.59
           args: --timeout=3m
+
       - name: install gofumpt
         run: go install mvdan.cc/gofumpt@latest
+
       - name: run gofumpt
         run: |
           ERRORS=$(gofumpt -l . | wc -l)
