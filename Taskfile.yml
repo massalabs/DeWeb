@@ -9,6 +9,10 @@ tasks:
     cmds:
       - cmd: go generate ./...
       - cmd: mv pages/*.zip int/api/resources/
+        platforms: [linux, darwin]
+      # Workaround because no support for builtins commands on Windows https://github.com/go-task/task/issues/197
+      - cmd: cmd /C 'for %f in (pages\*.zip) do move %f int\api\resources\'
+        platforms: [windows]
 
   build:
     cmds:
