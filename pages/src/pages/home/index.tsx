@@ -1,4 +1,4 @@
 import Home from "./home";
-import { renderApp } from "../../RootApp";
+import { renderApp } from "../../utils/RootApp";
 
 renderApp({ children: <Home /> });

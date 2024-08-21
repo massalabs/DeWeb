@@ -1,9 +1,9 @@
 import { Tabs } from "@massalabs/react-ui-kit";
 
-import BrokenWebsite from "./pages/brokenWebsite/broken";
-import DomainNotFound from "./pages/domainNotFound/domainNotFound";
-import Home from "./pages/home/home";
-import NotAvailable from "./pages/notAvailable/notAvailable";
+import BrokenWebsite from "./brokenWebsite/broken";
+import DomainNotFound from "./domainNotFound/domainNotFound";
+import Home from "./home/home";
+import NotAvailable from "./notAvailable/notAvailable";
 
 const tabsConfig = [
   {

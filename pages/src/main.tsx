@@ -1,4 +1,4 @@
-import DevHomePage from "./DevHomePage.tsx";
-import { renderApp } from "./RootApp.tsx";
+import DevHomePage from "./pages/DevHomePage.tsx";
+import { renderApp } from "./utils/RootApp.tsx";
 
 renderApp({ children: <DevHomePage /> });
