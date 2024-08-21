@@ -1,4 +1,4 @@
-import { renderApp } from "../../ThemedApp";
+import { renderApp } from "../../RootApp";
 import BrokenWebsite from "./broken";
 
-renderApp("light", <BrokenWebsite />);
+renderApp({ children: <BrokenWebsite /> });

@@ -1,4 +1,4 @@
 import NotAvailable from "./notAvailable";
-import { renderApp } from '../../ThemedApp';
+import { renderApp } from '../../RootApp';
 
-renderApp("light", <NotAvailable />);
+renderApp({ children:  <NotAvailable />});

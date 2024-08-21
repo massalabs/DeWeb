@@ -1,4 +1,4 @@
-import App from "./App.tsx";
-import { renderApp } from "./ThemedApp.tsx";
+import DevHomePage from "./DevHomePage.tsx";
+import { renderApp } from "./RootApp.tsx";
 
-renderApp("light", <App />);
+renderApp({ children: <DevHomePage /> });

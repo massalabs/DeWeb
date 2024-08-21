@@ -1,4 +1,4 @@
-import { renderApp } from "../../ThemedApp";
+import { renderApp } from "../../RootApp";
 import DomainNotFound from "./domainNotFound";
 
-renderApp("light", <DomainNotFound />);
+renderApp({ children: <DomainNotFound /> });

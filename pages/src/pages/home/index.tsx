@@ -1,4 +1,4 @@
 import Home from "./home";
-import { renderApp } from '../../ThemedApp';
+import { renderApp } from "../../RootApp";
 
-renderApp("light", <Home />);
+renderApp({ children: <Home /> });
