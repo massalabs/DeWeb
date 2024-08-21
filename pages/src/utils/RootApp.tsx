@@ -1,7 +1,7 @@
 import React, { ReactNode, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import "./index.css";
+import "../index.css";
 import "@massalabs/react-ui-kit/src/global.css";
 
 interface RootAppProps {
