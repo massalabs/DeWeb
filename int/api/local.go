@@ -13,18 +13,17 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 		resourceName = "index.html"
 	}
 
-	logger.Debugf("localHandler: %s", resourceName)
 
 	content, err := zipper.ReadFileFromZip(zipBytes, resourceName)
 	if err != nil {
-		logger.Warnf("Filenot found: %b", zipper.IsNotFoundError(err, resourceName))
+		logger.Warnf("File not found: %b", zipper.IsNotFoundError(err, resourceName))
 		w.WriteHeader(http.StatusNotFound)
 
 		return
 	}
 
 	contentType := ContentType(resourceName, content)
-	logger.Debugf("localHandler: %s, %s", resourceName, contentType)
+	
 
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(http.StatusOK)
