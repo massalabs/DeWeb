@@ -1,6 +1,7 @@
 package api
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 	"slices"
@@ -13,6 +14,15 @@ import (
 	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
+
+//go:embed resources/domainNotFound.zip
+var domainNotFoundZip []byte
+
+//go:embed resources/notAvailable.zip
+var notAvailableZip []byte
+
+//go:embed resources/brokenWebsite.zip
+var brokenWebsiteZip []byte
 
 // SubdomainMiddleware handles subdomain website serving.
 func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.Handler {
@@ -33,14 +43,25 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 		address, err := resolveAddress(subdomain, conf.NetworkInfos)
 		if err != nil {
-			handleResolveError(w, subdomain, path, err)
+			logger.Warnf("Subdomain %s could not be resolved to an address: %v", subdomain, err)
+
+			localHandler(w, domainNotFoundZip, path)
+
+			return
+		}
+
+		if !mwUtils.IsValidAddress(address) {
+			logger.Warnf("%s is not a valid address", address)
+
+			localHandler(w, brokenWebsiteZip, path)
 
 			return
 		}
 
 		if !isWebsiteAllowed(address, subdomain, conf.AllowList, conf.BlockList) {
 			logger.Warnf("Subdomain %s or address %s is not allowed", subdomain, address)
-			http.Error(w, "Subdomain is not accessible from this DeWeb instance", http.StatusForbidden)
+
+			localHandler(w, notAvailableZip, path)
 
 			return
 		}
@@ -54,7 +75,8 @@ func serveContent(conf *config.ServerConfig, address string, path string, w http
 	content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		localHandler(w, brokenWebsiteZip, path)
 
 		return
 	}
@@ -93,28 +115,9 @@ func resolveAddress(subdomain string, network msConfig.NetworkInfos) (string, er
 		return "", fmt.Errorf("could not resolve MNS domain: %w", err)
 	}
 
-	if !mwUtils.IsValidAddress(domainTarget) {
-		return "", fmt.Errorf("subdomain %s could not be resolved to an address", subdomain)
-	}
-
 	logger.Debugf("Resolved subdomain %s to address %s", subdomain, domainTarget)
 
 	return domainTarget, nil
-}
-
-// handleResolveError returns an error page when the subdomain could not be resolved.
-func handleResolveError(w http.ResponseWriter, subdomain, path string, err error) {
-	logger.Warnf("Subdomain %s could not be resolved to an address: %v", subdomain, err)
-
-	if path == "index.html" {
-		w.Header().Set("Content-Type", "text/html")
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprint(w, "<html><body><h1>Could not resolve MNS domain</h1></body></html>")
-
-		return
-	}
-
-	http.Error(w, "Subdomain could not be resolved to an address", http.StatusNotFound)
 }
 
 func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, error) {
