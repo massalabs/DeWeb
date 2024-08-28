@@ -8,6 +8,8 @@ import (
 	"github.com/massalabs/station/pkg/node"
 )
 
+const datastoreBatchSize = 64
+
 // Fetch retrieves the complete data of a website as bytes.
 func Fetch(network *config.NetworkInfos, websiteAddress string) ([]byte, error) {
 	client := node.NewClient(network.NodeURL)
@@ -51,18 +53,28 @@ func fetchAllChunks(client *node.Client, websiteAddress string, chunkNumber int3
 		keys[i] = convert.I32ToBytes(i)
 	}
 
-	response, err := node.ContractDatastoreEntries(client, websiteAddress, keys)
-	if err != nil {
-		return nil, fmt.Errorf("calling get_datastore_entries '%+v': %w", keys, err)
-	}
-
-	if len(response) != int(chunkNumber) {
-		return nil, fmt.Errorf("expected %d entries, got %d", chunkNumber, len(response))
-	}
-
 	var dataStore []byte
-	for _, entry := range response {
-		dataStore = append(dataStore, entry.FinalValue...)
+
+	for start := 0; start < int(chunkNumber); start += datastoreBatchSize {
+		end := start + datastoreBatchSize
+		if end > int(chunkNumber) {
+			end = int(chunkNumber)
+		}
+
+		batchKeys := keys[start:end]
+
+		response, err := node.ContractDatastoreEntries(client, websiteAddress, batchKeys)
+		if err != nil {
+			return nil, fmt.Errorf("calling get_datastore_entries '%+v': %w", batchKeys, err)
+		}
+
+		if len(response) != len(batchKeys) {
+			return nil, fmt.Errorf("expected %d entries, got %d", len(batchKeys), len(response))
+		}
+
+		for _, entry := range response {
+			dataStore = append(dataStore, entry.FinalValue...)
+		}
 	}
 
 	return dataStore, nil
