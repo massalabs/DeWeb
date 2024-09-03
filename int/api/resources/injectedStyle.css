@@ -1,37 +1,40 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap");
+
 .massa-logo {
   width: 20px;
   height: 20px;
 }
 
 .massa-box {
-  position: fixed;
-  z-index: 1000;
-  bottom: 0px;
-  left: 0px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+
+  position: relative;
 
   min-width: 100vw;
 
-  background: linear-gradient(135deg, transparent 60%, #cecece 100%);
+  background: #ffffff;
 
   color: #010112;
   opacity: 1;
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  padding: 12px;
 }
 
 .massa-box-disappeared {
-  opacity: 0;
-  transform: translatex(-20px);
+  display: none;
 }
 
 .massa-box-content {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: end;
+  width: 66%;
+  justify-content: space-between;
   gap: 12px;
   color: #010112;
-  font-family: "Roboto", sans-serif;
-  padding: 0px 16px;
 }
 
 .massa-link,
@@ -44,24 +47,21 @@
 .hide-button {
   background-color: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 16px;
   cursor: pointer;
   position: relative;
-  top: -2px;
   color: #010112;
+}
+
+.massa-flex-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Mobile Styles */
 @media (max-width: 880px) {
-  .massa-link,
-  .hide-button,
-  .deweb-version {
-    display: none;
-  }
-  .massa-box {
-    background: transparent;
-  }
-  .massa-logo-link {
-    padding: 8px;
+  .massa-box-content {
+    justify-content: flex-start;
   }
 }

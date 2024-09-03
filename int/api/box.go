@@ -4,6 +4,8 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/massalabs/DeWeb/int/config"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
@@ -27,6 +29,7 @@ func InjectStyles(content []byte) []byte {
     <style type="text/css" >
       %s
     </style>
+    <!-- Injected DeWeb label style -->
     </head>
   `, injectedStyle)
 
@@ -38,37 +41,17 @@ func InjectHtmlBox(content []byte, chainID uint64) []byte {
 	chainName := getChainName(chainID)
 	chainDocURL := getChainDocURL(chainID)
 
-	boxHTML := fmt.Sprintf(`
-      <div class="massa-box" id="massaBox">
-      <div class="massa-box-content">
-        <a
-          class="massa-logo-link"
-          href="https://massa.net"
-          target="_blank"
-          onclick="document.getElementById('massaBox').classList.add('show-all')"
-        >
-          <div class="massa-logo">%s</div>
-        </a>
-        <a
-          class="massa-link"
-          href="https://docs.massa.net/docs/deweb/home"
-          target="_blank"
-        >
-          <strong>hosted on chain</strong>
-        </a>
-        <a class="massa-link" href="%s" target="_blank">%s</a>
-        <div class="deweb-version">%s</div>
-        <button
-          class="hide-button"
-          onclick="document.getElementById('massaBox').classList.add('massa-box-disappeared')"
-        >
-          &#171;
-        </button>
-      </div>
-    </div>`, massaLogomark, chainDocURL, chainName, config.Version)
+	boxHtml := "int/api/resources/massaBox.html"
+
+	boxTemplate, err := os.ReadFile(boxHtml)
+	if err != nil {
+		log.Fatalf("Failed to read template file: %v", err)
+	}
+
+	boxHTML := fmt.Sprintf(string(boxTemplate), massaLogomark, chainDocURL, chainName, config.Version)
 
 	// Insert the boxHTML before the closing </body> tag
-	return bytes.Replace(content, []byte("</body>"), []byte(boxHTML), 1)
+	return bytes.Replace(content, []byte("<body>"), []byte(boxHTML), 1)
 }
 
 // getChainName returns the name of the chain based on the chainID
