@@ -10,15 +10,17 @@
   align-items: center;
   justify-content: space-between;
 
+  z-index: 100000;
   position: relative;
 
   min-width: 100vw;
+  max-width: 100%;
 
   background: #ffffff;
 
   color: #010112;
   opacity: 1;
-  padding: 12px;
+  padding: 12px 0px;
 }
 
 .massa-box-disappeared {
@@ -35,6 +37,7 @@
   justify-content: space-between;
   gap: 12px;
   color: #010112;
+  padding: 0px 12px;
 }
 
 .massa-link,
@@ -51,6 +54,7 @@
   cursor: pointer;
   position: relative;
   color: #010112;
+  margin-right: 12px;
 }
 
 .massa-flex-content {
