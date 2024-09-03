@@ -22,22 +22,27 @@ var massaLogomark []byte
 //go:embed resources/injectedStyle.css
 var injectedStyle []byte
 
+func InjectOnChainBox(content []byte, chainID uint64) []byte {
+	content = injectStyles(content)
+	content = injectHtmlBox(content, chainID)
+
+	return content
+}
+
 // InjectStyles injects the DeWeb label style into the HTML content
-func InjectStyles(content []byte) []byte {
+func injectStyles(content []byte) []byte {
 	styleHTML := fmt.Sprintf(`
-  <!-- Injected DeWeb label style -->
-    <style type="text/css" >
-      %s
-    </style>
-    <!-- Injected DeWeb label style -->
-    </head>
-  `, injectedStyle)
+  		<!-- Injected DeWeb label style -->
+  		  <style type="text/css" >
+  		    %s
+  		  </style>
+  		<!-- Injected DeWeb label style -->`, injectedStyle)
 
 	return bytes.Replace(content, []byte("</head>"), []byte(styleHTML), 1)
 }
 
 // InjectHtmlBox injects a "Hosted by Massa" box into the HTML content
-func InjectHtmlBox(content []byte, chainID uint64) []byte {
+func injectHtmlBox(content []byte, chainID uint64) []byte {
 	chainName := getChainName(chainID)
 	chainDocURL := getChainDocURL(chainID)
 
@@ -45,7 +50,7 @@ func InjectHtmlBox(content []byte, chainID uint64) []byte {
 
 	boxTemplate, err := os.ReadFile(boxHtml)
 	if err != nil {
-		log.Fatalf("Failed to read template file: %v", err)
+		log.Fatalf("failed to read template file: %v", err)
 	}
 
 	boxHTML := fmt.Sprintf(string(boxTemplate), massaLogomark, chainDocURL, chainName, config.Version)

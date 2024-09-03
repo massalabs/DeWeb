@@ -150,8 +150,9 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 
 	if strings.HasPrefix(contentType, "text/html") {
 		logger.Debugf("Injecting 'Hosted by Massa' box")
-		content = InjectStyles(content)
-		content = InjectHtmlBox(content, network.ChainID)
+
+		content = InjectOnChainBox(content, network.ChainID)
+
 		logger.Debugf("Injected 'Hosted by Massa' box\n%s", content)
 	}
 
