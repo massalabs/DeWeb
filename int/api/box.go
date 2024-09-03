@@ -17,66 +17,55 @@ const (
 //go:embed resources/massa_logomark.svg
 var massaLogomark []byte
 
-// InjectHostedByMassaBox injects a "Hosted by Massa" box into the HTML content
-func InjectHostedByMassaBox(content []byte, chainID uint64) []byte {
+//go:embed resources/injectedStyle.css
+var injectedStyle []byte
+
+// InjectStyles injects the DeWeb label style into the HTML content
+func InjectStyles(content []byte) []byte {
+	styleHTML := fmt.Sprintf(`
+  <!-- Injected DeWeb label style -->
+    <style type="text/css" >
+      %s
+    </style>
+    </head>
+  `, injectedStyle)
+
+	return bytes.Replace(content, []byte("</head>"), []byte(styleHTML), 1)
+}
+
+// InjectHtmlBox injects a "Hosted by Massa" box into the HTML content
+func InjectHtmlBox(content []byte, chainID uint64) []byte {
 	chainName := getChainName(chainID)
 	chainDocURL := getChainDocURL(chainID)
 
 	boxHTML := fmt.Sprintf(`
-		<style>
-			.hosted-by-massa-box {
-				position: fixed;
-				bottom: 10px;
-				left: 10px;
-				background-color: #FFFFFF;
-				color: #010112;
-				padding: 8px;
-				border-radius: 8px;
-				z-index: 10000;
-				display: flex;
-				flex-direction: column;
-				gap: 4px;
-				font-family: Urbane, sans-serif;
-				font-size: 16px;
-				line-height: 16px;
-				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-			}
-			.hosted-by-massa-box a {
-				font-weight: 700;
-				text-decoration: none;
-				color: #010112;
-			}
-			.hosted-by-massa-box .logo {
-				width: 22px;
-				height: 22px;
-			}
-			.hosted-by-massa-box .hide-button {
-				background: none;
-				border: none;
-				color: #010112;
-				font-size: 16px;
-				cursor: pointer;
-				position: absolute;
-				top: 5px;
-				right: 5px;
-			}
-		</style>
-		<div class="hosted-by-massa-box" id="massaBox">
-			<button class="hide-button" onclick="document.getElementById('massaBox').style.display='none'">✖</button>
-			<div style="display: flex; align-items: center; gap: 4px;">
-				<a href="https://massa.net" target="_blank">
-					<div class="logo">%s</div>
-				</a>
-				<a href="https://docs.massa.net/docs/deweb/home" target="_blank">
-					<div style="margin-right: 12px">Hosted on chain</div>
-				</a>
-			</div>
-			<div style="display: flex; justify-content: space-between;">
-				<a href="%s" target="_blank" style="font-weight: 400;">%s</a>
-				<div>%s</div>
-			</div>
-		</div>
-	</body>`, massaLogomark, chainDocURL, chainName, config.Version)
+      <div class="massa-box" id="massaBox">
+      <div class="massa-box-content">
+        <a
+          class="massa-logo-link"
+          href="https://massa.net"
+          target="_blank"
+          onclick="document.getElementById('massaBox').classList.add('show-all')"
+        >
+          <div class="massa-logo">%s</div>
+        </a>
+        <a
+          class="massa-link"
+          href="https://docs.massa.net/docs/deweb/home"
+          target="_blank"
+        >
+          <strong>hosted on chain</strong>
+        </a>
+        <a class="massa-link" href="%s" target="_blank">%s</a>
+        <div class="deweb-version">%s</div>
+        <button
+          class="hide-button"
+          onclick="document.getElementById('massaBox').classList.add('massa-box-disappeared')"
+        >
+          &#171;
+        </button>
+      </div>
+    </div>`, massaLogomark, chainDocURL, chainName, config.Version)
 
 	// Insert the boxHTML before the closing </body> tag
 	return bytes.Replace(content, []byte("</body>"), []byte(boxHTML), 1)

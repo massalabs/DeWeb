@@ -1,0 +1,67 @@
+.massa-logo {
+  width: 20px;
+  height: 20px;
+}
+
+.massa-box {
+  position: fixed;
+  z-index: 1000;
+  bottom: 0px;
+  left: 0px;
+
+  min-width: 100vw;
+
+  background: linear-gradient(135deg, transparent 60%, #cecece 100%);
+
+  color: #010112;
+  opacity: 1;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.massa-box-disappeared {
+  opacity: 0;
+  transform: translatex(-20px);
+}
+
+.massa-box-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: end;
+  gap: 12px;
+  color: #010112;
+  font-family: "Roboto", sans-serif;
+  padding: 0px 16px;
+}
+
+.massa-link,
+.massa-logo-link {
+  text-decoration: none;
+  color: #010112;
+  cursor: pointer;
+}
+
+.hide-button {
+  background-color: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  position: relative;
+  top: -2px;
+  color: #010112;
+}
+
+/* Mobile Styles */
+@media (max-width: 880px) {
+  .massa-link,
+  .hide-button,
+  .deweb-version {
+    display: none;
+  }
+  .massa-box {
+    background: transparent;
+  }
+  .massa-logo-link {
+    padding: 8px;
+  }
+}
