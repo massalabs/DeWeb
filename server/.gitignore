@@ -1,0 +1,11 @@
+# build directory
+build/
+
+# log files
+deweb-*.log
+
+# Websites archives
+websitesCache/
+
+# Yaml files
+*config.yaml
