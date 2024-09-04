@@ -1,6 +1,9 @@
 # build directory
 build/
 
+# generated files
+int/api/resources/*.zip
+
 # log files
 deweb-*.log
 
