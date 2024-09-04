@@ -20,7 +20,7 @@
 
   color: #010112;
   opacity: 1;
-  padding: 12px 0px;
+  padding: .25rem 1rem;
 }
 
 .massa-box-disappeared {
@@ -37,7 +37,6 @@
   justify-content: space-between;
   gap: 12px;
   color: #010112;
-  padding: 0px 12px;
 }
 
 .massa-link,
@@ -47,6 +46,10 @@
   cursor: pointer;
 }
 
+.massa-on-chain-text {
+  text-wrap: nowrap;
+}
+
 .hide-button {
   background-color: transparent;
   border: none;
@@ -54,7 +57,6 @@
   cursor: pointer;
   position: relative;
   color: #010112;
-  margin-right: 12px;
 }
 
 .massa-flex-content {

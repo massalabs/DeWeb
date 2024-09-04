@@ -4,8 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"log"
-	"os"
+	"regexp"
 
 	"github.com/massalabs/DeWeb/int/config"
 	pkgConfig "github.com/massalabs/DeWeb/pkg/config"
@@ -21,6 +20,9 @@ var massaLogomark []byte
 
 //go:embed resources/injectedStyle.css
 var injectedStyle []byte
+
+//go:embed resources/massaBox.html
+var massaBox []byte
 
 func InjectOnChainBox(content []byte, chainID uint64) []byte {
 	content = injectStyles(content)
@@ -46,17 +48,18 @@ func injectHtmlBox(content []byte, chainID uint64) []byte {
 	chainName := getChainName(chainID)
 	chainDocURL := getChainDocURL(chainID)
 
-	boxHtml := "int/api/resources/massaBox.html"
+	boxHTML := fmt.Sprintf(string(massaBox), massaLogomark, chainDocURL, chainName, config.Version)
 
-	boxTemplate, err := os.ReadFile(boxHtml)
-	if err != nil {
-		log.Fatalf("failed to read template file: %v", err)
+	bodyRegex := regexp.MustCompile(`(?i)<body[^>]*>`)
+
+	loc := bodyRegex.FindIndex(content)
+	if loc == nil {
+		return content
 	}
 
-	boxHTML := fmt.Sprintf(string(boxTemplate), massaLogomark, chainDocURL, chainName, config.Version)
+	result := append(content[:loc[1]], append([]byte(boxHTML), content[loc[1]:]...)...)
 
-	// Insert the boxHTML before the closing </body> tag
-	return bytes.Replace(content, []byte("<body>"), []byte(boxHTML), 1)
+	return result
 }
 
 // getChainName returns the name of the chain based on the chainID
