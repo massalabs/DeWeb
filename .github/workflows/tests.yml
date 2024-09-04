@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test-server:
     runs-on: ubuntu-latest
 
     defaults:
