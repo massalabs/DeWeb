@@ -1,0 +1,57 @@
+<body>
+  <div class="massa-box" id="massaBox">
+    <div class="massa-box-content">
+      <div class="massa-flex-content">
+        <a
+          class="massa-logo-link"
+          href="https://massa.net"
+          target="_blank"
+          onclick="document.getElementById('massaBox').classList.add('show-all')"
+        >
+          <div class="massa-logo">%s</div>
+        </a>
+        <a
+          class="massa-link massa-on-chain-text"
+          href="https://docs.massa.net/docs/deweb/home"
+          target="_blank"
+        >
+          <strong>hosted on chain</strong>
+        </a>
+      </div>
+      <div class="massa-flex-content">
+        <a class="massa-link" href="%s" target="_blank">%s</a>
+        <div class="deweb-version">%s</div>
+      </div>
+    </div>
+    <button class="hide-button" id="closeMassaBoxBtn">&times;</button>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      function checkIfClosed() {
+        const isClosed = localStorage.getItem("massaBoxClosed");
+        const massaBox = document.getElementById("massaBox");
+
+        if (isClosed != "true") {
+          massaBox.style.display = "flex";
+        }
+      }
+
+      // Function to close the element and save the state in local storage
+      function closeMassaBox() {
+        const massaBox = document.getElementById("massaBox");
+        if (massaBox) {
+          massaBox.style.display = "none";
+          localStorage.setItem("massaBoxClosed", "true");
+        }
+      }
+
+      checkIfClosed();
+
+      const closeButton = document.getElementById("closeMassaBoxBtn");
+      if (closeButton) {
+        closeButton.addEventListener("click", closeMassaBox);
+      }
+    });
+  </script>
+</body>

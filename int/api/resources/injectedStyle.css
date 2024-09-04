@@ -1,0 +1,73 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&display=swap");
+
+.massa-logo {
+  width: 20px;
+  height: 20px;
+}
+
+.massa-box {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+
+  z-index: 100000;
+  position: relative;
+
+  min-width: 100vw;
+  max-width: 100%;
+
+  background: #ffffff;
+
+  color: #010112;
+  opacity: 1;
+  padding: .25rem 1rem;
+}
+
+.massa-box-disappeared {
+  display: none;
+}
+
+.massa-box-content {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 66%;
+  justify-content: space-between;
+  gap: 12px;
+  color: #010112;
+}
+
+.massa-link,
+.massa-logo-link {
+  text-decoration: none;
+  color: #010112;
+  cursor: pointer;
+}
+
+.massa-on-chain-text {
+  text-wrap: nowrap;
+}
+
+.hide-button {
+  background-color: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  position: relative;
+  color: #010112;
+}
+
+.massa-flex-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mobile Styles */
+@media (max-width: 880px) {
+  .massa-box-content {
+    justify-content: flex-start;
+  }
+}
