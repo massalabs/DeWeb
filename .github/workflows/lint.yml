@@ -8,6 +8,11 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./server
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,14 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./pages
+        working-directory: ./server/pages
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: ./pages/package-lock.json
+          cache-dependency-path: ./server/pages/package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Run code formating and linting
