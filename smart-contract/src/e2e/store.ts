@@ -13,7 +13,7 @@ import {
   assertChunkExists,
 } from './helpers';
 
-const CHUNK_LIMIT = 64 * 1024;
+const CHUNK_LIMIT = 4 * 1024;
 const projectPath = 'src/e2e/test-project/dist';
 
 async function deploy(provider: Web3Provider): Promise<SmartContract> {

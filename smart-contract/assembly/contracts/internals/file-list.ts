@@ -1,6 +1,4 @@
-import { ConstantManager } from '@massalabs/massa-as-sdk';
-
-const FILES_PATH_LIST = new ConstantManager<Array<string>, u8>();
+import { FILES_PATH_LIST } from '../utils/const';
 
 export function _pushFilePath(filePath: string): void {
   const filePathList = FILES_PATH_LIST.mustValue();

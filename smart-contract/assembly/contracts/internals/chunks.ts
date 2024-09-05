@@ -2,7 +2,6 @@ import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
 import { generateEvent, sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from '../utils/const';
 import { _isPathFileInList, _pushFilePath } from './file-list';
-import { _verifyStorageValueSize } from './helpers';
 
 // SETTERS
 export function _setFileChunk(
@@ -11,8 +10,6 @@ export function _setFileChunk(
   chunk: StaticArray<u8>,
   totalChunks: u32,
 ): void {
-  _verifyStorageValueSize(chunk);
-
   const filePathHash = sha256(stringToBytes(filePath));
 
   // Check if we update a file with a different number of chunks
@@ -50,18 +47,16 @@ export function _getNbChunk(filePathHash: StaticArray<u8>): u32 {
 
 // KEYS
 export function _getNbChunkKey(filePathHash: StaticArray<u8>): StaticArray<u8> {
-  // filePÄth should be a hash
-  return stringToBytes(`${CHUNK_NB_TAG}${filePathHash.toString()}`);
+  return CHUNK_NB_TAG.concat(filePathHash);
 }
 
 export function _getChunkKey(
   filePathHash: StaticArray<u8>,
   chunkIndex: u32,
 ): StaticArray<u8> {
-  // should we use this or directly have parameters as bytes?
-  return stringToBytes(
-    `${FILE_TAG}${filePathHash.toString()}${CHUNK_TAG}${chunkIndex}`,
-  );
+  return FILE_TAG.concat(filePathHash)
+    .concat(CHUNK_TAG)
+    .concat(u32ToBytes(chunkIndex));
 }
 
 // HELPERS
