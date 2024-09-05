@@ -35,6 +35,11 @@ jobs:
             target: darwin
 
     runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: ./server
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

@@ -1,0 +1,41 @@
+{
+  "name": "deweb-cli",
+  "version": "0.2.0",
+  "description": "DeWeb is your gateway to the decentralized web, enabling seamless access to websites stored on-chain from any device, anywhere in the world.",
+  "license": "MIT",
+  "main": "./bin/index.js",
+  "bin": {
+    "deweb": "./bin/index.js"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./bin/index.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "prettier": "prettier --check .",
+    "prettier:fix": "prettier --write .",
+    "fmt": "npm run lint:fix && npm run prettier:fix",
+    "fmt:check": "npm run lint && npm run prettier"
+  },
+  "dependencies": {
+    "@commander-js/extra-typings": "^12.1.0",
+    "@massalabs/massa-web3": "^5.0.0-next",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@massalabs/eslint-config": "^0.0.11",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.5.3",
+    "@typescript-eslint/eslint-plugin": "^8.4.0",
+    "eslint": "^8.6.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-jsdoc": "^50.2.2",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  }
+}

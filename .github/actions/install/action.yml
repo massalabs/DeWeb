@@ -28,12 +28,14 @@ runs:
       with:
         node-version: 20
         cache: 'npm'
-        cache-dependency-path: pages/package-lock.json
+        cache-dependency-path: server/pages/package-lock.json
 
     - name: Install Dependencies
       run: task install
       shell: bash
+      working-directory: ./server
 
     - name: Generate
       run: task generate
       shell: bash
+      working-directory: ./server

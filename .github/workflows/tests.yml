@@ -6,8 +6,13 @@ on:
   pull_request:
 
 jobs:
-  test:
+  test-server:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./server
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

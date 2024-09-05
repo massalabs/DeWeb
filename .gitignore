@@ -1,12 +1,5 @@
-build
-
-*.log
-
-# Websites archives
-*.zip
-
-# Yaml files
-*.yaml
+# IDE
+.idea
 
 # MacOS
 .DS_Store

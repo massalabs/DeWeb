@@ -6,8 +6,13 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  lint-server:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./server
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,6 +27,7 @@ jobs:
         with:
           version: v1.59
           args: --timeout=3m
+          working-directory: ./server
 
       - name: install gofumpt
         run: go install mvdan.cc/gofumpt@latest
@@ -35,18 +41,35 @@ jobs:
             exit 1
           fi
 
-  lint-frontend:
+  lint-cli:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./pages
+        working-directory: ./cli
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: "npm"
-          cache-dependency-path: ./pages/package-lock.json
+          cache-dependency-path: ./cli/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run code formating and linting
+        run: npm run fmt:check
+
+  lint-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server/pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: ./server/pages/package-lock.json
       - name: Install dependencies
         run: npm ci
       - name: Run code formating and linting
