@@ -20,8 +20,6 @@ export function _setFileChunk(
   if (!_isPathFileInList(filePath)) {
     _pushFilePath(filePath);
   }
-
-  generateEvent(`ChunkStored: ${filePath} ${chunkIndex}`);
 }
 
 function _setNbChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {

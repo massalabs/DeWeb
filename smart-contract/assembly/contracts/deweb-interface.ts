@@ -6,14 +6,16 @@ import {
 import { ChunkPost, ChunkGet } from './serializable/Chunk';
 import { Args, u32ToBytes } from '@massalabs/as-types';
 import { _getFileChunk, _getNbChunk, _setFileChunk } from './internals/chunks';
-import { _getFilePathList } from './internals/file-list';
+import { FILES_PATH_LIST } from './utils/const';
 
 // TODO - Add a setBytecode function to the SmartContract to upgrade version
 // TODO - Add a way to make it immutable
+// TODO - Add a lastModified timestamp in Storage
 
 export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
   _setOwner(Context.caller().toString());
+  FILES_PATH_LIST.set([]);
 }
 
 export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
@@ -34,7 +36,7 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
 }
 
 export function getFilePathList(): StaticArray<u8> {
-  return new Args().add(_getFilePathList()).serialize();
+  return new Args().add(FILES_PATH_LIST.mustValue()).serialize();
 }
 
 export function getChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {

@@ -13,7 +13,6 @@ import {
 } from '../contracts/deweb-interface';
 import { ChunkGet, ChunkPost } from '../contracts/serializable/Chunk';
 import { Args, bytesToU32, stringToBytes } from '@massalabs/as-types';
-import { _getFilePathList } from '../contracts/internals/file-list';
 
 const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
 const fakeFile1 = new StaticArray<u8>(10240).fill(1);
@@ -70,7 +69,9 @@ describe('website deployer internals functions tests', () => {
           .serialize(),
       );
 
-      const fileList = _getFilePathList();
+      const fileListArgs = getFilePathList();
+      const fileList = new Args(fileListArgs).next<string[]>().unwrap();
+
       expect(fileList.length).toBe(1);
       expect(fileList[0]).toBe('file1');
 

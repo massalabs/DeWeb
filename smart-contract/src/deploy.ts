@@ -9,13 +9,9 @@ import { getByteCode } from './utils';
 
 async function deploy(provider: Web3Provider): Promise<SmartContract> {
   const byteCode = getByteCode('build', 'deweb-interface.wasm');
-  const contract = await SmartContract.deploy(provider, byteCode, undefined, {
+  return await SmartContract.deploy(provider, byteCode, undefined, {
     coins: Mas.fromString('50'),
   });
-
-  console.log('Contract deployed at:', contract.address);
-
-  return contract;
 }
 
 async function main() {
