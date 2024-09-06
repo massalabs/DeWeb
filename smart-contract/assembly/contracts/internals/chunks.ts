@@ -1,8 +1,9 @@
 import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
-import { generateEvent, sha256, Storage } from '@massalabs/massa-as-sdk';
+import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from '../utils/const';
 import { _isPathFileInList, _pushFilePath } from './file-list';
 
+// TODO: Add TS-doc
 // SETTERS
 export function _setFileChunk(
   filePath: string,
@@ -12,11 +13,18 @@ export function _setFileChunk(
 ): void {
   const filePathHash = sha256(stringToBytes(filePath));
 
+  // TODO: Test this
+  assert(
+    chunkIndex < totalChunks,
+    'Cannot set chunk with index greater or equal than total chunks',
+  );
+
   // Check if we update a file with a different number of chunks
   _verifyTotalChunks(filePathHash, totalChunks);
 
   Storage.set(_getChunkKey(filePathHash, chunkIndex), chunk);
 
+  // TODO: Handle the case where the name of the file is randomly generated !!!
   if (!_isPathFileInList(filePath)) {
     _pushFilePath(filePath);
   }
@@ -58,6 +66,7 @@ export function _getChunkKey(
 }
 
 // HELPERS
+// TODO: Rename this function
 export function _verifyTotalChunks(
   filePathHash: StaticArray<u8>,
   totalChunks: u32,
@@ -65,7 +74,7 @@ export function _verifyTotalChunks(
   const nbChunk = _getNbChunk(filePathHash);
   if (nbChunk !== totalChunks) {
     if (nbChunk > totalChunks) {
-      // TODO - Delete chunks
+      // TODO: Delete chunks: Be careful with the index when deleting chunks
     }
     _setNbChunk(filePathHash, totalChunks);
   }

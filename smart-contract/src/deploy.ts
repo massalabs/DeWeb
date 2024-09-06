@@ -10,7 +10,8 @@ import { getByteCode } from './utils';
 async function deploy(provider: Web3Provider): Promise<SmartContract> {
   const byteCode = getByteCode('build', 'deweb-interface.wasm');
   return await SmartContract.deploy(provider, byteCode, undefined, {
-    coins: Mas.fromString('50'),
+    // TODO: Calculate the amount of coins to send
+    coins: Mas.fromString('0.01'),
   });
 }
 
