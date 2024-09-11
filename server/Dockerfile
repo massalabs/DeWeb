@@ -1,9 +1,8 @@
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM --platform=linux/amd64 alpine:latest
 
 # Update package list and install required certificates
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk --no-cache add ca-certificates \
+    && apk add --no-cache libc6-compat
 
 # Set a working directory (optional)
 WORKDIR /app
