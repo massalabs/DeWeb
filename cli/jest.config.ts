@@ -19,9 +19,6 @@ const config: Config = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
-  transformIgnorePatterns: [
-    '/node_modules/(?!(big-varint|other-esm-modules)/).*',
-  ],
 }
 
 export default config
