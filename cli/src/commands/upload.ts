@@ -1,16 +1,14 @@
 import { Command } from '@commander-js/extra-typings'
-import {
-  Account as KeyPair,
-  Mas,
-  SmartContract,
-  Web3Provider,
-} from '@massalabs/massa-web3'
-import { readdirSync, readFileSync } from 'fs'
+import { SmartContract } from '@massalabs/massa-web3'
+import { readdirSync, readFileSync, statSync } from 'fs'
+import { join } from 'path'
+
 import { deploySC } from '../lib/website/deploySC'
 import { uploadChunks } from '../lib/website/uploadChunk'
 import { ChunkPost, toChunkPosts } from '../lib/website/chunkPost'
 import { divideIntoChunks } from '../lib/website/chunk'
 import { batcher } from '../lib/website/batcher'
+
 import { makeProviderFromNodeURLAndSecret } from './utils'
 
 export const uploadCommand = new Command('upload')
@@ -40,6 +38,8 @@ export const uploadCommand = new Command('upload')
     } else {
       console.log('Deploying a new SC')
       sc = await deploySC(provider)
+
+      console.log('Deployed SC at', sc.address)
     }
 
     const chunkSize = 64_000 // 64KB
@@ -56,20 +56,30 @@ export const uploadCommand = new Command('upload')
   })
 
 /**
- * Read every files in the given directory and divide them into chunks
+ * Read every file in the given directory and divide them into chunks
  * @param path - the path to the website directory
  */
 function prepareChunks(path: string, chunkSize: number): ChunkPost[] {
-  const files = readdirSync(path, { recursive: true })
+  const files = readdirSync(path)
 
   const chunks: ChunkPost[] = []
 
   for (const file of files) {
-    const data = readFileSync(file)
-    const chunksData = divideIntoChunks(data, chunkSize)
+    const fullPath = join(path, file)
+    const stats = statSync(fullPath)
 
-    const chunkPosts = toChunkPosts(file.toString(), chunksData)
-    chunks.push(...chunkPosts)
+    if (stats.isDirectory()) {
+      // Recursively read the directory
+      const directoryChunks = prepareChunks(fullPath, chunkSize)
+      chunks.push(...directoryChunks)
+    } else if (stats.isFile()) {
+      console.log('Reading file', fullPath)
+      const data = readFileSync(fullPath)
+      const chunksData = divideIntoChunks(data, chunkSize)
+
+      const chunkPosts = toChunkPosts(fullPath, chunksData)
+      chunks.push(...chunkPosts)
+    }
   }
 
   return chunks

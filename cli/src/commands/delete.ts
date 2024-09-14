@@ -1,12 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
-import {
-  Account as KeyPair,
-  SmartContract,
-  Web3Provider,
-} from '@massalabs/massa-web3'
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { SmartContract } from '@massalabs/massa-web3'
 
-const KEY_ENV_NAME = 'SECRET_KEY'
+import { makeProviderFromNodeURLAndSecret } from './utils'
 
 export const deleteCommand = new Command('delete')
   .alias('d')
@@ -28,6 +23,7 @@ export const deleteCommand = new Command('delete')
       `Deleting ${websiteZipFilePath} with config ${globalOptions.config} and node URL ${globalOptions.node_url}`
     )
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sc = new SmartContract(provider, websiteZipFilePath)
 
     console.error('deleteWebsite not implemented yet in the SC')

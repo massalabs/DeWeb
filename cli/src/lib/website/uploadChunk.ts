@@ -1,4 +1,4 @@
-import { Args, Mas, SmartContract, Web3Provider } from '@massalabs/massa-web3'
+import { Args, SmartContract } from '@massalabs/massa-web3'
 import { ChunkPost } from './chunkPost'
 
 export async function uploadChunks(
