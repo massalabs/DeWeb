@@ -34,3 +34,6 @@ bin/
 
 # Jest
 coverage/
+
+# built sc
+*.wasm
