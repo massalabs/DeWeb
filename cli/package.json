@@ -13,7 +13,9 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:sc": "cd ../smart-contract && npm ci && npm run build && cp build/main.wasm ../cli/src/lib/website/sc/",
     "start": "node ./bin/index.js",
+    "dev": "ts-node ./src/index.ts",
     "test": "jest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

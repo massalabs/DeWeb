@@ -1,6 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
-import { deployCommand } from './commands/deploy'
-import { editCommand } from './commands/edit'
+import { uploadCommand } from './commands/upload'
+import { deleteCommand } from './commands/delete'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
@@ -15,7 +15,7 @@ program
   .option('-c, --config <path>', 'Path to the config file', defaultConfigPath)
   .option('-n, --node_url <url>', 'Node URL', defaultNodeUrl)
 
-program.addCommand(deployCommand)
-program.addCommand(editCommand)
+program.addCommand(uploadCommand)
+program.addCommand(deleteCommand)
 
 program.parse(process.argv)
