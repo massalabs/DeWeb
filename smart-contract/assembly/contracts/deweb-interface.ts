@@ -68,7 +68,9 @@ export function getChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
  * @returns Serialized number of chunks.
  * @throws If the filePathHash is invalid.
  */
-export function getNbOfChunks(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
+export function getTotalChunksForFile(
+  _binaryArgs: StaticArray<u8>,
+): StaticArray<u8> {
   const args = new Args(_binaryArgs);
   const filePathHash = args
     .next<StaticArray<u8>>()
