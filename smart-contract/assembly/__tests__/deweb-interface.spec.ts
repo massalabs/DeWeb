@@ -7,7 +7,7 @@ import {} from '../contracts/internals/chunks';
 import {
   constructor,
   getChunk,
-  getChunkNb,
+  getNbOfChunks,
   getFilePathList,
   storeFileChunks,
 } from '../contracts/deweb-interface';
@@ -75,7 +75,7 @@ describe('website deployer internals functions tests', () => {
       expect(fileList.length).toBe(1);
       expect(fileList[0]).toBe('file1');
 
-      const nbChunk = bytesToU32(getChunkNb(fileHashArgs('file1')));
+      const nbChunk = bytesToU32(getNbOfChunks(fileHashArgs('file1')));
       expect(nbChunk).toBe(2);
 
       const result1 = getChunk(chunkGetArgs(chunk1.filePath, chunk1.chunkId));

@@ -3,11 +3,17 @@ import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from '../utils/const';
 import { _isPathFileInList, _pushFilePath } from './file-list';
 
-// TODO: Add TS-doc
-// SETTERS
+/**
+ * Sets a chunk of a file in storage.
+ * @param filePath - The path of the file.
+ * @param chunkId - The index of the chunk.
+ * @param chunk - The chunk data.
+ * @param totalChunks - The total number of chunks for the file.
+ * @throws If the chunk index is greater than or equal to the total number of chunks.
+ */
 export function _setFileChunk(
   filePath: string,
-  chunkIndex: u32,
+  id: u32,
   chunk: StaticArray<u8>,
   totalChunks: u32,
 ): void {
@@ -15,14 +21,14 @@ export function _setFileChunk(
 
   // TODO: Test this
   assert(
-    chunkIndex < totalChunks,
+    id < totalChunks,
     'Cannot set chunk with index greater or equal than total chunks',
   );
 
   // Check if we update a file with a different number of chunks
   _verifyTotalChunks(filePathHash, totalChunks);
 
-  Storage.set(_getChunkKey(filePathHash, chunkIndex), chunk);
+  Storage.set(_getChunkKey(filePathHash, id), chunk);
 
   // TODO: Handle the case where the name of the file is randomly generated !!!
   if (!_isPathFileInList(filePath)) {
@@ -30,43 +36,69 @@ export function _setFileChunk(
   }
 }
 
+/**
+ * Sets the total number of chunks for a file.
+ * @param filePathHash - The hash of the file path.
+ * @param totalChunks - The total number of chunks.
+ */
 function _setNbChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {
   Storage.set(_getNbChunkKey(filePathHash), u32ToBytes(totalChunks));
 }
 
-// GETTERS
+/**
+ * Retrieves a specific chunk of a file.
+ * @param filePathHash - The hash of the file path.
+ * @param id - The index of the chunk to retrieve.
+ * @returns The chunk data.
+ * @throws If the chunk is not found in storage.
+ */
 export function _getFileChunk(
   filePathHash: StaticArray<u8>,
-  chunkIndex: u32,
+  id: u32,
 ): StaticArray<u8> {
-  assert(
-    Storage.has(_getChunkKey(filePathHash, chunkIndex)),
-    'Chunk not found',
-  );
-  return Storage.get(_getChunkKey(filePathHash, chunkIndex));
+  assert(Storage.has(_getChunkKey(filePathHash, id)), 'Chunk not found');
+  return Storage.get(_getChunkKey(filePathHash, id));
 }
 
+/**
+ * Gets the total number of chunks for a file.
+ * @param filePathHash - The hash of the file path.
+ * @returns The total number of chunks, or 0 if not set.
+ */
 export function _getNbChunk(filePathHash: StaticArray<u8>): u32 {
   if (!Storage.has(_getNbChunkKey(filePathHash))) return 0;
   return bytesToU32(Storage.get(_getNbChunkKey(filePathHash)));
 }
 
-// KEYS
+/**
+ * Generates the storage key for the number of chunks of a file.
+ * @param filePathHash - The hash of the file path.
+ * @returns The storage key for the number of chunks.
+ */
 export function _getNbChunkKey(filePathHash: StaticArray<u8>): StaticArray<u8> {
   return CHUNK_NB_TAG.concat(filePathHash);
 }
 
+/**
+ * Generates the storage key for a specific chunk of a file.
+ * @param filePathHash - The hash of the file path.
+ * @param id - The index of the chunk.
+ * @returns The storage key for the chunk.
+ */
 export function _getChunkKey(
   filePathHash: StaticArray<u8>,
-  chunkIndex: u32,
+  id: u32,
 ): StaticArray<u8> {
-  return FILE_TAG.concat(filePathHash)
-    .concat(CHUNK_TAG)
-    .concat(u32ToBytes(chunkIndex));
+  return FILE_TAG.concat(filePathHash).concat(CHUNK_TAG).concat(u32ToBytes(id));
 }
 
-// HELPERS
-// TODO: Rename this function
+/**
+ * Verifies and updates the total number of chunks for a file.
+ * If the current number of chunks is greater than the new total,
+ * it should delete excess chunks (TODO).
+ * @param filePathHash - The hash of the file path.
+ * @param totalChunks - The new total number of chunks.
+ */
 export function _verifyTotalChunks(
   filePathHash: StaticArray<u8>,
   totalChunks: u32,

@@ -1,6 +1,17 @@
 import { Serializable, Args, Result } from '@massalabs/as-types';
 
+/**
+ * Represents a chunk of data to be posted.
+ * Implements the Serializable interface for encoding and decoding.
+ */
 export class ChunkPost implements Serializable {
+  /**
+   * Creates a new ChunkPost instance.
+   * @param filePath - The path of the file this chunk belongs to.
+   * @param chunkId - The unique identifier of this chunk within the file.
+   * @param data - The actual data of the chunk.
+   * @param totalChunks - The total number of chunks for the complete file.
+   */
   constructor(
     public filePath: string = '',
     public chunkId: u32 = 0,
@@ -8,6 +19,10 @@ export class ChunkPost implements Serializable {
     public totalChunks: u32 = 1,
   ) {}
 
+  /**
+   * Serializes the ChunkPost instance into a byte array.
+   * @returns A StaticArray<u8> representing the serialized data.
+   */
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.filePath)
@@ -17,6 +32,12 @@ export class ChunkPost implements Serializable {
       .serialize();
   }
 
+  /**
+   * Deserializes a byte array into a ChunkPost instance.
+   * @param data - The byte array to deserialize.
+   * @param offset - The starting offset in the byte array.
+   * @returns A Result containing the new offset after deserialization.
+   */
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
 
@@ -49,16 +70,32 @@ export class ChunkPost implements Serializable {
   }
 }
 
+/**
+ * Represents a request to get a specific chunk of data.
+ * Implements the Serializable interface for encoding and decoding.
+ */
 export class ChunkGet implements Serializable {
-  constructor(
-    public filePathHash: StaticArray<u8> = [],
-    public chunkId: u32 = 0,
-  ) {}
+  /**
+   * Creates a new ChunkGet instance.
+   * @param filePathHash - The hash of the file path.
+   * @param id - The unique identifier of the chunk to retrieve.
+   */
+  constructor(public filePathHash: StaticArray<u8> = [], public id: u32 = 0) {}
 
+  /**
+   * Serializes the ChunkGet instance into a byte array.
+   * @returns A StaticArray<u8> representing the serialized data.
+   */
   serialize(): StaticArray<u8> {
-    return new Args().add(this.filePathHash).add(this.chunkId).serialize();
+    return new Args().add(this.filePathHash).add(this.id).serialize();
   }
 
+  /**
+   * Deserializes a byte array into a ChunkGet instance.
+   * @param data - The byte array to deserialize.
+   * @param offset - The starting offset in the byte array.
+   * @returns A Result containing the new offset after deserialization.
+   */
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
 
@@ -73,7 +110,7 @@ export class ChunkGet implements Serializable {
     }
 
     this.filePathHash = filePathHash.unwrap();
-    this.chunkId = chunkId.unwrap();
+    this.id = chunkId.unwrap();
 
     return new Result(args.offset);
   }
