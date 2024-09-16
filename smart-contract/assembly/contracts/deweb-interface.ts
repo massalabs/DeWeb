@@ -6,7 +6,7 @@ import {
 import { ChunkPost, ChunkGet } from './serializable/Chunk';
 import { Args, u32ToBytes } from '@massalabs/as-types';
 import { _getFileChunk, _getNbChunk, _setFileChunk } from './internals/chunks';
-import { FILES_PATH_LIST } from './utils/const';
+import { FILES_PATH_LIST } from './internals/const';
 
 /**
  * Initializes the smart contract.

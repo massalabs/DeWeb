@@ -1,6 +1,6 @@
 import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
 import { sha256, Storage } from '@massalabs/massa-as-sdk';
-import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from '../utils/const';
+import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from './const';
 import { _isPathFileInList, _pushFilePath } from './file-list';
 
 /**

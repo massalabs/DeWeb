@@ -1,4 +1,4 @@
-import { FILES_PATH_LIST } from '../utils/const';
+import { FILES_PATH_LIST } from './const';
 
 /**
  * Adds a new file path to the list of file paths.
