@@ -17,20 +17,55 @@ export function _setFileChunk(
   chunk: StaticArray<u8>,
   totalChunks: u32,
 ): void {
-  const filePathHash = sha256(stringToBytes(filePath));
-
-  // TODO: Test this
   assert(
     id < totalChunks,
     'Cannot set chunk with index greater or equal than total chunks',
   );
 
-  // Check if we update a file with a different number of chunks
-  _verifyTotalChunks(filePathHash, totalChunks);
+  const filePathHash = sha256(stringToBytes(filePath));
 
+  _updateTotalChunks(filePathHash, totalChunks);
+  _storeChunk(filePathHash, id, chunk);
+  _updateFilePathList(filePath);
+}
+
+/**
+ * Updates the total number of chunks for a file.
+ * @param filePathHash - The hash of the file path.
+ * @param newTotalChunks - The new total number of chunks.
+ */
+function _updateTotalChunks(
+  filePathHash: StaticArray<u8>,
+  newTotalChunks: u32,
+): void {
+  const currentTotalChunks = _getNbChunk(filePathHash);
+  if (currentTotalChunks !== newTotalChunks) {
+    if (currentTotalChunks > newTotalChunks) {
+      // Remove extra chunks
+    }
+    _setNbChunk(filePathHash, newTotalChunks);
+  }
+}
+
+/**
+ * Stores a chunk in the storage.
+ * @param filePathHash - The hash of the file path.
+ * @param id - The index of the chunk.
+ * @param chunk - The chunk data.
+ */
+function _storeChunk(
+  filePathHash: StaticArray<u8>,
+  id: u32,
+  chunk: StaticArray<u8>,
+): void {
   Storage.set(_getChunkKey(filePathHash, id), chunk);
+}
 
-  // TODO: Handle the case where the name of the file is randomly generated !!!
+/**
+ * Updates the file path list if the file path is not already in the list.
+ * @param filePath - The path of the file.
+ */
+function _updateFilePathList(filePath: string): void {
   if (!_isPathFileInList(filePath)) {
     _pushFilePath(filePath);
   }
@@ -90,24 +125,4 @@ export function _getChunkKey(
   id: u32,
 ): StaticArray<u8> {
   return FILE_TAG.concat(filePathHash).concat(CHUNK_TAG).concat(u32ToBytes(id));
-}
-
-/**
- * Verifies and updates the total number of chunks for a file.
- * If the current number of chunks is greater than the new total,
- * it should delete excess chunks (TODO).
- * @param filePathHash - The hash of the file path.
- * @param totalChunks - The new total number of chunks.
- */
-export function _verifyTotalChunks(
-  filePathHash: StaticArray<u8>,
-  totalChunks: u32,
-): void {
-  const nbChunk = _getNbChunk(filePathHash);
-  if (nbChunk !== totalChunks) {
-    if (nbChunk > totalChunks) {
-      // TODO: Delete chunks: Be careful with the index when deleting chunks
-    }
-    _setNbChunk(filePathHash, totalChunks);
-  }
 }
