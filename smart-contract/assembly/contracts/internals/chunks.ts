@@ -6,7 +6,7 @@ import { _isPathFileInList, _pushFilePath } from './file-list';
 /**
  * Sets a chunk of a file in storage.
  * @param filePath - The path of the file.
- * @param chunkId - The index of the chunk.
+ * @param id - The index of the chunk.
  * @param chunk - The chunk data.
  * @param totalChunks - The total number of chunks for the file.
  * @throws If the chunk index is greater than or equal to the total number of chunks.

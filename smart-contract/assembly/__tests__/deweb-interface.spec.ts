@@ -33,7 +33,7 @@ describe('website deployer internals functions tests', () => {
         new Args().addSerializableObjectArray<ChunkPost>([chunk]).serialize(),
       );
 
-      const result = getChunk(chunkGetArgs(chunk.filePath, chunk.chunkId));
+      const result = getChunk(chunkGetArgs(chunk.filePath, chunk.id));
 
       expect(result.length).toBe(10240);
 
@@ -78,8 +78,8 @@ describe('website deployer internals functions tests', () => {
       const nbChunk = bytesToU32(getNbOfChunks(fileHashArgs('file1')));
       expect(nbChunk).toBe(2);
 
-      const result1 = getChunk(chunkGetArgs(chunk1.filePath, chunk1.chunkId));
-      const result2 = getChunk(chunkGetArgs(chunk2.filePath, chunk2.chunkId));
+      const result1 = getChunk(chunkGetArgs(chunk1.filePath, chunk1.id));
+      const result2 = getChunk(chunkGetArgs(chunk2.filePath, chunk2.id));
 
       expect(result1.length).toBe(10240);
       expect(result2.length).toBe(10241);
@@ -101,8 +101,8 @@ describe('website deployer internals functions tests', () => {
   });
 });
 
-function chunkGetArgs(filePath: string, chunkId: u32): StaticArray<u8> {
-  return new ChunkGet(sha256(stringToBytes(filePath)), chunkId).serialize();
+function chunkGetArgs(filePath: string, id: u32): StaticArray<u8> {
+  return new ChunkGet(sha256(stringToBytes(filePath)), id).serialize();
 }
 
 function fileHashArgs(filePath: string): StaticArray<u8> {

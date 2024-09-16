@@ -8,13 +8,13 @@ export class ChunkPost implements Serializable {
   /**
    * Creates a new ChunkPost instance.
    * @param filePath - The path of the file this chunk belongs to.
-   * @param chunkId - The unique identifier of this chunk within the file.
+   * @param id - The unique identifier of this chunk within the file.
    * @param data - The actual data of the chunk.
    * @param totalChunks - The total number of chunks for the complete file.
    */
   constructor(
     public filePath: string = '',
-    public chunkId: u32 = 0,
+    public id: u32 = 0,
     public data: StaticArray<u8> = [],
     public totalChunks: u32 = 1,
   ) {}
@@ -26,7 +26,7 @@ export class ChunkPost implements Serializable {
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.filePath)
-      .add(this.chunkId)
+      .add(this.id)
       .add(this.data)
       .add(this.totalChunks)
       .serialize();
@@ -46,8 +46,8 @@ export class ChunkPost implements Serializable {
       return new Result(args.offset);
     }
 
-    const chunkId = args.next<u32>();
-    if (chunkId.error) {
+    const id = args.next<u32>();
+    if (id.error) {
       return new Result(args.offset);
     }
 
@@ -62,7 +62,7 @@ export class ChunkPost implements Serializable {
     }
 
     this.filePath = filePath.unwrap();
-    this.chunkId = chunkId.unwrap();
+    this.id = id.unwrap();
     this.data = chunkData.unwrap();
     this.totalChunks = totalChunks.unwrap();
 
@@ -104,13 +104,13 @@ export class ChunkGet implements Serializable {
       return new Result(args.offset);
     }
 
-    const chunkId = args.next<u32>();
-    if (chunkId.error) {
+    const id = args.next<u32>();
+    if (id.error) {
       return new Result(args.offset);
     }
 
     this.filePathHash = filePathHash.unwrap();
-    this.id = chunkId.unwrap();
+    this.id = id.unwrap();
 
     return new Result(args.offset);
   }

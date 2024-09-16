@@ -35,7 +35,7 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < chunks.length; i++) {
     _setFileChunk(
       chunks[i].filePath,
-      chunks[i].chunkId,
+      chunks[i].id,
       chunks[i].data,
       chunks[i].totalChunks,
     );
@@ -52,14 +52,14 @@ export function getFilePathList(): StaticArray<u8> {
 
 /**
  * Retrieves a specific chunk of a file.
- * @param _binaryArgs - Serialized ChunkGet object containing filePathHash and chunkId.
+ * @param _binaryArgs - Serialized ChunkGet object containing filePathHash and id.
  * @returns The requested file chunk.
  * @throws If the chunk request is invalid.
  */
 export function getChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(_binaryArgs);
   const chunk = args.next<ChunkGet>().expect('Invalid chunk');
-  return _getFileChunk(chunk.filePathHash, chunk.chunkId);
+  return _getFileChunk(chunk.filePathHash, chunk.id);
 }
 
 /**

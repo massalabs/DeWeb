@@ -40,7 +40,7 @@ export async function assertChunkExists(
 ): Promise<void> {
   const chunkGet = new ChunkGet(
     new Uint8Array(sha256.arrayBuffer(chunk.filePath)),
-    chunk.chunkId,
+    chunk.id,
   );
 
   const result = await contract.read(
@@ -51,5 +51,5 @@ export async function assertChunkExists(
   if (result.value.length !== chunk.data.length)
     throw new Error('Invalid chunk');
 
-  console.log(`Chunk found: ${chunk.filePath} ${chunk.chunkId}`);
+  console.log(`Chunk found: ${chunk.filePath} ${chunk.id}`);
 }

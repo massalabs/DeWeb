@@ -30,10 +30,10 @@ async function deploy(provider: Web3Provider): Promise<SmartContract> {
 function generateChunk(
   filePath: string,
   data: Uint8Array,
-  chunkId: bigint,
+  id: bigint,
   chunkTotal = 1n,
 ): ChunkPost {
-  return new ChunkPost(filePath, chunkId, data, chunkTotal);
+  return new ChunkPost(filePath, id, data, chunkTotal);
 }
 
 async function testStoreChunks(contract: SmartContract) {
