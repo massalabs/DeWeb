@@ -17,7 +17,7 @@ export function _pushFilePath(filePath: string): void {
  */
 export function _removeFilePath(filePath: string): void {
   const filePathList = FILES_PATH_LIST.mustValue();
-  if (!_isPathFileInList(filePath)) return;
+  assert(_isPathFileInList(filePath), 'File does not exists');
 
   const newFilePathList: string[] = [];
   for (let i = 0; i < filePathList.length; i++) {
