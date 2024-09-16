@@ -8,7 +8,6 @@ export function _pushFilePath(filePath: string): void {
   const filePathList = FILES_PATH_LIST.mustValue();
   filePathList.push(filePath);
   FILES_PATH_LIST.set(filePathList);
-  _getFilePathList();
 }
 
 /**
