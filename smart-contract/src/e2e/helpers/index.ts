@@ -25,13 +25,16 @@ async function getFilePathList(contract: SmartContract): Promise<string[]> {
 
 export async function assertFilePathInList(
   contract: SmartContract,
-  filePath: string,
+  filePaths: string[],
 ): Promise<void> {
   const list = await getFilePathList(contract);
-  if (!list.includes(filePath))
-    throw new Error(`File not found in list: ${filePath}`);
-
-  console.log(`File found in list: ${filePath}`);
+  // eslint-disable-next-line guard-for-in
+  for (let filePath of filePaths) {
+    if (!list.includes(filePath)) {
+      throw new Error(`File not found in list: ${filePath}`);
+    }
+    console.log(`File found in list: ${filePath}`);
+  }
 }
 
 export async function assertChunkExists(

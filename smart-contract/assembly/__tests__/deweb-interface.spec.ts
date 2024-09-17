@@ -85,6 +85,30 @@ describe('website deployer internals functions tests', () => {
       expect(result2.length).toBe(10241);
     });
 
+    test('Store 2 batch of chunks', () => {
+      const chunk1 = new ChunkPost('file1', 0, fakeFile1, 2);
+      const chunk2 = new ChunkPost('file2', 1, fakeFile2, 2);
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([chunk1, chunk2])
+          .serialize(),
+      );
+
+      const chunk3 = new ChunkPost('file3', 0, fakeFile1, 2);
+      const chunk4 = new ChunkPost('file4', 1, fakeFile2, 2);
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([chunk3, chunk4])
+          .serialize(),
+      );
+
+      const nbChunk = new Args(getFilePathList()).nextStringArray().unwrap();
+
+      expect(nbChunk.length).toBe(4);
+    });
+
     // TODO add test for updating a chunk with different totalChunks
   });
 

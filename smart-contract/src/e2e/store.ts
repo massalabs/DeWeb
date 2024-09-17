@@ -46,7 +46,7 @@ async function testStoreChunks(contract: SmartContract) {
   console.log('Uploading Html file...');
   await uploadChunks(contract, [chunkHtml]);
 
-  await assertFilePathInList(contract, 'index.html');
+  await assertFilePathInList(contract, ['index.html']);
   await assertChunkExists(contract, chunkHtml);
 
   // Add multiple files
@@ -72,8 +72,11 @@ async function testStoreChunks(contract: SmartContract) {
   console.log('Uploading remaining part of Js file...');
   await uploadChunks(contract, [chunkJsPart2]);
 
-  await assertFilePathInList(contract, 'index-DiwrgTda.css');
-  await assertFilePathInList(contract, 'index-f40OySzR.js');
+  await assertFilePathInList(contract, [
+    'index.html',
+    'index-DiwrgTda.css',
+    'index-f40OySzR.js',
+  ]);
 
   // Get chunks
   await assertChunkExists(contract, chunkCss);
