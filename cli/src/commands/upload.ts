@@ -1,7 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
 import { readdirSync, readFileSync, statSync } from 'fs'
-import { join } from 'path'
+import { join, relative } from 'path'
 
 import { deploySC } from '../lib/website/deploySC'
 import { uploadChunks } from '../lib/website/uploadChunk'
@@ -58,8 +58,14 @@ export const uploadCommand = new Command('upload')
 /**
  * Read every file in the given directory and divide them into chunks
  * @param path - the path to the website directory
+ * @param chunkSize - the maximum size of each chunk
+ * @param basePath - the base path to compute relative paths (optional)
  */
-function prepareChunks(path: string, chunkSize: number): ChunkPost[] {
+function prepareChunks(
+  path: string,
+  chunkSize: number,
+  basePath: string = path
+): ChunkPost[] {
   const files = readdirSync(path)
 
   const chunks: ChunkPost[] = []
@@ -70,14 +76,16 @@ function prepareChunks(path: string, chunkSize: number): ChunkPost[] {
 
     if (stats.isDirectory()) {
       // Recursively read the directory
-      const directoryChunks = prepareChunks(fullPath, chunkSize)
+      const directoryChunks = prepareChunks(fullPath, chunkSize, basePath)
       chunks.push(...directoryChunks)
     } else if (stats.isFile()) {
       console.log('Reading file', fullPath)
       const data = readFileSync(fullPath)
       const chunksData = divideIntoChunks(data, chunkSize)
 
-      const chunkPosts = toChunkPosts(fullPath, chunksData)
+      // Compute the relative path from the base path
+      const relativePath = relative(basePath, fullPath)
+      const chunkPosts = toChunkPosts(relativePath, chunksData)
       chunks.push(...chunkPosts)
     }
   }
