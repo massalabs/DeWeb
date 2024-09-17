@@ -22,7 +22,4 @@ async function main() {
   console.log(`Contract deployed at: ${contract.address}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main();

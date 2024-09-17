@@ -8,7 +8,4 @@ async function main() {
   console.log('Tests finished');
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main();
