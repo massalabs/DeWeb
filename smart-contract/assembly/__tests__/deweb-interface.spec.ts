@@ -94,6 +94,8 @@ describe('website deployer internals functions tests', () => {
           .addSerializableObjectArray<ChunkPost>([chunk1, chunk2])
           .serialize(),
       );
+      let nbChunk = new Args(getFilePathList()).nextStringArray().unwrap();
+      expect(nbChunk.length).toBe(2);
 
       const chunk3 = new ChunkPost('file3', 0, fakeFile1, 2);
       const chunk4 = new ChunkPost('file4', 1, fakeFile2, 2);
@@ -104,8 +106,7 @@ describe('website deployer internals functions tests', () => {
           .serialize(),
       );
 
-      const nbChunk = new Args(getFilePathList()).nextStringArray().unwrap();
-
+      nbChunk = new Args(getFilePathList()).nextStringArray().unwrap();
       expect(nbChunk.length).toBe(4);
     });
 
