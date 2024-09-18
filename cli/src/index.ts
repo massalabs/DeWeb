@@ -1,6 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
 import { uploadCommand } from './commands/upload'
 import { deleteCommand } from './commands/delete'
+import { listFilesCommand } from './commands/list'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
@@ -17,5 +18,6 @@ program
 
 program.addCommand(uploadCommand)
 program.addCommand(deleteCommand)
+program.addCommand(listFilesCommand)
 
 program.parse(process.argv)
