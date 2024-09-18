@@ -7,7 +7,7 @@ export const deleteCommand = new Command('delete')
   .alias('d')
   .description('Delete the given website from Massa blockchain')
   .argument('<address>', 'Address of the website to delete')
-  .action(async (websiteZipFilePath, _, command) => {
+  .action(async (address, _, command) => {
     const globalOptions = command.parent?.opts()
 
     if (!globalOptions) {
@@ -18,13 +18,8 @@ export const deleteCommand = new Command('delete')
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    // Placeholder for the deploy action
-    console.log(
-      `Deleting ${websiteZipFilePath} with config ${globalOptions.config} and node URL ${globalOptions.node_url}`
-    )
-
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const sc = new SmartContract(provider, websiteZipFilePath)
+    const sc = new SmartContract(provider, address)
 
     console.error('deleteWebsite not implemented yet in the SC')
 
