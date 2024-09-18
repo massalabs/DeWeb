@@ -17,7 +17,7 @@ export function _setFileChunk(
   chunk: StaticArray<u8>,
   totalChunks: u32,
 ): void {
-  // TODO: If we reupload file at index 4 on a totalChunk of 10, we must reupload 5,6,7,8,9,10
+  // FIXME: If we reupload file at index 4 on a totalChunk of 10, we must reupload 5,6,7,8,9,10
   assert(
     id < totalChunks,
     'Cannot set chunk with index greater or equal than total chunks',
@@ -25,7 +25,7 @@ export function _setFileChunk(
 
   const filePathHash = sha256(stringToBytes(filePath));
 
-  // TODO: Do we want to update the totalChunk off-chain or on-chain
+  // FIXME: Do we want to update the totalChunk off-chain or on-chain
   _updateTotalChunks(filePathHash, totalChunks);
   _storeChunk(filePathHash, id, chunk);
   _updateFilePathList(filePath);

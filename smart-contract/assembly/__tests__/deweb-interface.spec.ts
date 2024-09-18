@@ -33,7 +33,7 @@ describe('website deployer internals functions tests', () => {
         new Args().addSerializableObjectArray<ChunkPost>([chunk]).serialize(),
       );
 
-      const result = getChunk(chunkGetArgs(chunk.filePath, chunk.id));
+      const result = getChunk(chunkGetArgs(chunk.filePath, chunk.index));
 
       expect(result.length).toBe(10240);
 
@@ -78,8 +78,8 @@ describe('website deployer internals functions tests', () => {
       const nbChunk = bytesToU32(getTotalChunksForFile(fileHashArgs('file1')));
       expect(nbChunk).toBe(2);
 
-      const result1 = getChunk(chunkGetArgs(chunk1.filePath, chunk1.id));
-      const result2 = getChunk(chunkGetArgs(chunk2.filePath, chunk2.id));
+      const result1 = getChunk(chunkGetArgs(chunk1.filePath, chunk1.index));
+      const result2 = getChunk(chunkGetArgs(chunk2.filePath, chunk2.index));
 
       expect(result1.length).toBe(10240);
       expect(result2.length).toBe(10241);
@@ -110,7 +110,68 @@ describe('website deployer internals functions tests', () => {
       expect(nbChunk.length).toBe(4);
     });
 
-    // TODO add test for updating a chunk with different totalChunks
+    test('Update a chunk with different totalChunks', () => {
+      const chunk1 = new ChunkPost('file1', 0, fakeFile1, 1);
+      storeFileChunks(
+        new Args().addSerializableObjectArray<ChunkPost>([chunk1]).serialize(),
+      );
+
+      // FIXME: Problem with the total chunk solution is if we say we have 2 chunks and we only provide 1,
+      // the file is considered complete
+      const newChunkPart1 = new ChunkPost('file1', 0, fakeFile1, 2);
+      const newChunkPart2 = new ChunkPost('file1', 1, fakeFile2, 2);
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([newChunkPart1, newChunkPart2])
+          .serialize(),
+      );
+
+      const nbChunk = bytesToU32(getTotalChunksForFile(fileHashArgs('file1')));
+      expect(nbChunk).toBe(2);
+    });
+
+    test('Post chunks in reverse order', () => {
+      const chunk1 = new ChunkPost('file1', 1, fakeFile2, 2);
+      const chunk2 = new ChunkPost('file1', 0, fakeFile1, 2);
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([chunk1, chunk2])
+          .serialize(),
+      );
+
+      const result1 = getChunk(chunkGetArgs('file1', 0));
+      const result2 = getChunk(chunkGetArgs('file1', 1));
+
+      expect(result1.length).toBe(10240);
+      expect(result2.length).toBe(10241);
+    });
+
+    throws('Chunks with non-coherent IDs', () => {
+      const chunk1 = new ChunkPost('file1', 0, fakeFile1, 2);
+      const chunk2 = new ChunkPost('file1', 2, fakeFile2, 2); // Non-coherent ID (should not be above 1)
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([chunk1, chunk2])
+          .serialize(),
+      );
+    });
+
+    throws('Wrong totalChunk', () => {
+      // FIXME: Problem with the total chunk solution is if we say we have 2 chunks and we only provide 1,
+      const chunk1 = new ChunkPost('file1', 0, fakeFile1, 3);
+      const chunk2 = new ChunkPost('file1', 1, fakeFile2, 3);
+
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([chunk1, chunk2])
+          .serialize(),
+      );
+
+      getChunk(chunkGetArgs('file1', 2));
+    });
   });
 
   describe('Get', () => {

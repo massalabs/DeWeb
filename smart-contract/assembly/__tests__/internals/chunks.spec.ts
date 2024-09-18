@@ -28,7 +28,7 @@ describe('website deployer internals functions tests', () => {
       const chunkSize = 4096;
       storeFileInChunks(fileName2, fileData, chunkSize);
       verifyStoredFile(fileName2, fileData, chunkSize);
-      // verifyFilesInList([fileName2]);
+      verifyFilesInList([fileName2]);
     });
 
     test('Store multiple files with varying chunk sizes', () => {

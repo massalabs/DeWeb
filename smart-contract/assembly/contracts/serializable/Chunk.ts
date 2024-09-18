@@ -14,7 +14,7 @@ export class ChunkPost implements Serializable {
    */
   constructor(
     public filePath: string = '',
-    public id: u32 = 0,
+    public index: u32 = 0,
     public data: StaticArray<u8> = [],
     public totalChunks: u32 = 1,
   ) {}
@@ -26,7 +26,7 @@ export class ChunkPost implements Serializable {
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.filePath)
-      .add(this.id)
+      .add(this.index)
       .add(this.data)
       .add(this.totalChunks)
       .serialize();
@@ -46,8 +46,8 @@ export class ChunkPost implements Serializable {
       return new Result(args.offset);
     }
 
-    const id = args.next<u32>();
-    if (id.error) {
+    const index = args.next<u32>();
+    if (index.error) {
       return new Result(args.offset);
     }
 
@@ -62,7 +62,7 @@ export class ChunkPost implements Serializable {
     }
 
     this.filePath = filePath.unwrap();
-    this.id = id.unwrap();
+    this.index = index.unwrap();
     this.data = chunkData.unwrap();
     this.totalChunks = totalChunks.unwrap();
 
@@ -80,14 +80,17 @@ export class ChunkGet implements Serializable {
    * @param filePathHash - The hash of the file path.
    * @param id - The unique identifier of the chunk to retrieve.
    */
-  constructor(public filePathHash: StaticArray<u8> = [], public id: u32 = 0) {}
+  constructor(
+    public filePathHash: StaticArray<u8> = [],
+    public index: u32 = 0,
+  ) {}
 
   /**
    * Serializes the ChunkGet instance into a byte array.
    * @returns A StaticArray<u8> representing the serialized data.
    */
   serialize(): StaticArray<u8> {
-    return new Args().add(this.filePathHash).add(this.id).serialize();
+    return new Args().add(this.filePathHash).add(this.index).serialize();
   }
 
   /**
@@ -104,13 +107,13 @@ export class ChunkGet implements Serializable {
       return new Result(args.offset);
     }
 
-    const id = args.next<u32>();
-    if (id.error) {
+    const index = args.next<u32>();
+    if (index.error) {
       return new Result(args.offset);
     }
 
     this.filePathHash = filePathHash.unwrap();
-    this.id = id.unwrap();
+    this.index = index.unwrap();
 
     return new Result(args.offset);
   }
