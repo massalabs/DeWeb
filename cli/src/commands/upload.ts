@@ -1,22 +1,34 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import { readdirSync, readFileSync, statSync } from 'fs'
-import { join, relative } from 'path'
+import { Listr, ListrLogger } from 'listr2'
 
-import { deploySC } from '../lib/website/deploySC'
-import { uploadChunks } from '../lib/website/uploadChunk'
-import { ChunkPost, toChunkPosts } from '../lib/website/chunkPost'
-import { divideIntoChunks } from '../lib/website/chunk'
-import { batcher } from '../lib/website/batcher'
+import { listFiles } from '../lib/website/read'
+import { deploySCTask } from '../tasks/deploy'
+import {
+  estimateGasTask,
+  showEstimatedCost,
+  showTotalEstimatedCost,
+} from '../tasks/estimations'
+import { prepareBatchesTask } from '../tasks/prepareChunk'
+import { UploadCtx } from '../tasks/tasks'
+import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+
+const DEFAULT_CHUNK_SIZE = 64000n
 
 export const uploadCommand = new Command('upload')
   .alias('u')
   .description('Uploads the given website on Massa blockchain')
   .argument('<website_path>', 'Path to the website directory to upload')
   .option('-a, --address <address>', 'Address of the website to edit')
-  .action(async (websiteZipFilePath, options, command) => {
+  .option('-y, --yes', 'Skip confirmation prompt', false)
+  .option(
+    '-c, --chunk-size <size>',
+    'Chunk size in bytes',
+    DEFAULT_CHUNK_SIZE.toString()
+  )
+  .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.parent?.opts()
 
     if (!globalOptions) {
@@ -27,68 +39,52 @@ export const uploadCommand = new Command('upload')
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    console.log('Provider', provider)
+    const chunkSize = parseInt(options.chunkSize)
 
-    let sc: SmartContract
+    const ctx: UploadCtx = {
+      provider: provider,
+      batches: [],
+      chunks: [],
+      chunkSize: chunkSize,
+      websiteDirPath: websiteDirPath,
+      logger: new ListrLogger({ useIcons: false }),
+      skipConfirm: options.yes,
+      currentTotalEstimation: 0n,
+      minimalFees: await provider.client.getMinimalFee(),
+    }
+
     if (options.address) {
-      console.log(
-        `Editing website at address ${options.address}, no deploy needed`
-      )
-      sc = new SmartContract(provider, options.address)
-    } else {
-      console.log('Deploying a new SC')
-      sc = await deploySC(provider)
+      const address = options.address
+      console.log(`Editing website at address ${address}, no deploy needed`)
 
-      console.log('Deployed SC at', sc.address)
+      validateAddress(address)
+
+      ctx.sc = new SmartContract(provider, address)
     }
 
-    const chunkSize = 64_000 // 64KB
+    const tasksArray = [
+      prepareBatchesTask(),
+      showEstimatedCost(),
+      deploySCTask(),
+      estimateGasTask(),
+      confirmUploadTask(),
+      uploadBatchesTask(),
+      showTotalEstimatedCost(),
+    ]
 
-    const chunks = prepareChunks(websiteZipFilePath, chunkSize)
+    const tasks = new Listr(tasksArray, {
+      concurrent: false,
+    })
 
-    const batchedChunks = batcher(chunks, chunkSize)
-
-    for (const batch of batchedChunks) {
-      uploadChunks(sc, batch)
+    try {
+      await tasks.run(ctx)
+      console.log('Upload complete!')
+    } catch (error) {
+      console.error('Error during the process:', error)
+      process.exit(1)
     }
 
-    console.log('Done')
+    const files = await listFiles(tasks.ctx.sc)
+    console.log('Files uploaded:')
+    files.forEach((f) => console.log(f))
   })
-
-/**
- * Read every file in the given directory and divide them into chunks
- * @param path - the path to the website directory
- * @param chunkSize - the maximum size of each chunk
- * @param basePath - the base path to compute relative paths (optional)
- */
-function prepareChunks(
-  path: string,
-  chunkSize: number,
-  basePath: string = path
-): ChunkPost[] {
-  const files = readdirSync(path)
-
-  const chunks: ChunkPost[] = []
-
-  for (const file of files) {
-    const fullPath = join(path, file)
-    const stats = statSync(fullPath)
-
-    if (stats.isDirectory()) {
-      // Recursively read the directory
-      const directoryChunks = prepareChunks(fullPath, chunkSize, basePath)
-      chunks.push(...directoryChunks)
-    } else if (stats.isFile()) {
-      console.log('Reading file', fullPath)
-      const data = readFileSync(fullPath)
-      const chunksData = divideIntoChunks(data, chunkSize)
-
-      // Compute the relative path from the base path
-      const relativePath = relative(basePath, fullPath)
-      const chunkPosts = toChunkPosts(relativePath, chunksData)
-      chunks.push(...chunkPosts)
-    }
-  }
-
-  return chunks
-}
