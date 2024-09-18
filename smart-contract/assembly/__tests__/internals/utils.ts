@@ -2,7 +2,7 @@ import { stringToBytes } from '@massalabs/as-types';
 import { sha256 } from '@massalabs/massa-as-sdk';
 import {
   _getFileChunk,
-  _getNbChunk,
+  _getTotalChunk,
   _setFileChunk,
 } from '../../contracts/internals/chunks';
 import { _getFilePathList } from '../../contracts/internals/file-list';
@@ -31,7 +31,7 @@ export function storeFileInChunks(
     const start = i * chunkSize;
     const end = u32(Math.min(f64(start + chunkSize), f64(data.length)));
     const chunk = StaticArray.fromArray(data.slice(start, end));
-    _setFileChunk(fileName, i, chunk, totalChunks);
+    _setFileChunk(fileName, i, chunk);
   }
 }
 
@@ -41,7 +41,7 @@ export function verifyStoredFile(
   chunkSize: u32,
 ): void {
   const fileHash = sha256(stringToBytes(fileName));
-  const totalChunks = _getNbChunk(fileHash);
+  const totalChunks = _getTotalChunk(fileHash);
   const shouldTotalChunks = calculateTotalChunks(originalData, chunkSize);
   expect(totalChunks).toBe(shouldTotalChunks);
 

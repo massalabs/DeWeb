@@ -31,9 +31,8 @@ function generateChunk(
   filePath: string,
   data: Uint8Array,
   id: bigint,
-  chunkTotal = 1n,
 ): ChunkPost {
-  return new ChunkPost(filePath, id, data, chunkTotal);
+  return new ChunkPost(filePath, id, data);
 }
 
 async function testStoreChunks(contract: SmartContract) {
@@ -62,8 +61,8 @@ async function testStoreChunks(contract: SmartContract) {
   const jsPart1 = jsFile.subarray(0, remainingBytes);
   const jsPart2 = jsFile.subarray(remainingBytes);
 
-  const chunkJsPart1 = generateChunk('index-f40OySzR.js', jsPart1, 0n, 2n);
-  const chunkJsPart2 = generateChunk('index-f40OySzR.js', jsPart2, 1n, 2n);
+  const chunkJsPart1 = generateChunk('index-f40OySzR.js', jsPart1, 0n);
+  const chunkJsPart2 = generateChunk('index-f40OySzR.js', jsPart2, 1n);
 
   // Css file is small enough to be uploaded in one chunk so we will add a part of the js file
   // Js file is too big so we will split it in multiple chunks
@@ -88,7 +87,7 @@ async function testStoreChunks(contract: SmartContract) {
 
 export async function testStoreFiles() {
   const account = await Account.fromEnv();
-  const provider = Web3Provider.newPublicBuildnetProvider(account);
+  const provider = Web3Provider.buildnet(account);
   const contract = await deploy(provider);
   await testStoreChunks(contract);
 }

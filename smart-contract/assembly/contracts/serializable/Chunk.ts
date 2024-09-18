@@ -8,15 +8,13 @@ export class ChunkPost implements Serializable {
   /**
    * Creates a new ChunkPost instance.
    * @param filePath - The path of the file this chunk belongs to.
-   * @param id - The unique identifier of this chunk within the file.
+   * @param index - The unique identifier of this chunk within the file.
    * @param data - The actual data of the chunk.
-   * @param totalChunks - The total number of chunks for the complete file.
    */
   constructor(
     public filePath: string = '',
     public index: u32 = 0,
     public data: StaticArray<u8> = [],
-    public totalChunks: u32 = 1,
   ) {}
 
   /**
@@ -28,7 +26,6 @@ export class ChunkPost implements Serializable {
       .add(this.filePath)
       .add(this.index)
       .add(this.data)
-      .add(this.totalChunks)
       .serialize();
   }
 
@@ -56,15 +53,9 @@ export class ChunkPost implements Serializable {
       return new Result(args.offset);
     }
 
-    const totalChunks = args.next<u32>();
-    if (totalChunks.error) {
-      return new Result(args.offset);
-    }
-
     this.filePath = filePath.unwrap();
     this.index = index.unwrap();
     this.data = chunkData.unwrap();
-    this.totalChunks = totalChunks.unwrap();
 
     return new Result(args.offset);
   }

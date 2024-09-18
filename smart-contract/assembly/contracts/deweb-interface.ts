@@ -1,11 +1,15 @@
-import { Context } from '@massalabs/massa-as-sdk';
+import { balance, Context, transferCoins } from '@massalabs/massa-as-sdk';
 import {
   _onlyOwner,
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
 import { ChunkPost, ChunkGet } from './serializable/Chunk';
 import { Args, u32ToBytes } from '@massalabs/as-types';
-import { _getFileChunk, _getNbChunk, _setFileChunk } from './internals/chunks';
+import {
+  _getFileChunk,
+  _getTotalChunk,
+  _setFileChunk,
+} from './internals/chunks';
 import { FILES_PATH_LIST } from './internals/const';
 
 /**
@@ -33,12 +37,7 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
     .expect('Invalid chunks');
 
   for (let i = 0; i < chunks.length; i++) {
-    _setFileChunk(
-      chunks[i].filePath,
-      chunks[i].index,
-      chunks[i].data,
-      chunks[i].totalChunks,
-    );
+    _setFileChunk(chunks[i].filePath, chunks[i].index, chunks[i].data);
   }
 }
 
@@ -76,5 +75,21 @@ export function getTotalChunksForFile(
     .next<StaticArray<u8>>()
     .expect('Invalid filePathHash');
 
-  return u32ToBytes(_getNbChunk(filePathHash));
+  return u32ToBytes(_getTotalChunk(filePathHash));
+}
+
+/**
+ * Allow the owner to withdraw funds from the contract balance.
+ * Only the contract owner can call this function.
+ * @param _binaryArgs - Serialized amount to withdraw.
+ * @throws If the caller is not the owner.
+ */
+export function withdraw(binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+  const args = new Args(binaryArgs);
+  const amount = args.next<u64>().expect('Invalid amount');
+  assert(amount > 0, 'Invalid amount');
+  assert(balance() >= amount, 'Insufficient balance');
+
+  transferCoins(Context.caller(), amount);
 }

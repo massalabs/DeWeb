@@ -13,40 +13,60 @@ import { _isPathFileInList, _pushFilePath } from './file-list';
  */
 export function _setFileChunk(
   filePath: string,
-  id: u32,
+  index: u32,
   chunk: StaticArray<u8>,
-  totalChunks: u32,
 ): void {
-  // FIXME: If we reupload file at index 4 on a totalChunk of 10, we must reupload 5,6,7,8,9,10
-  assert(
-    id < totalChunks,
-    'Cannot set chunk with index greater or equal than total chunks',
-  );
-
   const filePathHash = sha256(stringToBytes(filePath));
+  const totalChunks = _getTotalChunk(filePathHash);
 
-  // FIXME: Do we want to update the totalChunk off-chain or on-chain
-  _updateTotalChunks(filePathHash, totalChunks);
-  _storeChunk(filePathHash, id, chunk);
-  _updateFilePathList(filePath);
+  // Case of a new file or a first chunk of a file update
+  if (index === 0) {
+    _removeChunks(filePathHash, totalChunks);
+    _updateFilePathList(filePath);
+    _resetTotalChunks(filePathHash);
+  }
+
+  // Case of a new chunk we need to check if the index is in the right order
+  if (index > 0) {
+    assert(
+      index === totalChunks,
+      `Chunks with non-coherent Index ${index} with totalChunks ${totalChunks}`,
+    );
+  }
+
+  // Store the chunk and increase the total number of chunks
+  _storeChunk(filePathHash, index, chunk);
+  _increaseTotalChunks(filePathHash, totalChunks);
 }
 
 /**
- * Updates the total number of chunks for a file.
+ * Increases the total number of chunks for a file by 1.
  * @param filePathHash - The hash of the file path.
- * @param newTotalChunks - The new total number of chunks.
  */
-function _updateTotalChunks(
+function _increaseTotalChunks(
   filePathHash: StaticArray<u8>,
-  newTotalChunks: u32,
+  totalChunks: u32,
 ): void {
-  const currentTotalChunks = _getNbChunk(filePathHash);
-  if (currentTotalChunks !== newTotalChunks) {
-    if (currentTotalChunks > newTotalChunks) {
-      // Remove extra chunks
-    }
-    _setNbChunk(filePathHash, newTotalChunks);
-  }
+  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks + 1));
+}
+
+/**
+ * Decreases the total number of chunks for a file by 1.
+ * @param filePathHash - The hash of the file path.
+ * @throws If the total number of chunks is already 0.
+ */
+function _decreaseTotalChunks(filePathHash: StaticArray<u8>): void {
+  const totalChunks = _getTotalChunk(filePathHash);
+  assert(totalChunks > 0, 'Total chunks already 0');
+  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks - 1));
+}
+
+/**
+ * Resets the total number of chunks for a file to 0.
+ * @param filePathHash - The hash of the file path.
+ */
+function _resetTotalChunks(filePathHash: StaticArray<u8>): void {
+  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(0));
 }
 
 /**
@@ -57,10 +77,10 @@ function _updateTotalChunks(
  */
 function _storeChunk(
   filePathHash: StaticArray<u8>,
-  id: u32,
+  index: u32,
   chunk: StaticArray<u8>,
 ): void {
-  Storage.set(_getChunkKey(filePathHash, id), chunk);
+  Storage.set(_getChunkKey(filePathHash, index), chunk);
 }
 
 /**
@@ -74,15 +94,6 @@ function _updateFilePathList(filePath: string): void {
 }
 
 /**
- * Sets the total number of chunks for a file.
- * @param filePathHash - The hash of the file path.
- * @param totalChunks - The total number of chunks.
- */
-function _setNbChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {
-  Storage.set(_getNbChunkKey(filePathHash), u32ToBytes(totalChunks));
-}
-
-/**
  * Retrieves a specific chunk of a file.
  * @param filePathHash - The hash of the file path.
  * @param id - The index of the chunk to retrieve.
@@ -91,10 +102,10 @@ function _setNbChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {
  */
 export function _getFileChunk(
   filePathHash: StaticArray<u8>,
-  id: u32,
+  index: u32,
 ): StaticArray<u8> {
-  assert(Storage.has(_getChunkKey(filePathHash, id)), 'Chunk not found');
-  return Storage.get(_getChunkKey(filePathHash, id));
+  assert(Storage.has(_getChunkKey(filePathHash, index)), 'Chunk not found');
+  return Storage.get(_getChunkKey(filePathHash, index));
 }
 
 /**
@@ -102,9 +113,9 @@ export function _getFileChunk(
  * @param filePathHash - The hash of the file path.
  * @returns The total number of chunks, or 0 if not set.
  */
-export function _getNbChunk(filePathHash: StaticArray<u8>): u32 {
-  if (!Storage.has(_getNbChunkKey(filePathHash))) return 0;
-  return bytesToU32(Storage.get(_getNbChunkKey(filePathHash)));
+export function _getTotalChunk(filePathHash: StaticArray<u8>): u32 {
+  if (!Storage.has(_getTotalChunkKey(filePathHash))) return 0;
+  return bytesToU32(Storage.get(_getTotalChunkKey(filePathHash)));
 }
 
 /**
@@ -112,7 +123,9 @@ export function _getNbChunk(filePathHash: StaticArray<u8>): u32 {
  * @param filePathHash - The hash of the file path.
  * @returns The storage key for the number of chunks.
  */
-export function _getNbChunkKey(filePathHash: StaticArray<u8>): StaticArray<u8> {
+export function _getTotalChunkKey(
+  filePathHash: StaticArray<u8>,
+): StaticArray<u8> {
   return CHUNK_NB_TAG.concat(filePathHash);
 }
 
@@ -124,7 +137,20 @@ export function _getNbChunkKey(filePathHash: StaticArray<u8>): StaticArray<u8> {
  */
 export function _getChunkKey(
   filePathHash: StaticArray<u8>,
-  id: u32,
+  index: u32,
 ): StaticArray<u8> {
-  return FILE_TAG.concat(filePathHash).concat(CHUNK_TAG).concat(u32ToBytes(id));
+  return FILE_TAG.concat(filePathHash)
+    .concat(CHUNK_TAG)
+    .concat(u32ToBytes(index));
+}
+
+export function _removeChunks(
+  filePathHash: StaticArray<u8>,
+  totalChunks: u32,
+): void {
+  if (totalChunks == 0) return;
+
+  for (let i = u32(0); i < totalChunks; i++) {
+    Storage.del(_getChunkKey(filePathHash, i));
+  }
 }
