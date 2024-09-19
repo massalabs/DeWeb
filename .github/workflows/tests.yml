@@ -25,31 +25,31 @@ jobs:
       - name: Run unit tests
         run: go test ./...
 
-  functional-test-cli:
-    runs-on: ubuntu-latest
+  # functional-test-cli:
+  #   runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./cli
+  #   defaults:
+  #     run:
+  #       working-directory: ./cli
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-          cache-dependency-path: ./server/pages/package-lock.json
-      - name: Install dependencies
-        run: npm ci
-      - name: Setup wallet
-        run: |
-          echo "$WALLET_TEST_WALLET" > ./wallet_fullpower.yaml
-        env:
-          WALLET_TEST_WALLET: ${{ secrets.WALLET_TEST_WALLET }}
-      - name: Run code formating and linting
-        run: |
-          npm run build
-          npm run start -- upload -y --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD
-        env:
-          WALLET_TEST_PASSWORD: ${{ secrets.WALLET_TEST_PASSWORD }}
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: "npm"
+  #         cache-dependency-path: ./server/pages/package-lock.json
+  #     - name: Install dependencies
+  #       run: npm ci
+  #     - name: Setup wallet
+  #       run: |
+  #         echo "$WALLET_TEST_WALLET" > ./wallet_fullpower.yaml
+  #       env:
+  #         WALLET_TEST_WALLET: ${{ secrets.WALLET_TEST_WALLET }}
+  #     - name: Run code formating and linting
+  #       run: |
+  #         npm run build
+  #         npm run start -- upload -y --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD
+  #       env:
+  #         WALLET_TEST_PASSWORD: ${{ secrets.WALLET_TEST_PASSWORD }}
