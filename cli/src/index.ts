@@ -15,6 +15,8 @@ program
   .version(version)
   .option('-c, --config <path>', 'Path to the config file', defaultConfigPath)
   .option('-n, --node_url <url>', 'Node URL', defaultNodeUrl)
+  .option('-w, --wallet <path>', 'Path to the wallet file')
+  .option('-p, --password <password>', 'Password for the wallet file')
 
 program.addCommand(uploadCommand)
 program.addCommand(deleteCommand)
