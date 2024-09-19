@@ -15,9 +15,19 @@ import { UploadCtx } from './tasks'
 export function prepareBatchesTask(): ListrTask {
   return {
     title: 'Preparing batches',
-    task: async (ctx: UploadCtx) => {
+    task: async (ctx: UploadCtx, task) => {
       const chunks = prepareChunks(ctx.websiteDirPath, ctx.chunkSize)
       ctx.batches = batcher(chunks, ctx.chunkSize)
+      for (const batch of ctx.batches) {
+        task.output = `Batch ${batch.id} with ${batch.chunks.length} chunks`
+        for (const chunk of batch.chunks) {
+          task.output = `  Chunk ${chunk.filePath} ${chunk.chunkId} with ${chunk.data.length} bytes`
+        }
+      }
+    },
+    rendererOptions: {
+      outputBar: Infinity,
+      persistentOutput: true,
     },
   }
 }
