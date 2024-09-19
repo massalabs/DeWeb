@@ -47,3 +47,29 @@ export class ChunkGet implements Serializable<ChunkGet> {
     return { instance: this, offset: args.getOffset() };
   }
 }
+
+export class PreStore implements Serializable<PreStore> {
+  constructor(
+    public filePath: string = '',
+    public filePathHash: Uint8Array = new Uint8Array(0),
+    public newTotalChunks: bigint = 0n,
+  ) {}
+
+  serialize(): Uint8Array {
+    return new Args()
+      .addString(this.filePath)
+      .addUint8Array(this.filePathHash)
+      .addU32(this.newTotalChunks)
+      .serialize();
+  }
+
+  deserialize(data: Uint8Array, offset: number): DeserializedResult<PreStore> {
+    const args = new Args(data, offset);
+
+    this.filePath = args.nextString();
+    this.filePathHash = args.nextUint8Array();
+    this.newTotalChunks = args.nextU32();
+
+    return { instance: this, offset: args.getOffset() };
+  }
+}

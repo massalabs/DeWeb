@@ -6,18 +6,21 @@ import {
   Web3Provider,
 } from '@massalabs/massa-web3';
 import { getByteCode } from '../utils';
-import { ChunkPost } from './helpers/serializable/Chunk';
+import { ChunkPost, PreStore } from './helpers/serializable/Chunk';
 import {
-  uploadChunks,
+  storeChunk,
   assertFilePathInList,
   assertChunkExists,
+  preStoreChunks,
 } from './helpers';
+import { CONTRACT_FILE, CSS_FILE, HTML_FILE, JS_FILE } from './helpers/const';
+import { sha256 } from 'js-sha256';
 
 const CHUNK_LIMIT = 4 * 1024;
 const projectPath = 'src/e2e/test-project/dist';
 
 async function deploy(provider: Web3Provider): Promise<SmartContract> {
-  const byteCode = getByteCode('build', 'deweb-interface.wasm');
+  const byteCode = getByteCode('build', CONTRACT_FILE);
   const contract = await SmartContract.deploy(provider, byteCode, undefined, {
     coins: Mas.fromString('50'),
   });
@@ -36,53 +39,68 @@ function generateChunk(
 }
 
 async function testStoreChunks(contract: SmartContract) {
+  const htmlPreStore = new PreStore(
+    HTML_FILE,
+    new Uint8Array(sha256.arrayBuffer(HTML_FILE)),
+    1n,
+  );
+
+  const cssPreStore = new PreStore(
+    CSS_FILE,
+    new Uint8Array(sha256.arrayBuffer(CSS_FILE)),
+    1n,
+  );
+
+  const jsPreStore = new PreStore(
+    JS_FILE,
+    new Uint8Array(sha256.arrayBuffer(JS_FILE)),
+    2n,
+  );
+
+  await preStoreChunks(contract, [htmlPreStore, cssPreStore, jsPreStore]);
+
   const chunkHtml = generateChunk(
-    'index.html',
-    getByteCode(projectPath, 'index.html'),
+    HTML_FILE,
+    getByteCode(projectPath, HTML_FILE),
     0n,
   );
 
   console.log('Uploading Html file...');
-  await uploadChunks(contract, [chunkHtml]);
+  await storeChunk(contract, [chunkHtml]);
 
-  await assertFilePathInList(contract, ['index.html']);
+  await assertFilePathInList(contract, [HTML_FILE]);
   await assertChunkExists(contract, chunkHtml);
 
   // Add multiple files
   const chunkCss = generateChunk(
-    'index-DiwrgTda.css',
-    getByteCode(`${projectPath}/assets`, 'index-DiwrgTda.css'),
+    CSS_FILE,
+    getByteCode(`${projectPath}/assets`, CSS_FILE),
     0n,
   );
 
   // Calculate remaining bytes to fit css and part of js file
   const remainingBytes = CHUNK_LIMIT - chunkCss.data.length;
-  const jsFile = getByteCode(`${projectPath}/assets`, 'index-f40OySzR.js');
+  const jsFile = getByteCode(`${projectPath}/assets`, JS_FILE);
   const jsPart1 = jsFile.subarray(0, remainingBytes);
   const jsPart2 = jsFile.subarray(remainingBytes);
 
-  const chunkJsPart1 = generateChunk('index-f40OySzR.js', jsPart1, 0n);
-  const chunkJsPart2 = generateChunk('index-f40OySzR.js', jsPart2, 1n);
+  // TODO: Put file name in const
+  const chunkJsPart1 = generateChunk(JS_FILE, jsPart1, 0n);
+  const chunkJsPart2 = generateChunk(JS_FILE, jsPart2, 1n);
 
   // Css file is small enough to be uploaded in one chunk so we will add a part of the js file
   // Js file is too big so we will split it in multiple chunks
   console.log('Uploading Css and part of Js file...');
-  await uploadChunks(contract, [chunkCss, chunkJsPart1]);
+  await storeChunk(contract, [chunkCss, chunkJsPart1]);
   console.log('Uploading remaining part of Js file...');
-  await uploadChunks(contract, [chunkJsPart2]);
+  await storeChunk(contract, [chunkJsPart2]);
 
-  await assertFilePathInList(contract, [
-    'index.html',
-    'index-DiwrgTda.css',
-    'index-f40OySzR.js',
-  ]);
+  await assertFilePathInList(contract, [HTML_FILE, CSS_FILE, JS_FILE]);
 
   // Get chunks
   await assertChunkExists(contract, chunkCss);
   await assertChunkExists(contract, chunkJsPart1);
   await assertChunkExists(contract, chunkJsPart2);
-
-  // const cssFile = bytesToArray<string>(resultCss.value, ArrayTypes.STRING);
 }
 
 export async function testStoreFiles() {

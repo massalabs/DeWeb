@@ -1,7 +1,7 @@
 import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
 import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from './const';
-import { _isPathFileInList, _pushFilePath } from './file-list';
+import { _removeFilePath } from './file-list';
 
 /**
  * Sets a chunk of a file in storage.
@@ -16,73 +16,29 @@ export function _setFileChunk(
   chunk: StaticArray<u8>,
 ): void {
   const filePathHash = sha256(stringToBytes(filePath));
-  let totalChunks = _getTotalChunk(filePathHash);
+  const totalChunks = _getTotalChunk(filePathHash);
 
-  if (_isFirstChunk(index)) {
-    _handleFirstChunk(filePathHash, filePath, totalChunks);
-    totalChunks = 0;
-  } else {
-    _validateChunkOrder(index, totalChunks, filePath);
-  }
+  assert(totalChunks > 0, "Total chunks wasn't set for this file");
+  assert(index < _getTotalChunk(filePathHash), 'Index out of bounds');
 
-  _storeChunk(filePathHash, index, chunk);
-  _setTotalChunk(filePathHash, totalChunks + 1);
+  Storage.set(_getChunkKey(filePathHash, index), chunk);
 }
 
-function _isFirstChunk(index: u32): bool {
-  return index === 0;
-}
-
-function _handleFirstChunk(
+export function _removeChunksRange(
   filePathHash: StaticArray<u8>,
-  filePath: string,
-  totalChunks: u32,
+  start: u32 = 0,
+  end: u32 = 0,
 ): void {
-  if (totalChunks > 0) {
-    _removeExistingChunks(filePathHash, totalChunks);
-  }
-
-  if (!_isPathFileInList(filePath)) {
-    _pushFilePath(filePath);
-  }
-}
-
-function _removeExistingChunks(
-  filePathHash: StaticArray<u8>,
-  totalChunks: u32,
-): void {
-  for (let i = u32(1); i < totalChunks; i++) {
+  for (let i = u32(start); i < end; i++) {
     Storage.del(_getChunkKey(filePathHash, i));
   }
 }
 
-function _validateChunkOrder(
-  index: u32,
-  totalChunks: u32,
-  filePath: string,
-): void {
-  assert(
-    index === totalChunks,
-    `Chunk index mismatch: Expected ${totalChunks}, but received ${index}. File: ${filePath}`,
-  );
-}
-
-function _setTotalChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {
-  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks));
-}
-
-/**
- * Stores a chunk in the storage.
- * @param filePathHash - The hash of the file path.
- * @param index - The index of the chunk.
- * @param chunk - The chunk data.
- */
-function _storeChunk(
+export function _setTotalChunk(
   filePathHash: StaticArray<u8>,
-  index: u32,
-  chunk: StaticArray<u8>,
+  totalChunks: u32,
 ): void {
-  Storage.set(_getChunkKey(filePathHash, index), chunk);
+  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks));
 }
 
 /**
@@ -134,4 +90,14 @@ export function _getChunkKey(
   return FILE_TAG.concat(filePathHash)
     .concat(CHUNK_TAG)
     .concat(u32ToBytes(index));
+}
+
+export function _removeFile(
+  filePath: string,
+  filePathHash: StaticArray<u8>,
+  newTotalChunks: u32,
+): void {
+  _removeFilePath(filePath);
+  _removeChunksRange(filePathHash, 0, newTotalChunks - 1);
+  Storage.del(_getTotalChunkKey(filePathHash));
 }

@@ -109,3 +109,44 @@ export class ChunkGet implements Serializable {
     return new Result(args.offset);
   }
 }
+
+export class PreStore implements Serializable {
+  constructor(
+    public filePath: string = '',
+    public filePathHash: StaticArray<u8> = [],
+    public newTotalChunks: u32 = 0,
+  ) {}
+
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.filePath)
+      .add(this.filePathHash)
+      .add(this.newTotalChunks)
+      .serialize();
+  }
+
+  deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
+    const args = new Args(data, offset);
+
+    const filePath = args.next<string>();
+    if (filePath.error) {
+      return new Result(args.offset);
+    }
+
+    const filePathHash = args.next<StaticArray<u8>>();
+    if (filePathHash.error) {
+      return new Result(args.offset);
+    }
+
+    const newTotalChunks = args.next<u32>();
+    if (newTotalChunks.error) {
+      return new Result(args.offset);
+    }
+
+    this.filePath = filePath.unwrap();
+    this.filePathHash = filePathHash.unwrap();
+    this.newTotalChunks = newTotalChunks.unwrap();
+
+    return new Result(args.offset);
+  }
+}

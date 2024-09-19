@@ -1,14 +1,23 @@
 /* eslint-disable no-console */
 import { SmartContract, Args, ArrayTypes } from '@massalabs/massa-web3';
-import { ChunkPost, ChunkGet } from './serializable/Chunk';
+import { ChunkPost, ChunkGet, PreStore } from './serializable/Chunk';
 import { sha256 } from 'js-sha256';
 
-export async function uploadChunks(
-  contract: SmartContract,
-  chunks: ChunkPost[],
-) {
+export async function storeChunk(contract: SmartContract, chunks: ChunkPost[]) {
   const op = await contract.call(
     'storeFileChunks',
+    new Args().addSerializableObjectArray(chunks).serialize(),
+  );
+
+  await op.waitSpeculativeExecution();
+}
+
+export async function preStoreChunks(
+  contract: SmartContract,
+  chunks: PreStore[],
+) {
+  const op = await contract.call(
+    'preStoreFileChunks',
     new Args().addSerializableObjectArray(chunks).serialize(),
   );
 

@@ -3,14 +3,18 @@ import {
   _onlyOwner,
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
-import { ChunkPost, ChunkGet } from './serializable/Chunk';
+import { ChunkPost, ChunkGet, PreStore } from './serializable/Chunk';
 import { Args, u32ToBytes } from '@massalabs/as-types';
 import {
   _getFileChunk,
   _getTotalChunk,
+  _removeChunksRange,
+  _removeFile,
   _setFileChunk,
+  _setTotalChunk,
 } from './internals/chunks';
 import { FILES_PATH_LIST } from './internals/const';
+import { _pushFilePath } from './internals/file-list';
 
 /**
  * Initializes the smart contract.
@@ -38,6 +42,36 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
 
   for (let i = 0; i < chunks.length; i++) {
     _setFileChunk(chunks[i].filePath, chunks[i].index, chunks[i].data);
+  }
+}
+
+export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+  const args = new Args(_binaryArgs);
+  const files = args
+    .nextSerializableObjectArray<PreStore>()
+    .expect('Invalid preStore');
+
+  for (let i = 0; i < files.length; i++) {
+    const totalChunks = _getTotalChunk(files[i].filePathHash);
+
+    if (totalChunks === 0) {
+      _pushFilePath(files[i].filePath);
+    }
+
+    // Remove the file if the new total chunks is 0
+    if (files[i].newTotalChunks === 0) {
+      _removeFile(files[i].filePath, files[i].filePathHash, totalChunks - 1);
+    } else {
+      if (files[i].newTotalChunks < totalChunks) {
+        _removeChunksRange(
+          files[i].filePathHash,
+          files[i].newTotalChunks - 1,
+          totalChunks - 1,
+        );
+      }
+      _setTotalChunk(files[i].filePathHash, files[i].newTotalChunks);
+    }
   }
 }
 
