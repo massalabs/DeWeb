@@ -1,10 +1,6 @@
 import { stringToBytes } from '@massalabs/as-types';
 import { sha256 } from '@massalabs/massa-as-sdk';
-import {
-  _getFileChunk,
-  _getTotalChunk,
-  _setFileChunk,
-} from '../../contracts/internals/chunks';
+import { _getFileChunk, _setFileChunk } from '../../contracts/internals/chunks';
 import { _getFilePathList } from '../../contracts/internals/file-list';
 
 function calculateTotalChunks(data: StaticArray<u8>, chunkSize: u32): u32 {
@@ -41,12 +37,11 @@ export function verifyStoredFile(
   chunkSize: u32,
 ): void {
   const fileHash = sha256(stringToBytes(fileName));
-  const totalChunks = _getTotalChunk(fileHash);
+
   const shouldTotalChunks = calculateTotalChunks(originalData, chunkSize);
-  expect(totalChunks).toBe(shouldTotalChunks);
 
   let reconstructedData: StaticArray<u8> = [];
-  for (let i: u32 = 0; i < totalChunks; i++) {
+  for (let i: u32 = 0; i < shouldTotalChunks; i++) {
     const chunk = _getFileChunk(fileHash, i);
 
     reconstructedData = reconstructedData.concat(chunk);

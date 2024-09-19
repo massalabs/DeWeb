@@ -198,7 +198,6 @@ describe('website deployer internals functions tests', () => {
     });
 
     throws('Wrong totalChunk', () => {
-      // Prepare contract to store file with 2 chunks
       const file = new PreStore(file1Name, file1NameHash, 2);
       preStoreFileChunks(
         new Args().addSerializableObjectArray<PreStore>([file]).serialize(),
