@@ -37,3 +37,6 @@ coverage/
 
 # built sc
 *.wasm
+
+# wallets
+wallet*.yaml
