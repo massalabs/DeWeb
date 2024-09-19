@@ -112,30 +112,26 @@ describe('website deployer internals functions tests', () => {
       expect(totalChunk.length).toBe(4);
     });
 
-    // FIXME: This test is not possible because we can't have different chunk of the same file in the same batch.
-    // We should investigate why it fails though.
-    // NOTE: This fails but it can't happen.
-    // We don't have different chunk of the same file in the same batch, it doesn't make sense.
-    // test('Update a chunk with different totalChunks', () => {
-    //   const chunk1 = new ChunkPost('file1', 0, fakeFile1);
-    //   storeFileChunks(
-    //     new Args().addSerializableObjectArray<ChunkPost>([chunk1]).serialize(),
-    //   );
+    test('Update a chunk with different totalChunks', () => {
+      const chunk1 = new ChunkPost('file1', 0, fakeFile1);
+      storeFileChunks(
+        new Args().addSerializableObjectArray<ChunkPost>([chunk1]).serialize(),
+      );
 
-    //   const newChunkPart1 = new ChunkPost('file1', 0, fakeFile1);
-    //   const newChunkPart2 = new ChunkPost('file1', 1, fakeFile2);
+      const newChunkPart1 = new ChunkPost('file1', 0, fakeFile1);
+      const newChunkPart2 = new ChunkPost('file1', 1, fakeFile2);
 
-    //   storeFileChunks(
-    //     new Args()
-    //       .addSerializableObjectArray<ChunkPost>([newChunkPart1, newChunkPart2])
-    //       .serialize(),
-    //   );
+      storeFileChunks(
+        new Args()
+          .addSerializableObjectArray<ChunkPost>([newChunkPart1, newChunkPart2])
+          .serialize(),
+      );
 
-    //   const totalChunk = bytesToU32(
-    //     getTotalChunksForFile(fileHashArgs('file1')),
-    //   );
-    //   expect(totalChunk).toBe(2);
-    // });
+      const totalChunk = bytesToU32(
+        getTotalChunksForFile(fileHashArgs('file1')),
+      );
+      expect(totalChunk).toBe(2);
+    });
 
     throws('Post chunks in reverse order', () => {
       const chunk1 = new ChunkPost('file1', 1, fakeFile2);

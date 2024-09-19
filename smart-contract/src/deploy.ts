@@ -17,7 +17,7 @@ async function deploy(provider: Web3Provider): Promise<SmartContract> {
 
 async function main() {
   const account = await Account.fromEnv();
-  const provider = Web3Provider.newPublicBuildnetProvider(account);
+  const provider = Web3Provider.buildnet(account);
   const contract = await deploy(provider);
   console.log(`Contract deployed at: ${contract.address}`);
 }

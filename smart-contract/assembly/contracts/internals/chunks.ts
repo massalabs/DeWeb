@@ -17,13 +17,13 @@ export function _setFileChunk(
   chunk: StaticArray<u8>,
 ): void {
   const filePathHash = sha256(stringToBytes(filePath));
-  const totalChunks = _getTotalChunk(filePathHash);
+  let totalChunks = _getTotalChunk(filePathHash);
 
   // Case of a new file or a first chunk of a file update
   if (index === 0) {
     _removeChunks(filePathHash, totalChunks);
     _updateFilePathList(filePath);
-    _resetTotalChunks(filePathHash);
+    totalChunks = 0;
   }
 
   // Case of a new chunk we need to check if the index is in the right order
@@ -36,37 +36,11 @@ export function _setFileChunk(
 
   // Store the chunk and increase the total number of chunks
   _storeChunk(filePathHash, index, chunk);
-  _increaseTotalChunks(filePathHash, totalChunks);
+  _setTotalChunk(filePathHash, totalChunks + 1);
 }
 
-/**
- * Increases the total number of chunks for a file by 1.
- * @param filePathHash - The hash of the file path.
- */
-function _increaseTotalChunks(
-  filePathHash: StaticArray<u8>,
-  totalChunks: u32,
-): void {
-  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks + 1));
-}
-
-/**
- * Decreases the total number of chunks for a file by 1.
- * @param filePathHash - The hash of the file path.
- * @throws If the total number of chunks is already 0.
- */
-function _decreaseTotalChunks(filePathHash: StaticArray<u8>): void {
-  const totalChunks = _getTotalChunk(filePathHash);
-  assert(totalChunks > 0, 'Total chunks already 0');
-  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks - 1));
-}
-
-/**
- * Resets the total number of chunks for a file to 0.
- * @param filePathHash - The hash of the file path.
- */
-function _resetTotalChunks(filePathHash: StaticArray<u8>): void {
-  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(0));
+function _setTotalChunk(filePathHash: StaticArray<u8>, totalChunks: u32): void {
+  Storage.set(_getTotalChunkKey(filePathHash), u32ToBytes(totalChunks));
 }
 
 /**
