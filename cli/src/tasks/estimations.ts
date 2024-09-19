@@ -40,6 +40,9 @@ export function showEstimatedCost(): ListrTask {
 
       task.output = `${ctx.batches.length} batches found for a total of ${formatBytes(totalBytes)}`
       task.output = `Total estimated cost: ${formatMas(totalCost + opFees)} MAS (with ${formatMas(opFees)} MAS of operation fees)`
+      if ((await ctx.provider.balance(true)) < totalCost + opFees) {
+        throw new Error('Not enough funds to deploy the website')
+      }
       ctx.currentTotalEstimation += totalCost + opFees
     },
     rendererOptions: {
