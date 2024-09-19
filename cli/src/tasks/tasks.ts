@@ -7,12 +7,14 @@ import { ChunkPost } from '../lib/website/chunkPost'
 export interface UploadCtx {
   provider: Provider
   sc?: SmartContract
-  logger: ListrLogger
+
   skipConfirm: boolean
+  websiteDirPath: string
+  currentTotalEstimation: bigint
+
+
   chunks: ChunkPost[]
   batches: Batch[]
   chunkSize: number
-  websiteDirPath: string
   minimalFees: bigint
-  currentTotalEstimation: bigint
 }

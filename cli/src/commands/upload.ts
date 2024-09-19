@@ -1,6 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import { Listr, ListrLogger } from 'listr2'
+import { Listr } from 'listr2'
 
 import { listFiles } from '../lib/website/read'
 import { deploySCTask } from '../tasks/deploy'
@@ -47,7 +47,6 @@ export const uploadCommand = new Command('upload')
       chunks: [],
       chunkSize: chunkSize,
       websiteDirPath: websiteDirPath,
-      logger: new ListrLogger({ useIcons: false }),
       skipConfirm: options.yes,
       currentTotalEstimation: 0n,
       minimalFees: await provider.client.getMinimalFee(),
