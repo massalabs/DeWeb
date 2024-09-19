@@ -27,7 +27,7 @@ export function deploySCTask(): ListrTask {
           .prompt(ListrEnquirerPromptAdapter)
           .run<boolean>({
             type: 'Toggle',
-            message: 'Do agree to deploy the DeWeb smart contract?',
+            message: 'Do you agree to deploy the DeWeb smart contract?',
           })
 
         if (answer === false) {
