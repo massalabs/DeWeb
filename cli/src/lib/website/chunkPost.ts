@@ -5,7 +5,7 @@ export function toChunkPosts(
   chunks: Uint8Array[]
 ): ChunkPost[] {
   return chunks.map((chunk, index) => {
-    return new ChunkPost(filepath, BigInt(index), chunk, BigInt(chunks.length))
+    return new ChunkPost(filepath, BigInt(index), chunk)
   })
 }
 
@@ -13,8 +13,7 @@ export class ChunkPost implements Serializable<ChunkPost> {
   constructor(
     public filePath: string = '',
     public chunkId: bigint = 0n,
-    public data: Uint8Array = new Uint8Array(0),
-    public totalChunks: bigint = 1n
+    public data: Uint8Array = new Uint8Array(0)
   ) {}
 
   serialize(): Uint8Array {
@@ -22,7 +21,6 @@ export class ChunkPost implements Serializable<ChunkPost> {
       .addString(this.filePath)
       .addU32(this.chunkId)
       .addUint8Array(this.data)
-      .addU32(this.totalChunks)
       .serialize()
   }
 
@@ -31,7 +29,6 @@ export class ChunkPost implements Serializable<ChunkPost> {
     this.filePath = args.nextString()
     this.chunkId = args.nextU32()
     this.data = args.nextUint8Array()
-    this.totalChunks = args.nextU32()
 
     return { instance: this, offset: args.getOffset() }
   }
