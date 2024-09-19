@@ -50,6 +50,6 @@ jobs:
       - name: Run code formating and linting
         run: |
           npm run build
-          npm run start -- deploy --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD
+          npm run start -- upload -y --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD
         env:
           WALLET_TEST_PASSWORD: ${{ secrets.WALLET_TEST_PASSWORD }}
