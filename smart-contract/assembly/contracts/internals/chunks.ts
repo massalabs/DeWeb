@@ -19,7 +19,7 @@ export function _setFileChunk(
   const totalChunks = _getTotalChunk(filePathHash);
 
   assert(totalChunks > 0, "Total chunks wasn't set for this file");
-  assert(index < _getTotalChunk(filePathHash), 'Index out of bounds');
+  assert(index < totalChunks, 'Index out of bounds');
 
   Storage.set(_getChunkKey(filePathHash, index), chunk);
 }
