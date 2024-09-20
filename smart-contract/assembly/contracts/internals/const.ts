@@ -1,5 +1,4 @@
 import { ConstantManager, KeyIncrementer } from '@massalabs/massa-as-sdk';
-// TODO: Add tests for the constants and check if the value are right
 const k = new KeyIncrementer();
 export const FILE_TAG = k.nextKey(); // 0 as u8
 export const CHUNK_TAG = k.nextKey(); // 1 as u8
