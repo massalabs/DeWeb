@@ -54,11 +54,11 @@ function makeArgsCoinsFromBatch(batch: Batch): {
 } {
   const args = new Args().addSerializableObjectArray(batch.chunks)
   const coins = batch.chunks.reduce(
-    (acc, chunk, index) =>
+    (acc, chunk) =>
       acc +
       computeChunkCost(
         chunk.filePath,
-        BigInt(index),
+        BigInt(chunk.chunkId),
         BigInt(chunk.data.length)
       ),
     0n

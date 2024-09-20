@@ -7,13 +7,14 @@ import { deploySCTask } from '../tasks/deploy'
 import {
   estimateGasTask,
   showEstimatedCost,
-  showTotalEstimatedCost,
+  recapTask,
 } from '../tasks/estimations'
 import { prepareBatchesTask } from '../tasks/prepareChunk'
 import { UploadCtx } from '../tasks/tasks'
 import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+import { prepareUploadTask } from '../tasks/prepareUpload'
 
 const DEFAULT_CHUNK_SIZE = 64000n
 
@@ -45,6 +46,7 @@ export const uploadCommand = new Command('upload')
       provider: provider,
       batches: [],
       chunks: [],
+      preStores: [],
       chunkSize: chunkSize,
       websiteDirPath: websiteDirPath,
       skipConfirm: options.yes,
@@ -65,10 +67,11 @@ export const uploadCommand = new Command('upload')
       prepareBatchesTask(),
       showEstimatedCost(),
       deploySCTask(),
+      prepareUploadTask(),
       estimateGasTask(),
       confirmUploadTask(),
       uploadBatchesTask(),
-      showTotalEstimatedCost(),
+      recapTask(),
     ]
 
     const tasks = new Listr(tasksArray, {

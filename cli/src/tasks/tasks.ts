@@ -2,6 +2,7 @@ import { Provider, SmartContract } from '@massalabs/massa-web3'
 
 import { Batch } from '../lib/batcher'
 import { ChunkPost } from '../lib/website/chunkPost'
+import { PreStore } from '../lib/website/preStore'
 
 export interface UploadCtx {
   provider: Provider
@@ -12,6 +13,7 @@ export interface UploadCtx {
   currentTotalEstimation: bigint
 
   chunks: ChunkPost[]
+  preStores: PreStore[]
   batches: Batch[]
   chunkSize: number
   minimalFees: bigint

@@ -1,4 +1,4 @@
-import { Provider, smartContract, SmartContract } from '@massalabs/massa-web3'
+import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 import { readFileSync } from 'fs'
 import { storageCostForEntry } from '../utils/storage'
 
@@ -16,9 +16,7 @@ export function deployCost(provider: Provider): bigint {
     BigInt(ownerKey.length),
     BigInt(provider.address.length)
   )
-  const fileListCost = storageCostForEntry(BigInt(1), BigInt(1))
+  const fileListCost = storageCostForEntry(1n, BigInt(U32.SIZE_BYTE))
 
-  const smartContractCost = smartContract(byteCode.length)
-
-  return ownerKeyCost + smartContractCost + fileListCost
+  return ownerKeyCost + fileListCost
 }

@@ -14,7 +14,7 @@ import { formatBytes } from './utils'
  */
 export function showEstimatedCost(): ListrTask {
   return {
-    title: 'Estimating gas cost for each batch',
+    title: 'Estimated upload cost',
     task: async (ctx: UploadCtx, task) => {
       const totalCost = ctx.batches.reduce((sum, batch) => {
         const cost = batch.chunks.reduce((sum, chunk) => {
@@ -53,7 +53,7 @@ export function showEstimatedCost(): ListrTask {
 }
 
 /**
- * Create a task to prepare chunks from the website zip file
+ * Create a task to prepare chunks from the website dir path
  * @returns a Listr task to prepare chunks
  */
 export function estimateGasTask(): ListrTask {
@@ -100,11 +100,12 @@ export function estimateGasTask(): ListrTask {
  * Note: Needs to be modified to show the real total cost
  * @returns a Listr task
  */
-export function showTotalEstimatedCost(): ListrTask {
+export function recapTask(): ListrTask {
   return {
-    title: 'Total estimated cost',
+    title: 'Recap',
     task: (ctx, task) => {
       task.output = `Total estimated cost: ${formatMas(ctx.currentTotalEstimation)} MAS`
+      task.output = `Website deployed at ${ctx.sc.address}`
     },
     rendererOptions: {
       outputBar: Infinity,

@@ -1,10 +1,12 @@
 import { readdirSync, readFileSync, statSync } from 'fs'
+import { sha256 } from 'js-sha256'
 import { ListrTask } from 'listr2'
 import { join, relative } from 'path'
 
 import { batcher } from '../lib/batcher'
 import { divideIntoChunks } from '../lib/website/chunk'
 import { ChunkPost, toChunkPosts } from '../lib/website/chunkPost'
+import { PreStore } from '../lib/website/preStore'
 
 import { UploadCtx } from './tasks'
 
@@ -16,12 +18,16 @@ export function prepareBatchesTask(): ListrTask {
   return {
     title: 'Preparing batches',
     task: async (ctx: UploadCtx, task) => {
-      const chunks = prepareChunks(ctx.websiteDirPath, ctx.chunkSize)
+      const { chunks, preStores } = prepareChunks(
+        ctx.websiteDirPath,
+        ctx.chunkSize
+      )
       ctx.batches = batcher(chunks, ctx.chunkSize)
+      ctx.preStores = preStores
       for (const batch of ctx.batches) {
         task.output = `Batch ${batch.id} with ${batch.chunks.length} chunks`
         for (const chunk of batch.chunks) {
-          task.output = `  Chunk ${chunk.filePath} ${chunk.chunkId} with ${chunk.data.length} bytes`
+          task.output = `- Chunk ${chunk.filePath} ${chunk.chunkId} with ${chunk.data.length} bytes`
         }
       }
     },
@@ -42,10 +48,11 @@ function prepareChunks(
   path: string,
   chunkSize: number,
   basePath: string = path
-): ChunkPost[] {
+): { chunks: ChunkPost[]; preStores: PreStore[] } {
   const files = readdirSync(path)
 
   const chunks: ChunkPost[] = []
+  const preStores: PreStore[] = []
 
   for (const file of files) {
     const fullPath = join(path, file)
@@ -53,8 +60,9 @@ function prepareChunks(
 
     if (stats.isDirectory()) {
       // Recursively read the directory
-      const directoryChunks = prepareChunks(fullPath, chunkSize, basePath)
-      chunks.push(...directoryChunks)
+      const result = prepareChunks(fullPath, chunkSize, basePath)
+      chunks.push(...result.chunks)
+      preStores.push(...result.preStores)
     } else if (stats.isFile()) {
       const data = readFileSync(fullPath)
       const chunksData = divideIntoChunks(data, chunkSize)
@@ -63,8 +71,16 @@ function prepareChunks(
       const relativePath = relative(basePath, fullPath)
       const chunkPosts = toChunkPosts(relativePath, chunksData)
       chunks.push(...chunkPosts)
+
+      preStores.push(
+        new PreStore(
+          relativePath,
+          new Uint8Array(sha256.arrayBuffer(relativePath)),
+          BigInt(chunkPosts.length)
+        )
+      )
     }
   }
 
-  return chunks
+  return { chunks, preStores }
 }
