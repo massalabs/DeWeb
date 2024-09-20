@@ -1,9 +1,10 @@
 import { U32 } from '@massalabs/massa-web3'
-import { storageCostForEntry } from '../utils/storage'
 import { sha256 } from 'js-sha256'
 
-const FILE_TAG = 1n
-const CHUNK_TAG = 2n
+import { storageCostForEntry } from '../utils/storage'
+
+const FILE_TAG = 0
+const CHUNK_TAG = 1
 
 /**
  * Divide a data array into chunks of a given size.
@@ -55,9 +56,6 @@ export function computeChunkCost(
     chunkSize
   )
 
-  // Storage of the file path in the FILES_PATH_LIST
-  uploadCost += BigInt(filePath.length)
-
   return uploadCost
 }
 
@@ -67,13 +65,28 @@ export function computeChunkCost(
  * @param chunkID - the ID of the chunk
  * @returns the key full key of the chunk
  */
-export function getChunkKey(filePath: string, chunkID: bigint): string {
-  return (
-    FILE_TAG.toString() +
-    sha256.arrayBuffer(filePath) +
-    CHUNK_TAG.toString() +
-    U32.toBytes(chunkID)
+export function getChunkKey(filePath: string, chunkID: bigint): Uint8Array {
+  const filePathHashBuffer = sha256.arrayBuffer(filePath)
+  const filePathHashBytes = new Uint8Array(filePathHashBuffer)
+
+  const chunkNumberBytes = U32.toBytes(chunkID)
+
+  const result = new Uint8Array(
+    1 + filePathHashBytes.length + 1 + chunkNumberBytes.length
   )
+
+  let offset = 0
+
+  result[offset++] = FILE_TAG
+
+  result.set(filePathHashBytes, offset)
+  offset += filePathHashBytes.length
+
+  result[offset++] = CHUNK_TAG
+
+  result.set(chunkNumberBytes, offset)
+
+  return result
 }
 
 /**
