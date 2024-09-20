@@ -45,6 +45,15 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
   }
 }
 
+/**
+ * Prepares the storage of file chunks by setting the total number of chunks for each file.
+ * Additionally, it removes any chunks that exceed the new total number of chunks.
+ * Then, it removes the file if the new total number of chunks is 0.
+ *
+ * Only the contract owner can call this function.
+ * @param _binaryArgs - Serialized arguments containing an array of PreStore objects.
+ * @throws If the preStore data is invalid or if the caller is not the owner.
+ */
 export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
   const args = new Args(_binaryArgs);
