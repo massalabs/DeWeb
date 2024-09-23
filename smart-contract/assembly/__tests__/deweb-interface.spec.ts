@@ -4,11 +4,7 @@ import {
   sha256,
 } from '@massalabs/massa-as-sdk';
 import {} from '../contracts/internals/chunks';
-import {
-  constructor,
-  getChunk,
-  getFilePathList,
-} from '../contracts/deweb-interface';
+import { constructor, getChunk } from '../contracts/deweb-interface';
 import { ChunkGet } from '../contracts/serializable/Chunk';
 import { Args, stringToBytes } from '@massalabs/as-types';
 import { given, checkThat } from './FileBuilder';
