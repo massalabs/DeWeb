@@ -47,7 +47,10 @@ jobs:
           echo "$WALLET_TEST_WALLET" > ./wallet_fullpower.yaml
         env:
           WALLET_TEST_WALLET: ${{ secrets.WALLET_TEST_WALLET }}
-      - name: Run code formating and linting
+      - name: Build Smart Contract
+        run: |
+          npm run build:sc
+      - name: Run functional tests
         run: |
           npm run build
           npm run start -- upload -y --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD ../smart-contract/src/e2e/test-project/dist
