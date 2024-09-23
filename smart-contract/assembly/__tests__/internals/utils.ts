@@ -3,7 +3,10 @@ import { sha256 } from '@massalabs/massa-as-sdk';
 import { _getFileChunk, _setFileChunk } from '../../contracts/internals/chunks';
 import { _getFilePathList } from '../../contracts/internals/file-list';
 
-function calculateTotalChunks(data: StaticArray<u8>, chunkSize: u32): u32 {
+export function calculateTotalChunks(
+  data: StaticArray<u8>,
+  chunkSize: u32,
+): u32 {
   return u32(Math.ceil(f64(data.length) / f64(chunkSize)));
 }
 

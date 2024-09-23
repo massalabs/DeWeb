@@ -4,7 +4,7 @@ import {
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
 import { ChunkPost, ChunkGet, PreStore } from './serializable/Chunk';
-import { Args, u32ToBytes } from '@massalabs/as-types';
+import { Args, u32ToBytes, u64ToBytes } from '@massalabs/as-types';
 import {
   _getFileChunk,
   _getTotalChunk,
@@ -13,7 +13,7 @@ import {
   _setFileChunk,
   _setTotalChunk,
 } from './internals/chunks';
-import { FILES_PATH_LIST } from './internals/const';
+import { FILES_PATH_LIST, LAST_PROJECT_UPDATE } from './internals/const';
 import { _pushFilePath } from './internals/file-list';
 
 /**
@@ -25,6 +25,8 @@ export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
   _setOwner(Context.caller().toString());
   FILES_PATH_LIST.set([]);
+
+  LAST_PROJECT_UPDATE.set(Context.timestamp());
 }
 
 /**
@@ -64,6 +66,7 @@ export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < files.length; i++) {
     const totalChunks = _getTotalChunk(files[i].filePathHash);
 
+    // NOTE: We assume that if the totalChunks is 0, the file is new.
     if (totalChunks === 0) {
       _pushFilePath(files[i].filePath);
     }
@@ -82,6 +85,8 @@ export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
       _setTotalChunk(files[i].filePathHash, files[i].newTotalChunks);
     }
   }
+
+  LAST_PROJECT_UPDATE.set(Context.timestamp());
 }
 
 /**
@@ -135,4 +140,8 @@ export function withdraw(binaryArgs: StaticArray<u8>): void {
   assert(balance() >= amount, 'Insufficient balance');
 
   transferCoins(Context.caller(), amount);
+}
+
+export function getProjectLastUpdate(): StaticArray<u8> {
+  return u64ToBytes(LAST_PROJECT_UPDATE.mustValue());
 }
