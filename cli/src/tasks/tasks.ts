@@ -1,11 +1,11 @@
-import { Provider, SmartContract } from '@massalabs/massa-web3'
+import { SmartContract, Web3Provider } from '@massalabs/massa-web3'
 
 import { Batch } from '../lib/batcher'
 import { ChunkPost } from '../lib/website/chunkPost'
 import { PreStore } from '../lib/website/preStore'
 
 export interface UploadCtx {
-  provider: Provider
+  provider: Web3Provider
   sc?: SmartContract
 
   skipConfirm: boolean

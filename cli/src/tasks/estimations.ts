@@ -15,8 +15,9 @@ import { formatBytes } from './utils'
 export function showEstimatedCost(): ListrTask {
   return {
     title: 'Estimated upload cost',
+    skip: (ctx: UploadCtx) => ctx.batches.length === 0,
     task: async (ctx: UploadCtx, task) => {
-      const totalCost = ctx.batches.reduce((sum, batch) => {
+      const totalEstimatedGas = ctx.batches.reduce((sum, batch) => {
         const cost = batch.chunks.reduce((sum, chunk) => {
           return (
             sum +
@@ -39,11 +40,16 @@ export function showEstimatedCost(): ListrTask {
       const opFees = ctx.minimalFees * BigInt(ctx.batches.length)
 
       task.output = `${ctx.batches.length} batches found for a total of ${formatBytes(totalBytes)}`
-      task.output = `Total estimated cost: ${formatMas(totalCost + opFees)} MAS (with ${formatMas(opFees)} MAS of operation fees)`
-      if ((await ctx.provider.balance(true)) < totalCost + opFees) {
-        throw new Error('Not enough funds to deploy the website')
+      task.output = `Total estimated cost: ${formatMas(totalEstimatedGas + opFees)} MAS (with ${formatMas(opFees)} MAS of operation fees)`
+
+      const finalBalance = await ctx.provider.balance(true)
+      if (finalBalance < opFees) {
+        throw new Error(
+          'Final balance is not enough to cover the operation fees'
+        )
       }
-      ctx.currentTotalEstimation += totalCost + opFees
+
+      ctx.currentTotalEstimation += opFees
     },
     rendererOptions: {
       outputBar: Infinity,
@@ -59,6 +65,7 @@ export function showEstimatedCost(): ListrTask {
 export function estimateGasTask(): ListrTask {
   return {
     title: 'Estimating gas cost for each batch',
+    skip: (ctx: UploadCtx) => ctx.batches.length === 0,
     task: async (ctx, task) => {
       const uploadBatches: UploadBatch[] = await Promise.all(
         ctx.batches
@@ -74,12 +81,6 @@ export function estimateGasTask(): ListrTask {
           }))
       )
       ctx.uploadBatches = uploadBatches
-
-      // Display the upload batches and estimated gas cost
-      task.output = 'Upload batches:'
-      uploadBatches.forEach((batch: UploadBatch) => {
-        task.output = `Batch ${batch.id} with ${batch.chunks.length} chunks: ${formatMas(batch.gas)} MAS`
-      })
 
       const totalGas = uploadBatches.reduce(
         (sum: bigint, batch: UploadBatch) => sum + batch.gas,
@@ -103,9 +104,13 @@ export function estimateGasTask(): ListrTask {
 export function recapTask(): ListrTask {
   return {
     title: 'Recap',
-    task: (ctx, task) => {
+    task: (ctx: UploadCtx, task) => {
+      if (ctx.batches.length === 0) {
+        task.output = 'No file was modified'
+      }
+
       task.output = `Total estimated cost: ${formatMas(ctx.currentTotalEstimation)} MAS`
-      task.output = `Website deployed at ${ctx.sc.address}`
+      task.output = `Website deployed at ${ctx.sc?.address}`
     },
     rendererOptions: {
       outputBar: Infinity,

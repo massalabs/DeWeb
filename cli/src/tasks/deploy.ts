@@ -22,7 +22,8 @@ export function deploySCTask(): ListrTask {
           {
             title: 'Prompt for SC deployment confirmation',
             task: async (ctx, subTask) => {
-              subTask.output = 'Smart contract is not deployed yet'
+              subTask.output =
+                'Smart contract is not deployed yet, it is required to continue.'
               subTask.output =
                 `Deploying the DeWeb smart contract costs ${formatMas(deployCost(provider) + ctx.minimalFees)} MAS` +
                 ` (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`

@@ -4,6 +4,8 @@ import { ListrTask } from 'listr2'
 
 import { preStoreChunks, preStoreCost } from '../lib/website/preStore'
 
+import { UploadCtx } from './tasks'
+
 /**
  * Create a task to upload batches
  * @returns a Listr task to upload batches
@@ -11,7 +13,12 @@ import { preStoreChunks, preStoreCost } from '../lib/website/preStore'
 export function prepareUploadTask(): ListrTask {
   return {
     title: 'Prepare upload',
-    task: (_, task) => {
+    task: (ctx: UploadCtx, task) => {
+      if (ctx.preStores.length === 0) {
+        task.skip('All files are ready for upload')
+        return
+      }
+
       return task.newListr(
         [
           {
@@ -46,12 +53,42 @@ export function prepareUploadTask(): ListrTask {
                 throw new Error('Smart contract not found')
               }
 
-              const op = await preStoreChunks(ctx.sc, ctx.preStores)
-              if ((await op.waitFinalExecution()) !== OperationStatus.Success) {
-                throw new Error('Failed to pre-store chunks')
+              const operations = await preStoreChunks(ctx.sc, ctx.preStores)
+
+              const results = await Promise.all(
+                operations.map(async (op) => {
+                  const status = await op.waitFinalExecution()
+                  if (status !== OperationStatus.Success) {
+                    const events = await op.getFinalEvents()
+                    return {
+                      status,
+                      events,
+                    }
+                  }
+                  return {
+                    status,
+                  }
+                })
+              )
+
+              for (const result of results) {
+                if (result.status !== OperationStatus.Success) {
+                  subTask.output = 'Error while preparing SC for upload'
+                  for (const event of result.events) {
+                    subTask.output = event.data
+                  }
+                }
               }
 
-              subTask.output = 'Chunks pre-stored successfully'
+              if (
+                results.some(
+                  (result) => result.status !== OperationStatus.Success
+                )
+              ) {
+                throw new Error('Error while preparing SC for upload')
+              }
+
+              subTask.output = 'SC prepared for upload'
             },
             rendererOptions: {
               outputBar: Infinity,

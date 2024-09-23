@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { Listr, ListrTask } from 'listr2'
+import { ListrTask } from 'listr2'
 
 import { BatchStatus, UploadManager } from '../lib/uploadManager'
 
@@ -12,18 +12,17 @@ import { UploadCtx } from './tasks'
 export function confirmUploadTask(): ListrTask {
   return {
     title: 'Confirm upload',
-    task: async (ctx: UploadCtx, task) => {
-      if (!ctx.skipConfirm) {
-        const answer = await task
-          .prompt(ListrEnquirerPromptAdapter)
-          .run<boolean>({
-            type: 'Toggle',
-            message: 'Do you want to proceed with the upload?',
-          })
+    skip: (ctx: UploadCtx) => ctx.skipConfirm || ctx.batches.length === 0,
+    task: async (_, task) => {
+      const answer = await task
+        .prompt(ListrEnquirerPromptAdapter)
+        .run<boolean>({
+          type: 'Toggle',
+          message: 'Do you want to proceed with the upload?',
+        })
 
-        if (answer === false) {
-          throw new Error('Aborted')
-        }
+      if (answer === false) {
+        throw new Error('Aborted')
       }
     },
   }
@@ -34,68 +33,68 @@ export function confirmUploadTask(): ListrTask {
  * @returns a Listr task to upload batches
  */
 export function uploadBatchesTask(): ListrTask {
+  const maxConcurrentOps = 4
+
   return {
     title: 'Uploading batches',
-    task: (ctx) => {
+    skip: (ctx: UploadCtx) => ctx.batches.length === 0,
+    task: async (ctx, task) => {
       const uploadManager = new UploadManager(ctx.uploadBatches, {
-        maxConcurrentOps: 4,
+        maxConcurrentOps: maxConcurrentOps,
       })
 
-      // Create subtasks for each batch upload
-      const batchTasks: ListrTask[] = uploadManager
-        .getBatches()
-        .map((batch) => ({
-          title: `Batch ${batch.id} (Status: ${BatchStatus[batch.status]})`,
-          task: (_, task) =>
-            new Promise<void>((resolve, reject) => {
-              const interval = setInterval(() => {
-                const updatedBatch = uploadManager
-                  .getBatches()
-                  .find((b) => b.id === batch.id)
-                if (updatedBatch) {
-                  task.title = `Batch ${updatedBatch.id}: ${BatchStatus[updatedBatch.status]}`
-
-                  const baseOutput = `Batch ${updatedBatch.id} with ${updatedBatch.chunks.length} chunks:`
-
-                  if (updatedBatch.status === BatchStatus.Sent) {
-                    task.output = `${baseOutput} chunks sent to the node.`
-                  } else if (updatedBatch.status === BatchStatus.Success) {
-                    task.output = `${baseOutput} successfully uploaded.`
-                    clearInterval(interval)
-                    resolve()
-                  } else if (updatedBatch.status === BatchStatus.Error) {
-                    clearInterval(interval)
-                    reject(
-                      new Error(
-                        `${baseOutput} failed to upload. Check the logs for more information.`
-                      )
-                    )
-                    updatedBatch.operation?.getFinalEvents().then((events) => {
-                      events.forEach((event) => {
-                        console.error(event.data)
-                      })
-                    })
-                  }
-                }
-              }, 500)
-            }),
-          options: { persistentOutput: true },
-        }))
-
-      uploadManager.startUpload(ctx.sc, (updatedBatch) => {
-        const taskIndex = batchTasks.findIndex((task) =>
-          task.title?.includes(`Batch ${updatedBatch.id}`)
+      await uploadManager.startUpload(ctx.sc, () => {
+        const batches = uploadManager.getBatches()
+        const sentBatches = batches.filter(
+          (batch) => batch.status === BatchStatus.Sent
         )
-        if (taskIndex !== -1) {
-          batchTasks[taskIndex].title =
-            `Batch ${updatedBatch.id} (Status: ${BatchStatus[updatedBatch.status]})`
-        }
+        const errorBatches = batches.filter(
+          (batch) => batch.status === BatchStatus.Error
+        )
+        const successBatches = batches.filter(
+          (batch) => batch.status === BatchStatus.Success
+        )
+        const waitingBatches = batches.filter(
+          (batch) => batch.status === BatchStatus.WaitingUpload
+        )
+
+        task.output = ''
+
+        sentBatches.forEach((batch) => {
+          task.output += `Batch ${batch.id}: chunks sent to the node.\n`
+        })
+        errorBatches.forEach((batch) => {
+          task.output += `Batch ${batch.id}: failed to upload. Check the logs for more information.\n`
+        })
+
+        task.title = `Uploading: ${waitingBatches.length} waiting, ${sentBatches.length} sent, ${successBatches.length} completed, ${errorBatches.length} failed`
       })
 
-      return new Listr(batchTasks, {
-        concurrent: true,
-        rendererOptions: { collapse: false, collapseSubtasks: false },
-      })
+      const batches = uploadManager.getBatches()
+      const errorBatches = batches.filter(
+        (batch) => batch.status === BatchStatus.Error
+      )
+      const successBatches = batches.filter(
+        (batch) => batch.status === BatchStatus.Success
+      )
+      const waitingBatches = batches.filter(
+        (batch) => batch.status === BatchStatus.WaitingUpload
+      )
+
+      task.title = `Upload Recap: ${successBatches.length} completed, ${errorBatches.length} failed, ${waitingBatches.length} waiting`
+
+      if (errorBatches.length > 0) {
+        errorBatches.forEach((batch) => {
+          batch.operation?.getFinalEvents().then((events) => {
+            events.forEach((event) => {
+              console.error(event.data)
+            })
+          })
+        })
+        throw new Error(
+          `Failed batches: ${errorBatches.map((batch) => batch.id).join(', ')}`
+        )
+      }
     },
   }
 }
