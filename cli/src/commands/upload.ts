@@ -2,19 +2,18 @@ import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
 import { Listr } from 'listr2'
 
-import { listFiles } from '../lib/website/read'
 import { deploySCTask } from '../tasks/deploy'
 import {
   estimateGasTask,
-  showEstimatedCost,
   recapTask,
+  showEstimatedCost,
 } from '../tasks/estimations'
 import { prepareBatchesTask } from '../tasks/prepareChunk'
+import { prepareUploadTask } from '../tasks/prepareUpload'
 import { UploadCtx } from '../tasks/tasks'
 import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
-import { prepareUploadTask } from '../tasks/prepareUpload'
 
 const DEFAULT_CHUNK_SIZE = 64000n
 
@@ -85,8 +84,4 @@ export const uploadCommand = new Command('upload')
       console.error('Error during the process:', error)
       process.exit(1)
     }
-
-    const files = await listFiles(tasks.ctx.sc)
-    console.log('Files uploaded:')
-    files.forEach((f) => console.log(f))
   })
