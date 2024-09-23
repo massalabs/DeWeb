@@ -5,6 +5,7 @@ import { storageCostForEntry } from '../utils/storage'
 
 const FILE_TAG = 0
 const CHUNK_TAG = 1
+const CHUNK_NB_TAG = 2
 
 /**
  * Divide a data array into chunks of a given size.
@@ -97,4 +98,24 @@ export function getChunkKey(filePath: string, chunkID: bigint): Uint8Array {
  */
 export function getChunkKeyLength(filePath: string, chunkID: bigint): bigint {
   return BigInt(getChunkKey(filePath, chunkID).length)
+}
+
+/**
+ * Returns the storage key for the total number of chunks for a file.
+ * @param filePath - the path of the file the chunk belongs to
+ * @returns the key of the total number of chunks for a file
+ */
+export function getTotalChunkKey(filePath: string): Uint8Array {
+  const filePathHashBuffer = sha256.arrayBuffer(filePath)
+  const filePathHashBytes = new Uint8Array(filePathHashBuffer)
+
+  const result = new Uint8Array(1 + filePathHashBytes.length)
+
+  let offset = 0
+
+  result[offset++] = CHUNK_NB_TAG
+
+  result.set(filePathHashBytes, offset)
+
+  return result
 }
