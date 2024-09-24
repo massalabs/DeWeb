@@ -129,6 +129,21 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 			return nil, "", fmt.Errorf("failed to get website: %w", err)
 		}
 
+		// Handling missing .html extension
+		if notFound && !strings.HasSuffix(resourceName, ".html") {
+			logger.Warnf("Failed to get file %s from website: %v", resourceName, err)
+			resourceName += ".html"
+
+			content, notFound, err = webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+			if err != nil {
+				if notFound {
+					return nil, "", fmt.Errorf("could not find %s in website: %w", resourceName, err)
+				}
+
+				return nil, "", fmt.Errorf("failed to get file from website: %w", err)
+			}
+		}
+
 		// Handling Single Page Apps
 		if notFound && resourceName != "index.html" {
 			logger.Warnf("Failed to get file %s from zip: %v", resourceName, err)
@@ -152,8 +167,6 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 		logger.Debugf("Injecting 'Hosted by Massa' box")
 
 		content = InjectOnChainBox(content, network.ChainID)
-
-		logger.Debugf("Injected 'Hosted by Massa' box\n%s", content)
 	}
 
 	return content, contentType, nil
