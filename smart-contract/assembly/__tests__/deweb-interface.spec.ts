@@ -126,7 +126,7 @@ describe('website deployer internals functions tests', () => {
   });
 
   // Testing delete files
-  describe('Delete', () => {
+  describe('Delete File', () => {
     beforeEach(() => {
       resetStorage();
       setDeployContext(user);
@@ -193,6 +193,25 @@ describe('website deployer internals functions tests', () => {
       });
     });
 
+    test('Should throw if there are no files to delete', () => {
+      throws('should throw if there is no file to delete', () => {
+        deleteFile(
+          new Args()
+            .addSerializableObjectArray<ChunkDelete>([
+              new ChunkDelete('DeleteFile1'),
+            ])
+            .serialize(),
+        );
+      });
+    });
+  });
+
+  describe('Delete Files', () => {
+    beforeEach(() => {
+      resetStorage();
+      setDeployContext(user);
+      constructor(new Args().serialize());
+    });
     test('Should delete 2 files with 1 chunk', () => {
       const myUpload = given()
         .withFile(file1Path, 1, [fileData1])
@@ -229,18 +248,6 @@ describe('website deployer internals functions tests', () => {
       myFirstUpload.deleteFiles([fileToDelete1, fileToDelete2]);
 
       checkThat(myFirstUpload).hasNoFiles();
-    });
-
-    test('Should throw if there are no files to delete', () => {
-      throws('should throw if there is no file to delete', () => {
-        deleteFile(
-          new Args()
-            .addSerializableObjectArray<ChunkDelete>([
-              new ChunkDelete('DeleteFile1'),
-            ])
-            .serialize(),
-        );
-      });
     });
   });
 });
