@@ -73,3 +73,29 @@ export class PreStore implements Serializable<PreStore> {
     return { instance: this, offset: args.getOffset() };
   }
 }
+
+export class ChunkDelete implements Serializable<ChunkDelete> {
+  constructor(
+    public filePathName: string = '',
+    public filePathHash: Uint8Array = new Uint8Array(0),
+  ) {}
+
+  serialize(): Uint8Array {
+    return new Args()
+      .addString(this.filePathName)
+      .addUint8Array(this.filePathHash)
+      .serialize();
+  }
+
+  deserialize(
+    data: Uint8Array,
+    offset: number,
+  ): DeserializedResult<ChunkDelete> {
+    const args = new Args(data, offset);
+
+    this.filePathName = args.nextString();
+    this.filePathHash = args.nextUint8Array();
+
+    return { instance: this, offset: args.getOffset() };
+  }
+}

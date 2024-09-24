@@ -30,7 +30,7 @@ async function deploy(provider: Web3Provider): Promise<SmartContract> {
   return contract;
 }
 
-function generateChunk(
+export function generateChunk(
   filePath: string,
   data: Uint8Array,
   id: bigint,
@@ -108,4 +108,5 @@ export async function testStoreFiles() {
   const provider = Web3Provider.buildnet(account);
   const contract = await deploy(provider);
   await testStoreChunks(contract);
+  return contract;
 }
