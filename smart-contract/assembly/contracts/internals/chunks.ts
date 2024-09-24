@@ -1,5 +1,5 @@
 import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
-import { sha256, Storage } from '@massalabs/massa-as-sdk';
+import { set, sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from './const';
 import { _removeFilePath } from './file-list';
 
@@ -100,4 +100,21 @@ export function _removeFile(
   _removeFilePath(filePath);
   _removeChunksRange(filePathHash, 0, newTotalChunks - 1);
   Storage.del(_getTotalChunkKey(filePathHash));
+}
+
+/**
+ * Deletes a chunks of a given file from storage.
+ * @param filePathHash - The hash of the file path.
+ * @throws If the chunk is not found in storage.
+ */
+export function _deleteFile(filePathHash: StaticArray<u8>): void {
+  const chunkNumber = _getTotalChunk(filePathHash);
+  for (let i: u32 = 0; i < chunkNumber; i++) {
+    assert(
+      Storage.has(_getChunkKey(filePathHash, i)),
+      'Chunk not found while deleting',
+    );
+    Storage.del(_getChunkKey(filePathHash, i));
+  }
+  _setTotalChunk(filePathHash, 0);
 }

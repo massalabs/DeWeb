@@ -3,16 +3,25 @@ import {
   _onlyOwner,
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
-import { ChunkPost, ChunkGet, PreStore } from './serializable/Chunk';
+import {
+  ChunkPost,
+  ChunkGet,
+  PreStore,
+  ChunkDelete,
+} from './serializable/Chunk';
+
 import { Args, u32ToBytes } from '@massalabs/as-types';
 import {
   _getFileChunk,
   _getTotalChunk,
-  _removeChunksRange,
-  _removeFile,
   _setFileChunk,
   _setTotalChunk,
+  _deleteFile,
+  _removeChunksRange,
+  _removeFile,
 } from './internals/chunks';
+
+import { _isPathFileInList, _removeFilePath } from './internals/file-list';
 import { FILES_PATH_LIST } from './internals/const';
 import { _pushFilePath } from './internals/file-list';
 
@@ -136,3 +145,51 @@ export function withdraw(binaryArgs: StaticArray<u8>): void {
 
   transferCoins(Context.caller(), amount);
 }
+
+/**
+ * Deletes a file from the contract storage.
+ * @param _binaryArgs - Serialized arguments containing the ChunkDelete object.
+ * @param index - (optional) The index of the file to delete of deleting multiple files.
+ * @throws If the file does not exist or if the caller is not the owner.
+ */
+export function deleteFile(_binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+  const args = new Args(_binaryArgs);
+
+  const file = args
+    .nextSerializableObjectArray<ChunkDelete>()
+    .expect('Invalid files');
+
+  assert(_isPathFileInList(file[0].filePath), 'File does not exist');
+
+  _deleteFile(file[0].filePathHash);
+
+  _removeFilePath(file[0].filePath);
+}
+
+/**
+ * Deletes a set of files from the contract storage. Calls deleteFile for each file.
+ * @param _binaryArgs - Serialized arguments containing the ChunkDelete object.
+ * @throws If the file does not exist or if the caller is not the owner.
+ */
+export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+  const args = new Args(_binaryArgs);
+  const files = args
+    .nextSerializableObjectArray<ChunkDelete>()
+    .expect('Invalid files');
+
+  for (let i = 0; i < files.length; i++) {
+    assert(_isPathFileInList(files[i].filePath), 'File does not exist');
+
+    _deleteFile(files[i].filePathHash);
+
+    _removeFilePath(files[i].filePath);
+  }
+}
+
+//TODO: delete all files in project
+
+//TODO: delete all metadata
+
+//TODO: delete SC
