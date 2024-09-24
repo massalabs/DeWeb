@@ -5,9 +5,8 @@ describe('ChunkPost', () => {
     const filePath = 'test.txt'
     const chunkId = 1n
     const data = new Uint8Array([1, 2, 3, 4])
-    const totalChunks = 5n
 
-    const chunkPost = new ChunkPost(filePath, chunkId, data, totalChunks)
+    const chunkPost = new ChunkPost(filePath, chunkId, data)
     const serialized = chunkPost.serialize()
     const deserializedResult = new ChunkPost().deserialize(serialized, 0)
     const deserialized = deserializedResult.instance
@@ -15,7 +14,6 @@ describe('ChunkPost', () => {
     expect(deserialized.filePath).toBe(filePath)
     expect(deserialized.chunkId).toBe(chunkId)
     expect(deserialized.data).toEqual(data)
-    expect(deserialized.totalChunks).toBe(totalChunks)
   })
 })
 
@@ -29,11 +27,9 @@ describe('toChunkPosts', () => {
     expect(chunkPosts[0].filePath).toBe(filePath)
     expect(chunkPosts[0].chunkId).toBe(0n)
     expect(chunkPosts[0].data).toEqual(chunks[0])
-    expect(chunkPosts[0].totalChunks).toBe(2n)
 
     expect(chunkPosts[1].filePath).toBe(filePath)
     expect(chunkPosts[1].chunkId).toBe(1n)
     expect(chunkPosts[1].data).toEqual(chunks[1])
-    expect(chunkPosts[1].totalChunks).toBe(2n)
   })
 })
