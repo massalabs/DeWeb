@@ -4,15 +4,29 @@ import {
   sha256,
 } from '@massalabs/massa-as-sdk';
 import {} from '../contracts/internals/chunks';
-import { constructor, getChunk } from '../contracts/deweb-interface';
-import { ChunkGet } from '../contracts/serializable/Chunk';
+import {
+  constructor,
+  getChunk,
+  storeFileChunks,
+  preStoreFileChunks,
+  deleteFile,
+  deleteFiles,
+  getFilePathList,
+} from '../contracts/deweb-interface';
+import {
+  ChunkDelete,
+  ChunkGet,
+  ChunkPost,
+  PreStore,
+} from '../contracts/serializable/Chunk';
 import { Args, stringToBytes } from '@massalabs/as-types';
-import { given, checkThat } from './FileBuilder';
+import { checkThat, chunkGetArgs, given } from './FileBuilder';
 
 const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
-const file1Name = 'file1';
-const file2Name = 'file2';
-const file1NameHash = sha256(stringToBytes(file1Name));
+const file1Path = 'file1';
+const file2Path = 'file2';
+const file1PathHash = sha256(stringToBytes(file1Path));
+const file2PathHash = sha256(stringToBytes(file2Path));
 const fileData1 = new StaticArray<u8>(10240).fill(1);
 const fileData2 = new StaticArray<u8>(10241).fill(1);
 
@@ -26,7 +40,7 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 1 file with 1 chunk', () => {
       const myUpload = given()
-        .withFile(file1Name, 1, [fileData1])
+        .withFile(file1Path, 1, [fileData1])
         .preStore()
         .storeAll();
 
@@ -35,8 +49,8 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 2 files with 1 chunk each', () => {
       const myUpload = given()
-        .withFile(file1Name, 1, [fileData1])
-        .withFile(file2Name, 1, [fileData2])
+        .withFile(file1Path, 1, [fileData1])
+        .withFile(file2Path, 1, [fileData2])
         .preStore()
         .storeAll();
 
@@ -45,7 +59,7 @@ describe('website deployer internals functions tests', () => {
 
     test('Store a file with 2 chunks', () => {
       const myUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Path, 2, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
@@ -54,12 +68,12 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 2 batch of chunks', () => {
       const myFirstUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Path, 2, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
       const mySecondUpload = given()
-        .withFile(file2Name, 2, [fileData1, fileData2])
+        .withFile(file2Path, 2, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
@@ -69,14 +83,14 @@ describe('website deployer internals functions tests', () => {
 
     test('Update a chunk with different totalChunks', () => {
       const myUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Path, 2, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
       checkThat(myUpload).hasFiles();
 
       const myUpload2 = given()
-        .withFile(file1Name, 3, [fileData1, fileData2, fileData1])
+        .withFile(file1Path, 3, [fileData1, fileData2, fileData1])
         .preStore()
         .storeAll();
 
@@ -85,7 +99,7 @@ describe('website deployer internals functions tests', () => {
 
     throws('Wrong totalChunk', () => {
       given()
-        .withFile(file1Name, 3, [
+        .withFile(file1Path, 3, [
           fileData1,
           fileData2,
           fileData2,
@@ -107,14 +121,126 @@ describe('website deployer internals functions tests', () => {
     });
 
     throws('should throw if file does not exist', () => {
-      getChunk(chunkGetArgs(file1NameHash, 0));
+      getChunk(chunkGetArgs(file1PathHash, 0));
+    });
+  });
+
+  // Testing delete files
+  describe('Delete', () => {
+    beforeEach(() => {
+      resetStorage();
+      setDeployContext(user);
+      constructor(new Args().serialize());
+    });
+
+    test('Should delete 1 file with 1 chunk', () => {
+      const myUpload = given()
+        .withFile(file1Path, 1, [fileData1])
+        .preStore()
+        .storeAll();
+
+      const fileToDelete = new ChunkDelete(
+        file1Path,
+        sha256(stringToBytes(file1Path)),
+      );
+
+      myUpload.deleteFile(fileToDelete);
+
+      throws('should throw if file does not exist', () => {
+        getChunk(chunkGetArgs(file1PathHash, 0));
+      });
+
+      checkThat(myUpload).hasNoFiles();
+    });
+
+    test('Should delete 1 file with 2 chunks', () => {
+      const myUpload = given()
+        .withFile(file1Path, 2, [fileData1, fileData2])
+        .preStore()
+        .storeAll();
+
+      const fileToDelete = new ChunkDelete(file1Path, file1PathHash);
+
+      myUpload.deleteFile(fileToDelete);
+
+      throws('should throw if file does not exist', () => {
+        getChunk(chunkGetArgs(file1PathHash, 0));
+      });
+
+      checkThat(myUpload).hasNoFiles();
+    });
+
+    test('should delete 1 file in batch', () => {
+      const myFirstUpload = given()
+        .withFile(file1Path, 2, [fileData1, fileData2])
+        .preStore()
+        .storeAll();
+
+      const mySecondUpload = given()
+        .withFile(file2Path, 2, [fileData1, fileData2])
+        .preStore()
+        .storeAll();
+
+      const deleteFile1 = new ChunkDelete(file1Path, file1PathHash);
+
+      myFirstUpload.deleteFile(deleteFile1);
+
+      checkThat(myFirstUpload).fileIsDeleted(deleteFile1.filePath);
+      checkThat(mySecondUpload).hasFiles;
+
+      throws('should throw if file1 does not exists', () => {
+        getChunk(chunkGetArgs(file1PathHash, 0));
+      });
+    });
+
+    test('Should delete 2 files with 1 chunk', () => {
+      const myUpload = given()
+        .withFile(file1Path, 1, [fileData1])
+        .withFile(file2Path, 1, [fileData2])
+        .preStore()
+        .storeAll();
+
+      const fileToDelete1 = new ChunkDelete(file1Path, file1PathHash);
+      const fileToDelete2 = new ChunkDelete(file2Path, file2PathHash);
+
+      myUpload.deleteFiles([fileToDelete1, fileToDelete2]);
+
+      throws('should throw if file does not exist', () => {
+        getChunk(chunkGetArgs(file1PathHash, 0));
+      });
+
+      throws('should throw if file does not exist', () => {
+        getChunk(chunkGetArgs(file2PathHash, 0));
+      });
+
+      checkThat(myUpload).hasNoFiles();
+    });
+
+    test('Should delete all given files', () => {
+      const myFirstUpload = given()
+        .withFile(file1Path, 2, [fileData1, fileData2])
+        .withFile(file2Path, 4, [fileData1, fileData2, fileData2, fileData2])
+        .preStore()
+        .storeAll();
+
+      const fileToDelete1 = new ChunkDelete(file1Path, file1PathHash);
+      const fileToDelete2 = new ChunkDelete(file2Path, file2PathHash);
+
+      myFirstUpload.deleteFiles([fileToDelete1, fileToDelete2]);
+
+      checkThat(myFirstUpload).hasNoFiles();
+    });
+
+    test('Should throw if there are no files to delete', () => {
+      throws('should throw if there is no file to delete', () => {
+        deleteFile(
+          new Args()
+            .addSerializableObjectArray<ChunkDelete>([
+              new ChunkDelete('DeleteFile1'),
+            ])
+            .serialize(),
+        );
+      });
     });
   });
 });
-
-function chunkGetArgs(
-  filePathHash: StaticArray<u8>,
-  index: u32,
-): StaticArray<u8> {
-  return new ChunkGet(filePathHash, index).serialize();
-}
