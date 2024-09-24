@@ -150,3 +150,52 @@ export class PreStore implements Serializable {
     return new Result(args.offset);
   }
 }
+
+export class ChunkDelete implements Serializable {
+  /**
+   * Creates a new ChunkPost instance.
+   * @param filePath - The path of the file this chunk belongs to.
+   * @param filePathHash - The hash of the file path.
+   */
+  constructor(
+    public filePath: string = '',
+    public filePathHash: StaticArray<u8> = [],
+  ) {}
+
+  /**
+   * Serializes the ChunkPost instance into a byte array.
+   * @returns A StaticArray<u8> representing the serialized data.
+   */
+  serialize(): StaticArray<u8> {
+    return new Args()
+      .add(this.filePath)
+      .add(this.filePathHash)
+
+      .serialize();
+  }
+
+  /**
+   * Deserializes a byte array into a ChunkPost instance.
+   * @param data - The byte array to deserialize.
+   * @param offset - The starting offset in the byte array.
+   * @returns A Result containing the new offset after deserialization.
+   */
+  deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
+    const args = new Args(data, offset);
+
+    const filePath = args.next<string>();
+    if (filePath.error) {
+      return new Result(args.offset);
+    }
+
+    const filePathHash = args.next<StaticArray<u8>>();
+    if (filePathHash.error) {
+      return new Result(args.offset);
+    }
+
+    this.filePath = filePath.unwrap();
+    this.filePathHash = filePathHash.unwrap();
+
+    return new Result(args.offset);
+  }
+}
