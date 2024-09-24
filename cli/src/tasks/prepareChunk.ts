@@ -109,6 +109,14 @@ async function prepareChunks(
   return { chunks, preStores }
 }
 
+/**
+ * Check if the file requires update
+ * @param provider - the web3 provider
+ * @param filePath - the file path
+ * @param localFileContent - the local file content
+ * @param sc - the smart contract
+ * @returns true if the file requires update, false otherwise
+ */
 async function requiresUpdate(
   provider: Web3Provider,
   filePath: string,
@@ -141,6 +149,13 @@ async function requiresUpdate(
   return localFileHash !== onChainFileHash
 }
 
+/**
+ * Filter out pre-stores that are already stored on the blockchain
+ * @param provider - the web3 provider
+ * @param scAddress - the smart contract address
+ * @param preStores - the pre-stores to filter
+ * @returns the pre-stores that are not stored on the blockchain
+ */
 async function filterUselessPreStores(
   provider: Web3Provider,
   scAddress: string,
