@@ -125,7 +125,7 @@ export async function assertFileIsDeleted(
       throw new Error(`File still exists in list: ${filePath}`);
     }
 
-    //TODO: assert that the file is deleted from the chunks
+    //IMPROVE: assert that the file is deleted from the chunks
   }
 
   console.log(`File successfully deleted ${filePath} from list`);
@@ -139,7 +139,4 @@ export async function assertListIsEmpty(contract: SmartContract) {
   }
 
   console.log('All files have been deleted');
-  // await assert.rejects(async () => {
-  //   await getFilePathList(contract);
-  // }, 'should throw if there is no file to delete');
 }
