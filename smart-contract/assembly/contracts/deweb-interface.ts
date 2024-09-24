@@ -13,7 +13,7 @@ import {
   _setFileChunk,
   _setTotalChunk,
 } from './internals/chunks';
-import { FILES_PATH_LIST } from './internals/const';
+import { FILES_PATH_LIST, IMMUTABLE } from './internals/const';
 import { _pushFilePath } from './internals/file-list';
 
 /**
@@ -25,6 +25,7 @@ export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
   _setOwner(Context.caller().toString());
   FILES_PATH_LIST.set([]);
+  IMMUTABLE.set(false);
 }
 
 /**
@@ -34,6 +35,7 @@ export function constructor(_: StaticArray<u8>): void {
  * @throws If the chunks are invalid or if the caller is not the owner.
  */
 export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
+  assert(!IMMUTABLE.mustValue(), 'Contract is immutable');
   _onlyOwner();
   const args = new Args(_binaryArgs);
   const chunks = args
@@ -55,6 +57,8 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
  * @throws If the preStore data is invalid or if the caller is not the owner.
  */
 export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
+  assert(!IMMUTABLE.mustValue(), 'Contract is immutable');
+
   _onlyOwner();
   const args = new Args(_binaryArgs);
   const files = args
@@ -119,6 +123,11 @@ export function getTotalChunksForFile(
     .expect('Invalid filePathHash');
 
   return u32ToBytes(_getTotalChunk(filePathHash));
+}
+
+export function setImmutable(_: StaticArray<u8>): void {
+  _onlyOwner();
+  IMMUTABLE.set(true);
 }
 
 /**
