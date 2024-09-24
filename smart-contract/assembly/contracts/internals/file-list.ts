@@ -17,7 +17,6 @@ export function _pushFilePath(filePath: string): void {
  */
 export function _removeFilePath(filePath: string): void {
   const filePathList = FILES_PATH_LIST.mustValue();
-  assert(_isPathFileInList(filePath), 'File does not exists');
 
   const newFilePathList: string[] = [];
   for (let i = 0; i < filePathList.length; i++) {
@@ -25,6 +24,11 @@ export function _removeFilePath(filePath: string): void {
       newFilePathList.push(filePathList[i]);
     }
   }
+
+  assert(
+    newFilePathList.length < filePathList.length,
+    'File not found in list',
+  );
 
   FILES_PATH_LIST.set(newFilePathList);
 }
@@ -41,17 +45,4 @@ export function _getFilePathList(): string[] {
     return [];
   }
   return result.unwrap();
-}
-
-/**
- * Checks if a given file path exists in the list of file paths.
- * @param filePath - The file path to check.
- * @returns True if the file path is in the list, false otherwise.
- */
-export function _isPathFileInList(filePath: string): bool {
-  const filePathList = _getFilePathList();
-  for (let i = 0; i < filePathList.length; i++) {
-    if (filePathList[i] === filePath) return true;
-  }
-  return false;
 }
