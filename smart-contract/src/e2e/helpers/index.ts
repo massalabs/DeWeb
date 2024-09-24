@@ -12,8 +12,6 @@ import {
   ChunkDelete,
 } from './serializable/Chunk';
 
-import assert from 'assert';
-
 import { sha256 } from 'js-sha256';
 
 export async function storeChunk(contract: SmartContract, chunks: ChunkPost[]) {

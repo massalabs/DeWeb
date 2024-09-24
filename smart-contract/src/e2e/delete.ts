@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { SmartContract } from '@massalabs/massa-web3';
 import {
   assertFileIsDeleted,
