@@ -13,7 +13,7 @@ import {
   _setFileChunk,
   _setTotalChunk,
 } from './internals/chunks';
-import { FILES_PATH_LIST, IMMUTABLE } from './internals/const';
+import { DEWEB_VERSION, FILES_PATH_LIST, IMMUTABLE } from './internals/const';
 import { _pushFilePath } from './internals/file-list';
 
 /**
@@ -26,6 +26,7 @@ export function constructor(_: StaticArray<u8>): void {
   _setOwner(Context.caller().toString());
   FILES_PATH_LIST.set([]);
   IMMUTABLE.set(false);
+  DEWEB_VERSION.set(1);
 }
 
 /**
@@ -144,4 +145,14 @@ export function withdraw(binaryArgs: StaticArray<u8>): void {
   assert(balance() >= amount, 'Insufficient balance');
 
   transferCoins(Context.caller(), amount);
+}
+
+/**
+ * Retrieves the contract version.
+ * @param _ - Unused parameter (required).
+ * @returns The contract version.
+ *
+ */
+export function getVersion(_: StaticArray<u8>): StaticArray<u8> {
+  return u32ToBytes(DEWEB_VERSION.mustValue());
 }

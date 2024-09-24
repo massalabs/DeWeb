@@ -7,3 +7,4 @@ export const METADATA_TAG = k.nextKey(); // 3 as u8
 export const MAX_STORAGE_VALUE_SIZE = k.nextKey(); // 4 as u8
 export const FILES_PATH_LIST = new ConstantManager<Array<string>, u8>(k); // k will be 5 as u8
 export const IMMUTABLE = new ConstantManager<bool, u8>(k); // k will be 6 as u8
+export const DEWEB_VERSION = new ConstantManager<u32, u8>(k); // k will be 7 as u8
