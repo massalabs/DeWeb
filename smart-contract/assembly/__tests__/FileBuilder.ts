@@ -11,7 +11,6 @@ import {
   storeFileChunks,
   getFilePathList,
   getChunk,
-  deleteFile,
   deleteFiles,
 } from '../contracts/deweb-interface';
 const limitChunk = 10240;
@@ -132,12 +131,6 @@ class FileBuilder {
     }
 
     return this;
-  }
-
-  deleteFile(file: ChunkDelete): void {
-    deleteFile(
-      new Args().addSerializableObjectArray<ChunkDelete>([file]).serialize(),
-    );
   }
 
   deleteFiles(files: ChunkDelete[]): void {

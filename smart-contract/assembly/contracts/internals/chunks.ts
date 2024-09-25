@@ -1,5 +1,5 @@
 import { stringToBytes, bytesToU32, u32ToBytes } from '@massalabs/as-types';
-import { set, sha256, Storage } from '@massalabs/massa-as-sdk';
+import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from './const';
 import { _removeFilePath } from './file-list';
 
@@ -116,5 +116,5 @@ export function _deleteFile(filePathHash: StaticArray<u8>): void {
     );
     Storage.del(_getChunkKey(filePathHash, i));
   }
-  _setTotalChunk(filePathHash, 0);
+  Storage.del(_getTotalChunkKey(filePathHash));
 }

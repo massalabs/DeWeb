@@ -6,19 +6,10 @@ import {
 import {} from '../contracts/internals/chunks';
 import {
   constructor,
-  getChunk,
-  storeFileChunks,
-  preStoreFileChunks,
-  deleteFile,
   deleteFiles,
-  getFilePathList,
+  getChunk,
 } from '../contracts/deweb-interface';
-import {
-  ChunkDelete,
-  ChunkGet,
-  ChunkPost,
-  PreStore,
-} from '../contracts/serializable/Chunk';
+import { ChunkDelete } from '../contracts/serializable/Chunk';
 import { Args, stringToBytes } from '@massalabs/as-types';
 import { checkThat, chunkGetArgs, given } from './FileBuilder';
 
@@ -144,7 +135,7 @@ describe('website deployer internals functions tests', () => {
         sha256(stringToBytes(file1Path)),
       );
 
-      myUpload.deleteFile(fileToDelete);
+      myUpload.deleteFiles([fileToDelete]);
 
       throws('should throw if file does not exist', () => {
         getChunk(chunkGetArgs(file1PathHash, 0));
@@ -161,7 +152,7 @@ describe('website deployer internals functions tests', () => {
 
       const fileToDelete = new ChunkDelete(file1Path, file1PathHash);
 
-      myUpload.deleteFile(fileToDelete);
+      myUpload.deleteFiles([fileToDelete]);
 
       throws('should throw if file does not exist', () => {
         getChunk(chunkGetArgs(file1PathHash, 0));
@@ -183,7 +174,7 @@ describe('website deployer internals functions tests', () => {
 
       const deleteFile1 = new ChunkDelete(file1Path, file1PathHash);
 
-      myFirstUpload.deleteFile(deleteFile1);
+      myFirstUpload.deleteFiles([deleteFile1]);
 
       checkThat(myFirstUpload).fileIsDeleted(deleteFile1.filePath);
       checkThat(mySecondUpload).hasFiles;
@@ -195,7 +186,7 @@ describe('website deployer internals functions tests', () => {
 
     test('Should throw if there are no files to delete', () => {
       throws('should throw if there is no file to delete', () => {
-        deleteFile(
+        deleteFiles(
           new Args()
             .addSerializableObjectArray<ChunkDelete>([
               new ChunkDelete('DeleteFile1'),

@@ -167,11 +167,7 @@ export class ChunkDelete implements Serializable {
    * @returns A StaticArray<u8> representing the serialized data.
    */
   serialize(): StaticArray<u8> {
-    return new Args()
-      .add(this.filePath)
-      .add(this.filePathHash)
-
-      .serialize();
+    return new Args().add(this.filePath).add(this.filePathHash).serialize();
   }
 
   /**
