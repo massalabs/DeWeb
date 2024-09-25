@@ -1,4 +1,5 @@
 import {
+  Context,
   resetStorage,
   setDeployContext,
   sha256,
@@ -26,7 +27,7 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 1 file with 1 chunk', () => {
       const myUpload = given()
-        .withFile(file1Name, 1, [fileData1])
+        .withFile(file1Name, [fileData1])
         .preStore()
         .storeAll();
 
@@ -35,8 +36,8 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 2 files with 1 chunk each', () => {
       const myUpload = given()
-        .withFile(file1Name, 1, [fileData1])
-        .withFile(file2Name, 1, [fileData2])
+        .withFile(file1Name, [fileData1])
+        .withFile(file2Name, [fileData2])
         .preStore()
         .storeAll();
 
@@ -45,7 +46,7 @@ describe('website deployer internals functions tests', () => {
 
     test('Store a file with 2 chunks', () => {
       const myUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Name, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
@@ -54,12 +55,12 @@ describe('website deployer internals functions tests', () => {
 
     test('Store 2 batch of chunks', () => {
       const myFirstUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Name, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
       const mySecondUpload = given()
-        .withFile(file2Name, 2, [fileData1, fileData2])
+        .withFile(file2Name, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
@@ -69,14 +70,14 @@ describe('website deployer internals functions tests', () => {
 
     test('Update a chunk with different totalChunks', () => {
       const myUpload = given()
-        .withFile(file1Name, 2, [fileData1, fileData2])
+        .withFile(file1Name, [fileData1, fileData2])
         .preStore()
         .storeAll();
 
       checkThat(myUpload).hasFiles();
 
       const myUpload2 = given()
-        .withFile(file1Name, 3, [fileData1, fileData2, fileData1])
+        .withFile(file1Name, [fileData1, fileData2, fileData1])
         .preStore()
         .storeAll();
 
@@ -85,7 +86,7 @@ describe('website deployer internals functions tests', () => {
 
     throws('Wrong totalChunk', () => {
       given()
-        .withFile(file1Name, 3, [
+        .withFile(file1Name, [
           fileData1,
           fileData2,
           fileData2,
@@ -94,6 +95,7 @@ describe('website deployer internals functions tests', () => {
           fileData2,
           fileData1,
         ])
+        .setCustomTotalChunks(file1Name, 3)
         .preStore()
         .storeAll();
     });
@@ -110,6 +112,34 @@ describe('website deployer internals functions tests', () => {
       getChunk(chunkGetArgs(file1NameHash, 0));
     });
   });
+
+  describe('Project last update', () => {
+    beforeEach(() => {
+      resetStorage();
+      setDeployContext(user);
+      constructor(new Args().serialize());
+    });
+
+    test('that last update increase each pre-store', () => {
+      const myUpload = given()
+        .withFile(file1Name, [fileData1, fileData2, fileData2])
+        .preStore()
+        .storeAll();
+
+      const lastUpdate = myUpload.lastProjectUpdate;
+
+      busyWait(100);
+
+      const myUpload2 = given()
+        .withFile(file1Name, [fileData1])
+        .preStore()
+        .storeAll();
+
+      const lastUpdate2 = myUpload2.lastProjectUpdate;
+
+      expect(lastUpdate2).toBeGreaterThan(lastUpdate);
+    });
+  });
 });
 
 function chunkGetArgs(
@@ -117,4 +147,12 @@ function chunkGetArgs(
   index: u32,
 ): StaticArray<u8> {
   return new ChunkGet(filePathHash, index).serialize();
+}
+
+function busyWait(milliseconds: u64): void {
+  const start = Context.timestamp();
+
+  while (Context.timestamp() - start < milliseconds) {
+    // Busy wait
+  }
 }

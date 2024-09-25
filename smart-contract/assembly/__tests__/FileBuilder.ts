@@ -1,4 +1,9 @@
-import { Args, stringToBytes } from '@massalabs/as-types';
+import {
+  Args,
+  bytesToI64,
+  bytesToU64,
+  stringToBytes,
+} from '@massalabs/as-types';
 import { sha256 } from '@massalabs/massa-as-sdk';
 import { PreStore, ChunkPost, ChunkGet } from '../contracts/serializable/Chunk';
 import {
@@ -6,6 +11,7 @@ import {
   storeFileChunks,
   getFilePathList,
   getChunk,
+  getProjectLastUpdate,
 } from '../contracts/deweb-interface';
 const limitChunk = 10240;
 
@@ -25,17 +31,14 @@ class FileInfo {
 
 class FileBuilder {
   private files: FileInfo[];
+  lastProjectUpdate: u64 = 0;
 
   constructor() {
     this.files = [];
   }
 
-  withFile(
-    fileName: string,
-    nbChunks: u32,
-    fileData: StaticArray<u8>[],
-  ): FileBuilder {
-    this.files.push(new FileInfo(fileName, nbChunks, fileData));
+  withFile(fileName: string, fileData: StaticArray<u8>[]): FileBuilder {
+    this.files.push(new FileInfo(fileName, u32(fileData.length), fileData));
     return this;
   }
 
@@ -57,6 +60,8 @@ class FileBuilder {
         .addSerializableObjectArray<PreStore>(preStoreFiles)
         .serialize(),
     );
+
+    this.fetchLastProjectUpdate();
 
     return this;
   }
@@ -127,6 +132,25 @@ class FileBuilder {
     return this;
   }
 
+  setCustomTotalChunks(filename: string, totalChunks: u32): FileBuilder {
+    let fileInfo: FileInfo | null = null;
+    for (let i = 0; i < this.files.length; i++) {
+      if (this.files[i].fileName == filename) {
+        fileInfo = this.files[i];
+        fileInfo.nbChunks = totalChunks;
+        break;
+      }
+    }
+
+    if (fileInfo == null) {
+      throw new Error(
+        `File ${filename} not initialized. Use withFile() first.`,
+      );
+    }
+
+    return this;
+  }
+
   hasFiles(): void {
     const fileList = new Args(getFilePathList()).next<string[]>().unwrap();
     for (let i = 0; i < this.files.length; i++) {
@@ -145,6 +169,11 @@ class FileBuilder {
         );
       }
     }
+  }
+
+  fetchLastProjectUpdate(): void {
+    const lastUpdateBytes = getProjectLastUpdate();
+    this.lastProjectUpdate = bytesToU64(lastUpdateBytes);
   }
 }
 

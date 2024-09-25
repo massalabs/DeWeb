@@ -1,5 +1,6 @@
 import { resetStorage, sha256 } from '@massalabs/massa-as-sdk';
 import {
+  calculateTotalChunks,
   createRandomByteArray,
   storeFileInChunks,
   verifyStoredFile,
@@ -64,10 +65,14 @@ describe('website deployer internals functions tests', () => {
       const fileName = 'randomFile';
       const fileNameHash = sha256(stringToBytes(fileName));
 
-      const fileLength = u32(Math.floor(Math.random() * 50000) + 1000); // Random length between 1000 and 51000
-      const chunkSize = u32(Math.floor(Math.random() * 1000) + 100); // Random chunk size between 100 and 1100
+      const fileLength = u32(Math.floor(Math.random() * 50000) + 1000);
+      const chunkSize = u32(Math.floor(Math.random() * 1000) + 100);
       const fileData = createRandomByteArray(fileLength);
-      _setTotalChunk(fileNameHash, 100);
+
+      const totalChunks = calculateTotalChunks(fileData, chunkSize);
+
+      _setTotalChunk(fileNameHash, totalChunks);
+
       storeFileInChunks(fileName, fileData, chunkSize);
       verifyStoredFile(fileName, fileData, chunkSize);
     });
