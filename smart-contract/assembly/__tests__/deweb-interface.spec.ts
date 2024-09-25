@@ -124,7 +124,7 @@ describe('website deployer internals functions tests', () => {
       constructor(new Args().serialize());
     });
 
-    test('Should delete 1 file with 1 chunk', () => {
+    test('that we can delete 1 file with 1 chunk', () => {
       const myUpload = given()
         .withFile(file1Path, 1, [fileData1])
         .preStore()
@@ -144,7 +144,7 @@ describe('website deployer internals functions tests', () => {
       checkThat(myUpload).hasNoFiles();
     });
 
-    test('Should delete 1 file with 2 chunks', () => {
+    test('that we can delete 1 file with 2 chunks', () => {
       const myUpload = given()
         .withFile(file1Path, 2, [fileData1, fileData2])
         .preStore()
@@ -161,7 +161,7 @@ describe('website deployer internals functions tests', () => {
       checkThat(myUpload).hasNoFiles();
     });
 
-    test('should delete 1 file in batch', () => {
+    test('that we can delete 1 file in batch', () => {
       const myFirstUpload = given()
         .withFile(file1Path, 2, [fileData1, fileData2])
         .preStore()
@@ -203,7 +203,7 @@ describe('website deployer internals functions tests', () => {
       setDeployContext(user);
       constructor(new Args().serialize());
     });
-    test('Should delete 2 files with 1 chunk', () => {
+    test('that we can delete 2 files with 1 chunk', () => {
       const myUpload = given()
         .withFile(file1Path, 1, [fileData1])
         .withFile(file2Path, 1, [fileData2])
@@ -226,7 +226,7 @@ describe('website deployer internals functions tests', () => {
       checkThat(myUpload).hasNoFiles();
     });
 
-    test('Should delete all given files', () => {
+    test('that we can delete n files with multiple chunks', () => {
       const myFirstUpload = given()
         .withFile(file1Path, 2, [fileData1, fileData2])
         .withFile(file2Path, 4, [fileData1, fileData2, fileData2, fileData2])
