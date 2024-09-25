@@ -1,10 +1,14 @@
 import { Command } from '@commander-js/extra-typings'
-import { deployCommand } from './commands/deploy'
-import { editCommand } from './commands/edit'
+import { PublicApiUrl } from '@massalabs/massa-web3'
+
+import { deleteCommand } from './commands/delete'
+import { listFilesCommand } from './commands/list'
+import { showFileCommand } from './commands/showFile'
+import { uploadCommand } from './commands/upload'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
-const defaultNodeUrl = 'https://buildnet.massa.net/api/v2'
+const defaultNodeUrl = PublicApiUrl.Buildnet
 
 const program = new Command()
 
@@ -14,8 +18,12 @@ program
   .version(version)
   .option('-c, --config <path>', 'Path to the config file', defaultConfigPath)
   .option('-n, --node_url <url>', 'Node URL', defaultNodeUrl)
+  .option('-w, --wallet <path>', 'Path to the wallet file')
+  .option('-p, --password <password>', 'Password for the wallet file')
 
-program.addCommand(deployCommand)
-program.addCommand(editCommand)
+program.addCommand(uploadCommand)
+program.addCommand(deleteCommand)
+program.addCommand(listFilesCommand)
+program.addCommand(showFileCommand)
 
 program.parse(process.argv)

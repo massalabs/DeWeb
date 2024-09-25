@@ -31,3 +31,12 @@ node_modules/
 # build folder
 dist/
 bin/
+
+# Jest
+coverage/
+
+# built sc
+*.wasm
+
+# wallets
+wallet*.yaml
