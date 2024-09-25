@@ -1,16 +1,11 @@
 /* eslint-disable no-console */
 import { SmartContract } from '@massalabs/massa-web3';
-import {
-  assertFileIsDeleted,
-  assertListIsEmpty,
-  deleteFile,
-  deleteFiles,
-} from './helpers';
+import { assertFileIsDeleted, assertListIsEmpty, deleteFiles } from './helpers';
 import { CSS_FILE, HTML_FILE, JS_FILE } from './helpers/const';
 
 export async function _deleteFile(contract: SmartContract) {
   console.log('Deleting 1 file');
-  await deleteFile(contract, HTML_FILE);
+  await deleteFiles(contract, [HTML_FILE]);
   await assertFileIsDeleted(contract, HTML_FILE);
 }
 

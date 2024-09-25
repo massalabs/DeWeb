@@ -35,19 +35,6 @@ export async function preStoreChunks(
   await op.waitSpeculativeExecution();
 }
 
-export async function deleteFile(contract: SmartContract, filePath: string) {
-  const deleteChunk = new ChunkDelete(
-    filePath,
-    new Uint8Array(sha256.arrayBuffer(filePath)),
-  );
-  const op = await contract.call(
-    'deleteFile',
-    new Args().addSerializableObjectArray([deleteChunk]).serialize(),
-  );
-
-  await op.waitSpeculativeExecution();
-}
-
 export async function deleteFiles(
   contract: SmartContract,
   filePathArray: string[],
