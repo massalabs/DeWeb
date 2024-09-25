@@ -13,7 +13,7 @@ import {
   _setFileChunk,
   _setTotalChunk,
 } from './internals/chunks';
-import { FILES_PATH_LIST } from './internals/const';
+import { DEWEB_VERSION, FILES_PATH_LIST, IMMUTABLE } from './internals/const';
 import { _pushFilePath } from './internals/file-list';
 
 /**
@@ -25,6 +25,8 @@ export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
   _setOwner(Context.caller().toString());
   FILES_PATH_LIST.set([]);
+  IMMUTABLE.set(false);
+  DEWEB_VERSION.set(1);
 }
 
 /**
@@ -34,6 +36,7 @@ export function constructor(_: StaticArray<u8>): void {
  * @throws If the chunks are invalid or if the caller is not the owner.
  */
 export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
+  assert(!IMMUTABLE.mustValue(), 'Contract is immutable');
   _onlyOwner();
   const args = new Args(_binaryArgs);
   const chunks = args
@@ -55,6 +58,8 @@ export function storeFileChunks(_binaryArgs: StaticArray<u8>): void {
  * @throws If the preStore data is invalid or if the caller is not the owner.
  */
 export function preStoreFileChunks(_binaryArgs: StaticArray<u8>): void {
+  assert(!IMMUTABLE.mustValue(), 'Contract is immutable');
+
   _onlyOwner();
   const args = new Args(_binaryArgs);
   const files = args
@@ -121,6 +126,11 @@ export function getTotalChunksForFile(
   return u32ToBytes(_getTotalChunk(filePathHash));
 }
 
+export function setImmutable(_: StaticArray<u8>): void {
+  _onlyOwner();
+  IMMUTABLE.set(true);
+}
+
 /**
  * Allow the owner to withdraw funds from the contract balance.
  * Only the contract owner can call this function.
@@ -135,4 +145,14 @@ export function withdraw(binaryArgs: StaticArray<u8>): void {
   assert(balance() >= amount, 'Insufficient balance');
 
   transferCoins(Context.caller(), amount);
+}
+
+/**
+ * Retrieves the contract version.
+ * @param _ - Unused parameter (required).
+ * @returns The contract version.
+ *
+ */
+export function getVersion(_: StaticArray<u8>): StaticArray<u8> {
+  return u32ToBytes(DEWEB_VERSION.mustValue());
 }

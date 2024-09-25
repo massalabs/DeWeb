@@ -4,7 +4,11 @@ import {
   sha256,
 } from '@massalabs/massa-as-sdk';
 import {} from '../contracts/internals/chunks';
-import { constructor, getChunk } from '../contracts/deweb-interface';
+import {
+  constructor,
+  getChunk,
+  setImmutable,
+} from '../contracts/deweb-interface';
 import { ChunkGet } from '../contracts/serializable/Chunk';
 import { Args, stringToBytes } from '@massalabs/as-types';
 import { given, checkThat } from './FileBuilder';
@@ -83,7 +87,7 @@ describe('website deployer internals functions tests', () => {
       checkThat(myUpload2).hasFiles();
     });
 
-    throws('Wrong totalChunk', () => {
+    throws('if wrong totalChunk', () => {
       given()
         .withFile(file1Name, 3, [
           fileData1,
@@ -96,6 +100,14 @@ describe('website deployer internals functions tests', () => {
         ])
         .preStore()
         .storeAll();
+    });
+
+    throws('if project is immutable', () => {
+      given().withFile(file1Name, 1, [fileData1]).preStore().storeAll();
+
+      setImmutable([]);
+
+      given().withFile(file2Name, 1, [fileData2]).preStore().storeAll();
     });
   });
 
