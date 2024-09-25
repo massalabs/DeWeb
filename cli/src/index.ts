@@ -1,12 +1,14 @@
 import { Command } from '@commander-js/extra-typings'
-import { uploadCommand } from './commands/upload'
+import { PublicApiUrl } from '@massalabs/massa-web3'
+
 import { deleteCommand } from './commands/delete'
 import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
+import { uploadCommand } from './commands/upload'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
-const defaultNodeUrl = 'https://buildnet.massa.net/api/v2'
+const defaultNodeUrl = PublicApiUrl.Buildnet
 
 const program = new Command()
 
