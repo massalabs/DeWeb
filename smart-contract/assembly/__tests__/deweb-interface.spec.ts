@@ -241,4 +241,27 @@ describe('website deployer internals functions tests', () => {
       checkThat(myFirstUpload).hasNoFiles();
     });
   });
+  describe('deleteWebsite', () => {
+    beforeEach(() => {
+      resetStorage();
+      setDeployContext(user);
+      constructor(new Args().serialize());
+    });
+
+    test('that we can delete a fullwebsite', () => {
+      const myUpload = given()
+        .withFile(file1Path, 1, [fileData1])
+        .withFile(file2Path, 3, [fileData1, fileData1, fileData2])
+        .preStore()
+        .storeAll();
+
+      myUpload.deleteWebsite();
+
+      throws('should throw if file does not exist', () => {
+        getChunk(chunkGetArgs(file1PathHash, 0));
+      });
+
+      checkThat(myUpload).hasNoFiles();
+    });
+  });
 });

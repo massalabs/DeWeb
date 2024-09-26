@@ -12,6 +12,7 @@ import {
   getFilePathList,
   getChunk,
   deleteFiles,
+  deleteWebsite,
 } from '../contracts/deweb-interface';
 const limitChunk = 10240;
 
@@ -137,6 +138,10 @@ class FileBuilder {
     deleteFiles(
       new Args().addSerializableObjectArray<ChunkDelete>(files).serialize(),
     );
+  }
+
+  deleteWebsite(): void {
+    deleteWebsite(new Args().serialize());
   }
 
   hasFiles(): void {

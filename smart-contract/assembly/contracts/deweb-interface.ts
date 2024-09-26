@@ -1,4 +1,10 @@
-import { balance, Context, transferCoins } from '@massalabs/massa-as-sdk';
+import {
+  balance,
+  Context,
+  generateEvent,
+  sha256,
+  transferCoins,
+} from '@massalabs/massa-as-sdk';
 import {
   _onlyOwner,
   _setOwner,
@@ -10,7 +16,7 @@ import {
   ChunkDelete,
 } from './serializable/Chunk';
 
-import { Args, u32ToBytes } from '@massalabs/as-types';
+import { Args, stringToBytes, u32ToBytes } from '@massalabs/as-types';
 import {
   _getFileChunk,
   _getTotalChunk,
@@ -165,6 +171,15 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
 
     _removeFilePath(files[i].filePath);
   }
+}
+
+export function deleteWebsite(_: StaticArray<u8>): void {
+  _onlyOwner();
+  const filePaths = FILES_PATH_LIST.mustValue();
+  for (let i: i32 = 0; i < filePaths.length; i++) {
+    _deleteFile(sha256(stringToBytes(filePaths[i])));
+  }
+  FILES_PATH_LIST.set([]);
 }
 
 //TODO: delete all files in project
