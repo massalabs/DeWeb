@@ -5,6 +5,7 @@ import { makeProviderFromNodeURLAndSecret } from './utils'
 import { Listr, ListrTask } from 'listr2'
 import { DeleteCtx } from '../tasks/tasks'
 
+// Minimal implementation of delete command
 export const deleteCommand = new Command('delete')
   .alias('d')
   .description('Delete the given website from Massa blockchain')
@@ -20,7 +21,6 @@ export const deleteCommand = new Command('delete')
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sc = new SmartContract(provider, address)
 
     const ctx: DeleteCtx = {
@@ -44,7 +44,7 @@ export const deleteCommand = new Command('delete')
 export function deleteWebsiteTask(): ListrTask {
   return {
     title: 'Deleting website',
-    task: async (ctx, task) => {
+    task: async (ctx) => {
       // No deleteWebsite in the SC yet
       await deleteWebsite(ctx)
     },
@@ -65,7 +65,7 @@ async function deleteWebsite(ctx: DeleteCtx) {
     .then(() => {
       console.log(`Successfully deleted the website at ${ctx.address}`)
     })
-    .catch((error: any) => {
+    .catch((error) => {
       console.error(error)
     })
 }

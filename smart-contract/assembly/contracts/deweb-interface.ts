@@ -1,7 +1,6 @@
 import {
   balance,
   Context,
-  generateEvent,
   sha256,
   transferCoins,
 } from '@massalabs/massa-as-sdk';
@@ -173,7 +172,7 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
   }
 }
 
-//TODO: verify that this function throws is mustValue is empty
+// TODO: verify that this function throws is mustValue is empty
 export function deleteWebsite(_: StaticArray<u8>): void {
   _onlyOwner();
   const filePaths = FILES_PATH_LIST.mustValue();
@@ -183,6 +182,6 @@ export function deleteWebsite(_: StaticArray<u8>): void {
   FILES_PATH_LIST.set([]);
 }
 
-//TODO: delete all metadata
+// TODO: delete all metadata
 
-//TODO: delete SC
+// TODO: delete SC

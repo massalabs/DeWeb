@@ -110,7 +110,7 @@ export async function assertFileIsDeleted(
       throw new Error(`File still exists in list: ${filePath}`);
     }
 
-    //IMPROVE: assert that the file is deleted from the chunks
+    // IMPROVE: assert that the file is deleted from the chunks
   }
 
   console.log(`File successfully deleted ${filePath} from list`);
