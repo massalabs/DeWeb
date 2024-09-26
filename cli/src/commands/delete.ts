@@ -2,6 +2,8 @@ import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
 
 import { makeProviderFromNodeURLAndSecret } from './utils'
+import { Listr, ListrTask } from 'listr2'
+import { DeleteCtx } from '../tasks/tasks'
 
 export const deleteCommand = new Command('delete')
   .alias('d')
@@ -21,15 +23,49 @@ export const deleteCommand = new Command('delete')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sc = new SmartContract(provider, address)
 
-    console.error('deleteWebsite not implemented yet in the SC')
+    const ctx: DeleteCtx = {
+      provider: provider,
+      sc: sc,
+      address: address,
+    }
 
-    // No deleteWebsite in the SC yet
+    const tasks = new Listr(deleteWebsiteTask(), {
+      concurrent: false,
+    })
 
-    // sc.call('deleteWebsite', new Uint8Array())
-    //   .then((result) => {
-    //     console.log(result)
-    //   })
-    //   .catch((error) => {
-    //     console.error(error)
-    //   })
+    try {
+      await tasks.run(ctx)
+    } catch (error) {
+      console.error('Error during the process:', error)
+      process.exit(1)
+    }
   })
+
+export function deleteWebsiteTask(): ListrTask {
+  return {
+    title: 'Deleting website',
+    task: async (ctx, task) => {
+      // No deleteWebsite in the SC yet
+      await deleteWebsite(ctx)
+    },
+    rendererOptions: {
+      outputBar: Infinity,
+      persistentOutput: true,
+      collapseSubtasks: false,
+    },
+  }
+}
+
+async function deleteWebsite(ctx: DeleteCtx) {
+  if (!ctx.sc) {
+    throw new Error('Smart contract is not deployed yet')
+  }
+  ctx.sc
+    .call('deleteWebsite', new Uint8Array())
+    .then(() => {
+      console.log(`Successfully deleted the website at ${ctx.address}`)
+    })
+    .catch((error: any) => {
+      console.error(error)
+    })
+}

@@ -173,6 +173,7 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
   }
 }
 
+//TODO: verify that this function throws is mustValue is empty
 export function deleteWebsite(_: StaticArray<u8>): void {
   _onlyOwner();
   const filePaths = FILES_PATH_LIST.mustValue();
@@ -181,8 +182,6 @@ export function deleteWebsite(_: StaticArray<u8>): void {
   }
   FILES_PATH_LIST.set([]);
 }
-
-//TODO: delete all files in project
 
 //TODO: delete all metadata
 

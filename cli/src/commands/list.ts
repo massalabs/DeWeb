@@ -6,7 +6,7 @@ import { listFiles } from '../lib/website/read'
 export const listFilesCommand = new Command('list')
   .alias('ls')
   .description('Lists files from the given website on Massa blockchain')
-  .option('-a, --address <address>', 'Address of the website to edit')
+  .option('-a, --address <address>', 'Address of the website to list')
   .action(async (options, command) => {
     const globalOptions = command.parent?.opts()
 
