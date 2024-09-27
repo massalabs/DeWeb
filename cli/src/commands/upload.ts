@@ -34,6 +34,7 @@ export const uploadCommand = new Command('upload')
     DEFAULT_CHUNK_SIZE.toString()
   )
   .action(async (websiteDirPath, options, command) => {
+    // TODO: follow up on command.optsWithGlobals() vs command.parent?.opts()
     let globalOptions = command.optsWithGlobals()
 
     // throw if global options are not defined

@@ -11,7 +11,7 @@ import { parse as yamlParse } from 'yaml'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
 
-//TODO: add tests
+// TODO: add tests
 
 /**
  * Make a provider from the node URL and secret key
