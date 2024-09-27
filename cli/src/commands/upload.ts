@@ -13,7 +13,12 @@ import { prepareUploadTask } from '../tasks/prepareUpload'
 import { UploadCtx } from '../tasks/tasks'
 import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
-import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+import {
+  makeProviderFromNodeURLAndSecret,
+  parseConfigFile,
+  setConfigGlobalOptions,
+  validateAddress,
+} from './utils'
 
 const DEFAULT_CHUNK_SIZE = 64000n
 
@@ -29,17 +34,24 @@ export const uploadCommand = new Command('upload')
     DEFAULT_CHUNK_SIZE.toString()
   )
   .action(async (websiteDirPath, options, command) => {
-    const globalOptions = command.parent?.opts()
+    let globalOptions = command.parent?.opts()
 
+    // throw if global options are not defined
     if (!globalOptions) {
       throw new Error(
         'Global options are not defined. This should never happen.'
       )
     }
 
+    const config = parseConfigFile(globalOptions.config as string)
+
+    // set global options from config file if not already set
+    globalOptions = setConfigGlobalOptions(globalOptions, config)
+
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    const chunkSize = parseInt(options.chunkSize)
+    // set chunksize from options or config
+    const chunkSize = parseInt(options.chunkSize) || config.chunk_size
 
     const ctx: UploadCtx = {
       provider: provider,

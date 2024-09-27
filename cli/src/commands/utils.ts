@@ -6,10 +6,12 @@ import {
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 import { parse as yamlParse } from 'yaml'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
+
+//TODO: implement secret key import from yaml file
 
 /**
  * Make a provider from the node URL and secret key
@@ -84,4 +86,38 @@ export function validateAddress(address: string) {
     console.error('User addresses are not supported yet')
     process.exit(1)
   }
+}
+
+interface WalletConfig {
+  wallet: string
+  password: string
+}
+
+interface Config {
+  wallet_config: WalletConfig
+  node_url: string
+  chunk_size: number
+}
+
+export function parseConfigFile(filePath: string): Config {
+  const fileContent = readFileSync(filePath, 'utf-8')
+  try {
+    const parsedData = JSON.parse(fileContent)
+    return parsedData
+  } catch (error) {
+    throw new Error(`Failed to parse file: ${error}`)
+  }
+}
+
+export function setConfigGlobalOptions(
+  globalOptions: OptionValues,
+  config: Config
+): OptionValues {
+  //TODO: check if this should be done before
+  if (!existsSync(globalOptions.config)) return globalOptions
+
+  const wallet = globalOptions.wallet || config.wallet_config.wallet
+  const password = globalOptions.password || config.wallet_config.password
+  const node_url = globalOptions.node_url || config.node_url
+  return { wallet, password, node_url }
 }
