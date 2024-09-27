@@ -20,7 +20,7 @@ const KEY_ENV_NAME = 'SECRET_KEY'
  */
 export async function makeProviderFromNodeURLAndSecret(
   globalOptions: OptionValues,
-  config: Config
+  config: Config | null
 ): Promise<Web3Provider> {
   if (!globalOptions.node_url) {
     throw new Error('node_url is not defined. Please use --node_url to set one')
@@ -42,6 +42,7 @@ export async function makeProviderFromNodeURLAndSecret(
   }
 
   try {
+    if (!config?.secret_key) throw new Error()
     keyPair = await KeyPair.fromPrivateKey(config.secret_key)
     console.info('Initializing provider with SECRET_KEY from config file\n')
     provider = Web3Provider.fromRPCUrl(
@@ -129,7 +130,8 @@ interface Config {
   secret_key: string
 }
 
-export function parseConfigFile(filePath: string): Config {
+export function parseConfigFile(filePath: string): Config | null {
+  if (!existsSync(filePath)) return null
   const fileContent = readFileSync(filePath, 'utf-8')
   try {
     const parsedData = JSON.parse(fileContent)
@@ -141,13 +143,13 @@ export function parseConfigFile(filePath: string): Config {
 
 export function setConfigGlobalOptions(
   globalOptions: OptionValues,
-  config: Config
+  config: Config | null
 ): OptionValues {
-  //TODO: check if this should be done before
-  if (!existsSync(globalOptions.config)) return globalOptions
+  if (!config) return globalOptions
 
   const wallet = globalOptions.wallet || config.wallet_config.wallet
   const password = globalOptions.password || config.wallet_config.password
   const node_url = globalOptions.node_url || config.node_url
-  return { wallet, password, node_url }
+  const chunk_size = globalOptions.chunk_size || config.chunk_size
+  return { wallet, password, node_url, chunk_size }
 }

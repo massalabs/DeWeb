@@ -34,7 +34,7 @@ export const uploadCommand = new Command('upload')
     DEFAULT_CHUNK_SIZE.toString()
   )
   .action(async (websiteDirPath, options, command) => {
-    let globalOptions = command.parent?.opts()
+    let globalOptions = command.optsWithGlobals()
 
     // throw if global options are not defined
     if (!globalOptions) {
@@ -54,7 +54,8 @@ export const uploadCommand = new Command('upload')
     )
 
     // set chunksize from options or config
-    const chunkSize = parseInt(options.chunkSize) || config.chunk_size
+    const chunkSize =
+      parseInt(options.chunkSize) || (globalOptions.chunk_size as number)
 
     const ctx: UploadCtx = {
       provider: provider,
