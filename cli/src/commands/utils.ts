@@ -11,7 +11,7 @@ import { parse as yamlParse } from 'yaml'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
 
-//TODO: implement secret key import from yaml file
+//TODO: add tests
 
 /**
  * Make a provider from the node URL and secret key
@@ -19,39 +19,68 @@ const KEY_ENV_NAME = 'SECRET_KEY'
  * @returns the provider
  */
 export async function makeProviderFromNodeURLAndSecret(
-  globalOptions: OptionValues
+  globalOptions: OptionValues,
+  config: Config
 ): Promise<Web3Provider> {
   if (!globalOptions.node_url) {
     throw new Error('node_url is not defined. Please use --node_url to set one')
   }
 
-  var keyPair: KeyPair
-  if (
-    (globalOptions.wallet && !globalOptions.password) ||
-    (!globalOptions.wallet && globalOptions.password)
-  ) {
-    throw new Error('Both wallet and password must be provided together.')
+  let keyPair: KeyPair
+  let provider: Web3Provider
+
+  try {
+    keyPair = await KeyPair.fromEnv(KEY_ENV_NAME)
+    console.info('Initializing provider with SECRET_KEY from env\n')
+    provider = Web3Provider.fromRPCUrl(
+      globalOptions.node_url as string,
+      keyPair
+    )
+    return provider
+  } catch (error) {
+    console.warn(`Failed to initialize keyPair: ${error} \n`)
   }
 
-  if (globalOptions.wallet && globalOptions.password) {
+  try {
+    keyPair = await KeyPair.fromPrivateKey(config.secret_key)
+    console.info('Initializing provider with SECRET_KEY from config file\n')
+    provider = Web3Provider.fromRPCUrl(
+      globalOptions.node_url as string,
+      keyPair
+    )
+    return provider
+  } catch (error) {
+    console.warn(`Failed to initialize keyPair: ${error} \n`)
+  }
+
+  try {
+    if (
+      (globalOptions.wallet && !globalOptions.password) ||
+      (!globalOptions.wallet && globalOptions.password)
+    ) {
+      throw new Error('Both wallet and password must be provided together.')
+    }
+
     if (!globalOptions.wallet.endsWith('.yaml')) {
       throw new Error('Wallet file must be a YAML file')
     }
+
+    console.info('Initializing provider with wallet & password\n')
 
     keyPair = await importFromYamlKeyStore(
       globalOptions.wallet,
       globalOptions.password
     )
-  } else {
-    keyPair = await KeyPair.fromEnv(KEY_ENV_NAME)
+    provider = Web3Provider.fromRPCUrl(
+      globalOptions.node_url as string,
+      keyPair
+    )
+    return provider
+  } catch (error) {
+    console.warn(`Failed to import wallet from yaml file with: ${error}`)
   }
 
-  const provider = Web3Provider.fromRPCUrl(
-    globalOptions.node_url as string,
-    keyPair
-  )
-
-  return provider
+  throw new Error('Failed to initialize provider with any available method')
 }
 
 /**
@@ -97,6 +126,7 @@ interface Config {
   wallet_config: WalletConfig
   node_url: string
   chunk_size: number
+  secret_key: string
 }
 
 export function parseConfigFile(filePath: string): Config {

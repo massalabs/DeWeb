@@ -1,7 +1,11 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
 
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import {
+  makeProviderFromNodeURLAndSecret,
+  parseConfigFile,
+  setConfigGlobalOptions,
+} from './utils'
 import { Listr, ListrTask } from 'listr2'
 import { DeleteCtx } from '../tasks/tasks'
 
@@ -11,15 +15,22 @@ export const deleteCommand = new Command('delete')
   .description('Delete the given website from Massa blockchain')
   .argument('<address>', 'Address of the website to delete')
   .action(async (address, _, command) => {
-    const globalOptions = command.parent?.opts()
+    let globalOptions = command.parent?.opts()
 
     if (!globalOptions) {
       throw new Error(
         'Global options are not defined. This should never happen.'
       )
     }
+    const config = parseConfigFile(globalOptions.config as string)
 
-    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+    // set global options from config file if not already set
+    globalOptions = setConfigGlobalOptions(globalOptions, config)
+
+    const provider = await makeProviderFromNodeURLAndSecret(
+      globalOptions,
+      config
+    )
 
     const sc = new SmartContract(provider, address)
 

@@ -48,7 +48,10 @@ export const uploadCommand = new Command('upload')
     // set global options from config file if not already set
     globalOptions = setConfigGlobalOptions(globalOptions, config)
 
-    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+    const provider = await makeProviderFromNodeURLAndSecret(
+      globalOptions,
+      config
+    )
 
     // set chunksize from options or config
     const chunkSize = parseInt(options.chunkSize) || config.chunk_size
