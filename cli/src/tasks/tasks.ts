@@ -18,3 +18,9 @@ export interface UploadCtx {
   chunkSize: number
   minimalFees: bigint
 }
+
+export interface DeleteCtx {
+  provider: Web3Provider
+  sc?: SmartContract
+  address: string
+}

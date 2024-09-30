@@ -13,24 +13,13 @@ import {
   assertChunkExists,
   preStoreChunks,
 } from './helpers';
-import { CONTRACT_FILE, CSS_FILE, HTML_FILE, JS_FILE } from './helpers/const';
+import { CSS_FILE, HTML_FILE, JS_FILE } from './helpers/const';
 import { sha256 } from 'js-sha256';
 
 const CHUNK_LIMIT = 4 * 1024;
 const projectPath = 'src/e2e/test-project/dist';
 
-async function deploy(provider: Web3Provider): Promise<SmartContract> {
-  const byteCode = getByteCode('build', CONTRACT_FILE);
-  const contract = await SmartContract.deploy(provider, byteCode, undefined, {
-    coins: Mas.fromString('50'),
-  });
-
-  console.log('Contract deployed at:', contract.address);
-
-  return contract;
-}
-
-function generateChunk(
+export function generateChunk(
   filePath: string,
   data: Uint8Array,
   id: bigint,
@@ -38,7 +27,7 @@ function generateChunk(
   return new ChunkPost(filePath, id, data);
 }
 
-async function testStoreChunks(contract: SmartContract) {
+export async function testStoreFiles(contract: SmartContract) {
   const htmlPreStore = new PreStore(
     HTML_FILE,
     new Uint8Array(sha256.arrayBuffer(HTML_FILE)),
@@ -101,11 +90,4 @@ async function testStoreChunks(contract: SmartContract) {
   await assertChunkExists(contract, chunkCss);
   await assertChunkExists(contract, chunkJsPart1);
   await assertChunkExists(contract, chunkJsPart2);
-}
-
-export async function testStoreFiles() {
-  const account = await Account.fromEnv();
-  const provider = Web3Provider.buildnet(account);
-  const contract = await deploy(provider);
-  await testStoreChunks(contract);
 }

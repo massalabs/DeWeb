@@ -1,11 +1,18 @@
 import { Args, stringToBytes } from '@massalabs/as-types';
 import { sha256 } from '@massalabs/massa-as-sdk';
-import { PreStore, ChunkPost, ChunkGet } from '../contracts/serializable/Chunk';
+import {
+  PreStore,
+  ChunkPost,
+  ChunkGet,
+  ChunkDelete,
+} from '../contracts/serializable/Chunk';
 import {
   preStoreFileChunks,
   storeFileChunks,
   getFilePathList,
   getChunk,
+  deleteFiles,
+  deleteWebsite,
 } from '../contracts/deweb-interface';
 const limitChunk = 10240;
 
@@ -127,6 +134,16 @@ class FileBuilder {
     return this;
   }
 
+  deleteFiles(files: ChunkDelete[]): void {
+    deleteFiles(
+      new Args().addSerializableObjectArray<ChunkDelete>(files).serialize(),
+    );
+  }
+
+  deleteWebsite(): void {
+    deleteWebsite(new Args().serialize());
+  }
+
   hasFiles(): void {
     const fileList = new Args(getFilePathList()).next<string[]>().unwrap();
     for (let i = 0; i < this.files.length; i++) {
@@ -136,14 +153,27 @@ class FileBuilder {
         `File ${fileInfo.fileName} should be in the file list`,
       );
       for (let j = 0; j < fileInfo.data.length; j++) {
-        const storedChunk = getChunk(
-          new ChunkGet(fileInfo.fileNameHash, j).serialize(),
-        );
+        const storedChunk = getChunk(chunkGetArgs(fileInfo.fileNameHash, j));
         assert(
           storedChunk.length == fileInfo.data[j].length,
           `Chunk ${j} of ${fileInfo.fileName} should have correct length`,
         );
       }
+    }
+  }
+
+  hasNoFiles(): void {
+    const fileList = new Args(getFilePathList()).next<string[]>().unwrap();
+    assert(fileList.length === 0, 'FileList should be empty');
+  }
+
+  fileIsDeleted(filePath: string): void {
+    const fileList = new Args(getFilePathList()).next<string[]>().unwrap();
+    for (let i = 0; i < fileList.length; i++) {
+      assert(
+        !fileList.includes(filePath),
+        `File ${filePath} should not be in the file list`,
+      );
     }
   }
 }
@@ -154,4 +184,11 @@ export function given(): FileBuilder {
 
 export function checkThat(fileBuilder: FileBuilder): FileBuilder {
   return fileBuilder;
+}
+
+export function chunkGetArgs(
+  filePathHash: StaticArray<u8>,
+  index: u32,
+): StaticArray<u8> {
+  return new ChunkGet(filePathHash, index).serialize();
 }

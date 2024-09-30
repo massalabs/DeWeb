@@ -101,3 +101,20 @@ export function _removeFile(
   _removeChunksRange(filePathHash, 0, newTotalChunks - 1);
   Storage.del(_getTotalChunkKey(filePathHash));
 }
+
+/**
+ * Deletes a chunks of a given file from storage.
+ * @param filePathHash - The hash of the file path.
+ * @throws If the chunk is not found in storage.
+ */
+export function _deleteFile(filePathHash: StaticArray<u8>): void {
+  const chunkNumber = _getTotalChunk(filePathHash);
+  for (let i: u32 = 0; i < chunkNumber; i++) {
+    assert(
+      Storage.has(_getChunkKey(filePathHash, i)),
+      'Chunk not found while deleting',
+    );
+    Storage.del(_getChunkKey(filePathHash, i));
+  }
+  Storage.del(_getTotalChunkKey(filePathHash));
+}
