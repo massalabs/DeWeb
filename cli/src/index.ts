@@ -6,7 +6,12 @@ import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
 
-import { setProgramOptions } from './commands/config'
+import { existsSync } from 'fs'
+import {
+  mergeConfigAndOptions,
+  parseConfigFile,
+  setProgramOptions,
+} from './commands/config'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
@@ -28,6 +33,6 @@ program.addCommand(deleteCommand)
 program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
 
-setProgramOptions(program.opts())
+setProgramOptions(program)
 
 program.parse()
