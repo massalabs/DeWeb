@@ -1,11 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import {
-  makeProviderFromNodeURLAndSecret,
-  parseConfigFile,
-  setProgramOptions,
-  validateAddress,
-} from './utils'
+import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 import { getFileFromAddress } from '../lib/website/read'
 
 export const showFileCommand = new Command('show')
