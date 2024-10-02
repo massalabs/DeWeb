@@ -1,11 +1,6 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import {
-  makeProviderFromNodeURLAndSecret,
-  parseConfigFile,
-  setConfigGlobalOptions,
-  validateAddress,
-} from './utils'
+import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 import { listFiles } from '../lib/website/read'
 
 export const listFilesCommand = new Command('list')
@@ -13,7 +8,7 @@ export const listFilesCommand = new Command('list')
   .description('Lists files from the given website on Massa blockchain')
   .option('-a, --address <address>', 'Address of the website to list')
   .action(async (options, command) => {
-    let globalOptions = command.parent?.opts()
+    const globalOptions = command.optsWithGlobals()
 
     if (!globalOptions) {
       throw new Error(
@@ -21,15 +16,7 @@ export const listFilesCommand = new Command('list')
       )
     }
 
-    const config = parseConfigFile(globalOptions.config as string)
-
-    // set global options from config file if not already set
-    globalOptions = setConfigGlobalOptions(globalOptions, config)
-
-    const provider = await makeProviderFromNodeURLAndSecret(
-      globalOptions,
-      config
-    )
+    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     let sc: SmartContract
     if (options.address) {

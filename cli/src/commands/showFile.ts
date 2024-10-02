@@ -3,7 +3,7 @@ import { SmartContract } from '@massalabs/massa-web3'
 import {
   makeProviderFromNodeURLAndSecret,
   parseConfigFile,
-  setConfigGlobalOptions,
+  setProgramOptions,
   validateAddress,
 } from './utils'
 import { getFileFromAddress } from '../lib/website/read'
@@ -13,7 +13,7 @@ export const showFileCommand = new Command('show')
   .argument('<file_path>', 'Path of the file to show')
   .option('-a, --address <address>', 'Address of the website to edit')
   .action(async (filePath, options, command) => {
-    let globalOptions = command.parent?.opts()
+    const globalOptions = command.optsWithGlobals()
 
     if (!globalOptions) {
       throw new Error(
@@ -21,15 +21,7 @@ export const showFileCommand = new Command('show')
       )
     }
 
-    const config = parseConfigFile(globalOptions.config as string)
-
-    // set global options from config file if not already set
-    globalOptions = setConfigGlobalOptions(globalOptions, config)
-
-    const provider = await makeProviderFromNodeURLAndSecret(
-      globalOptions,
-      config
-    )
+    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     let sc: SmartContract
     if (options.address) {

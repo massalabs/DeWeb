@@ -6,7 +6,7 @@ import {
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
-import { existsSync, readFileSync } from 'fs'
+import { readFileSync } from 'fs'
 import { parse as yamlParse } from 'yaml'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
@@ -17,8 +17,7 @@ const KEY_ENV_NAME = 'SECRET_KEY'
  * @returns the provider
  */
 export async function makeProviderFromNodeURLAndSecret(
-  globalOptions: OptionValues,
-  config: Config | null
+  globalOptions: OptionValues
 ): Promise<Web3Provider> {
   if (!globalOptions.node_url) {
     throw new Error('node_url is not defined. Please use --node_url to set one')
@@ -40,8 +39,8 @@ export async function makeProviderFromNodeURLAndSecret(
   }
 
   try {
-    if (!config?.secret_key) throw new Error()
-    keyPair = await KeyPair.fromPrivateKey(config.secret_key)
+    if (!globalOptions?.secret_key) throw new Error()
+    keyPair = await KeyPair.fromPrivateKey(globalOptions.secret_key)
     console.info('Initializing provider with SECRET_KEY from config file\n')
     provider = Web3Provider.fromRPCUrl(
       globalOptions.node_url as string,
@@ -128,8 +127,7 @@ interface Config {
   secret_key: string
 }
 
-export function parseConfigFile(filePath: string): Config | null {
-  if (!existsSync(filePath)) return null
+export function parseConfigFile(filePath: string): Config {
   const fileContent = readFileSync(filePath, 'utf-8')
   try {
     const parsedData = JSON.parse(fileContent)
@@ -139,15 +137,17 @@ export function parseConfigFile(filePath: string): Config | null {
   }
 }
 
-export function setConfigGlobalOptions(
-  globalOptions: OptionValues,
-  config: Config | null
+export function setProgramOptions(
+  commandOptions: OptionValues,
+  configOptions: Config
 ): OptionValues {
-  if (!config) return globalOptions
+  if (!configOptions) return commandOptions
 
-  const wallet = globalOptions.wallet || config.wallet_config.wallet
-  const password = globalOptions.password || config.wallet_config.password
-  const node_url = globalOptions.node_url || config.node_url
-  const chunk_size = globalOptions.chunk_size || config.chunk_size
+  const wallet = commandOptions.wallet || configOptions.wallet_config.wallet
+  const password =
+    commandOptions.password || configOptions.wallet_config.password
+  const node_url = commandOptions.node_url || configOptions.node_url
+  const chunk_size = commandOptions.chunk_size || configOptions.chunk_size
+
   return { wallet, password, node_url, chunk_size }
 }

@@ -5,6 +5,8 @@ import { deleteCommand } from './commands/delete'
 import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
+import { parseConfigFile, setProgramOptions } from './commands/utils'
+import { existsSync } from 'fs'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
@@ -26,4 +28,23 @@ program.addCommand(deleteCommand)
 program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
 
-program.parse(process.argv)
+interface OptionValues {
+  config: string
+  node_url: string
+  wallet: string
+  password: string
+}
+
+const commandOptions: OptionValues = program.opts() as OptionValues
+
+if (existsSync(commandOptions.config)) {
+  const configOptions = parseConfigFile(commandOptions.config)
+
+  // commandOptions get priority over configOptions
+  const programOptions = setProgramOptions(commandOptions, configOptions)
+  for (const [key, value] of Object.entries(programOptions)) {
+    program.setOptionValue(key, value)
+  }
+}
+
+program.parse()
