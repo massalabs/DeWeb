@@ -30,7 +30,6 @@ export const uploadCommand = new Command('upload')
   )
   .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.optsWithGlobals()
-    console.log('globalOptions:', globalOptions)
 
     // throw if global options are not defined
     if (!globalOptions) {
