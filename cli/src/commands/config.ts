@@ -1,5 +1,5 @@
 import { OptionValues } from 'commander'
-import { readFileSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 
 interface Config {
   wallet_password: string
@@ -36,5 +36,24 @@ export function mergeConfigAndOptions(
     node_url,
     chunk_size,
     secret_key,
+  }
+}
+
+interface CommandOptions {
+  config: string
+  node_url: string
+  wallet: string
+  password: string
+}
+export function setProgramOptions(program: any): void {
+  const commandOptions: CommandOptions = program.opts() as CommandOptions
+  if (existsSync(commandOptions.config)) {
+    const configOptions = parseConfigFile(commandOptions.config)
+
+    // commandOptions get priority over configOptions
+    const programOptions = mergeConfigAndOptions(commandOptions, configOptions)
+    for (const [key, value] of Object.entries(programOptions)) {
+      program.setOptionValue(key, value)
+    }
   }
 }
