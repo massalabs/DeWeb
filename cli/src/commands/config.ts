@@ -24,11 +24,11 @@ export function mergeConfigAndOptions(
 ): OptionValues {
   if (!configOptions) return commandOptions
 
- return {
+  return {
     wallet: commandOptions.wallet || configOptions.wallet_path,
     password: commandOptions.password || configOptions.wallet_password,
     node_url: commandOptions.node_url || configOptions.node_url,
     chunk_size: commandOptions.chunk_size || configOptions.chunk_size,
-    secret_key: configOptions.secret_key || ''
+    secret_key: configOptions.secret_key || '',
   }
 }
