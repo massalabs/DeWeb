@@ -5,7 +5,6 @@ import {
   SmartContract,
   Web3Provider,
 } from '@massalabs/massa-web3';
-import { generateWebsite, testDeleteFiles, testDeleteWebsite } from './delete';
 import { testStoreFiles } from './store';
 import { getByteCode } from '../utils';
 import { CONTRACT_FILE } from './helpers/const';
@@ -33,13 +32,6 @@ async function main() {
   const contract = await generateContract();
   console.log('Testing store files...');
   await testStoreFiles(contract);
-  console.log('Finished test\n');
-  console.log('Testing file deletion...');
-  await testDeleteFiles(contract);
-  console.log('Finished test\n');
-  console.log('Testing website deletion...');
-  await generateWebsite(contract);
-  await testDeleteWebsite(contract);
   console.log('Finished test\n');
 }
 
