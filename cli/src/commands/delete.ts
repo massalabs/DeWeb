@@ -13,12 +13,6 @@ export const deleteCommand = new Command('delete')
   .action(async (address, _, command) => {
     const globalOptions = command.optsWithGlobals()
 
-    if (!globalOptions) {
-      throw new Error(
-        'Global options are not defined. This should never happen.'
-      )
-    }
-
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     const sc = new SmartContract(provider, address)

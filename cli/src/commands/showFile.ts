@@ -10,12 +10,6 @@ export const showFileCommand = new Command('show')
   .action(async (filePath, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
-    if (!globalOptions) {
-      throw new Error(
-        'Global options are not defined. This should never happen.'
-      )
-    }
-
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     let sc: SmartContract

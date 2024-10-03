@@ -31,13 +31,6 @@ export const uploadCommand = new Command('upload')
   .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
-    // throw if global options are not defined
-    if (!globalOptions) {
-      throw new Error(
-        'Global options are not defined. This should never happen.'
-      )
-    }
-
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     // set chunksize from options or config
