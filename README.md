@@ -17,13 +17,18 @@ Ensure you have `task` installed. Follow the instructions [here](https://taskfil
 
 ### Installation
 
-1. Install required tools:
+1. Navigate to server folder:
+
+   ```bash
+   cd server
+
+2. Install required tools:
 
    ```bash
    task install
    ```
 
-2. Build both binaries:
+3. Build both binaries:
 
    ```bash
    task build
@@ -36,7 +41,7 @@ Ensure you have `task` installed. Follow the instructions [here](https://taskfil
    task build:server
    ```
 
-3. The binaries will be stored in the `./build` directory.
+4. The binaries will be stored in the `./build` directory.
 
 # DeWeb CLI
 
