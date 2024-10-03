@@ -15,19 +15,13 @@ import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
-const DEFAULT_CHUNK_SIZE = 64000n
-
 export const uploadCommand = new Command('upload')
   .alias('u')
   .description('Uploads the given website on Massa blockchain')
   .argument('<website_path>', 'Path to the website directory to upload')
   .option('-a, --address <address>', 'Address of the website to edit')
+  .option('-s, --chunkSize <size>', 'Chunk size in bytes')
   .option('-y, --yes', 'Skip confirmation prompt', false)
-  .option(
-    '-c, --chunk-size <size>',
-    'Chunk size in bytes',
-    DEFAULT_CHUNK_SIZE.toString()
-  )
   .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
@@ -35,7 +29,8 @@ export const uploadCommand = new Command('upload')
 
     // set chunksize from options or config
     const chunkSize =
-      parseInt(options.chunkSize) || (globalOptions.chunk_size as number)
+      parseInt(options.chunkSize as string) ||
+      (globalOptions.chunk_size as number)
 
     const ctx: UploadCtx = {
       provider: provider,

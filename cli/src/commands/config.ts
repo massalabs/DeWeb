@@ -1,5 +1,9 @@
+import { PublicApiUrl } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
 import { readFileSync } from 'fs'
+
+export const DEFAULT_CHUNK_SIZE = 64000
+const DEFAULT_NODE_URL = PublicApiUrl.Buildnet
 
 interface Config {
   wallet_password: string
@@ -27,8 +31,9 @@ export function mergeConfigAndOptions(
   return {
     wallet: commandOptions.wallet || configOptions.wallet_path,
     password: commandOptions.password || configOptions.wallet_password,
-    node_url: commandOptions.node_url || configOptions.node_url,
-    chunk_size: commandOptions.chunk_size || configOptions.chunk_size,
+    node_url:
+      commandOptions.node_url || configOptions.node_url || DEFAULT_NODE_URL,
+    chunk_size: configOptions.chunk_size || DEFAULT_CHUNK_SIZE,
     secret_key: configOptions.secret_key || '',
   }
 }

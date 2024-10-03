@@ -1,5 +1,4 @@
 import { Command } from '@commander-js/extra-typings'
-import { PublicApiUrl } from '@massalabs/massa-web3'
 
 import { deleteCommand } from './commands/delete'
 import { listFilesCommand } from './commands/list'
@@ -11,7 +10,6 @@ import { mergeConfigAndOptions, parseConfigFile } from './commands/config'
 
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
-const defaultNodeUrl = PublicApiUrl.Buildnet
 
 const program = new Command()
 
@@ -20,7 +18,7 @@ program
   .description('CLI app for deploying websites')
   .version(version)
   .option('-c, --config <path>', 'Path to the config file', defaultConfigPath)
-  .option('-n, --node_url <url>', 'Node URL', defaultNodeUrl)
+  .option('-n, --node_url <url>', 'Node URL')
   .option('-w, --wallet <path>', 'Path to the wallet file')
   .option('-p, --password <password>', 'Password for the wallet file')
 
@@ -40,7 +38,6 @@ const commandOptions: OptionValues = program.opts() as OptionValues
 
 if (existsSync(commandOptions.config)) {
   const configOptions = parseConfigFile(commandOptions.config)
-
   // commandOptions get priority over configOptions
   const programOptions = mergeConfigAndOptions(commandOptions, configOptions)
   for (const [key, value] of Object.entries(programOptions)) {
