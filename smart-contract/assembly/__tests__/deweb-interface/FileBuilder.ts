@@ -212,7 +212,7 @@ class FileBuilder {
     return this;
   }
 
-  hasMetadata(): FileBuilder {
+  hasFileMetadata(): FileBuilder {
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
       for (let j = 0; j < fileInfo.metadata.length; j++) {

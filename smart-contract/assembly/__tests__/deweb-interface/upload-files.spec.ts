@@ -69,7 +69,7 @@ describe('Upload files', () => {
       .init()
       .uploadAll();
 
-    checkThat(myUpload).hasUploadedFiles().hasMetadata();
+    checkThat(myUpload).hasUploadedFiles().hasFileMetadata();
   });
 
   test('upload some files then upload a new version', () => {
@@ -95,8 +95,12 @@ describe('Upload files', () => {
 
     checkThat(myUpdate)
       .hasUploadedFiles()
-      .hasMetadata()
+      .hasFileMetadata()
       .hasTheRightNumberOfFiles()
       .hasTheRightNumberOfChunks();
+  });
+
+  throws('if initialize with a file with nb chunk = 0', () => {
+    given().withFile(file1Path, 0, [fileData1]).init().uploadAll();
   });
 });

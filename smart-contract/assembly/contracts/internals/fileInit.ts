@@ -15,6 +15,8 @@ export function _fileInit(
   totalChunk: u32,
   metadata: Metadata[],
 ): void {
+  assert(totalChunk > 0, 'Total chunk must be greater than 0');
+
   if (!Storage.has(fileMetadataLocationKey(hashLocation))) {
     _pushFileLocation(location, hashLocation);
   }
