@@ -11,13 +11,7 @@ export const deleteCommand = new Command('delete')
   .description('Delete the given website from Massa blockchain')
   .argument('<address>', 'Address of the website to delete')
   .action(async (address, _, command) => {
-    const globalOptions = command.parent?.opts()
-
-    if (!globalOptions) {
-      throw new Error(
-        'Global options are not defined. This should never happen.'
-      )
-    }
+    const globalOptions = command.optsWithGlobals()
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 

@@ -40,3 +40,5 @@ coverage/
 
 # wallets
 wallet*.yaml
+
+deweb_cli_config.json

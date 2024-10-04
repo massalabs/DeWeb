@@ -8,13 +8,7 @@ export const showFileCommand = new Command('show')
   .argument('<file_path>', 'Path of the file to show')
   .option('-a, --address <address>', 'Address of the website to edit')
   .action(async (filePath, options, command) => {
-    const globalOptions = command.parent?.opts()
-
-    if (!globalOptions) {
-      throw new Error(
-        'Global options are not defined. This should never happen.'
-      )
-    }
+    const globalOptions = command.optsWithGlobals()
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 

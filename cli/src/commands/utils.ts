@@ -12,6 +12,41 @@ import { parse as yamlParse } from 'yaml'
 const KEY_ENV_NAME = 'SECRET_KEY'
 
 /**
+ * Load the keypair using environment variables, secret_key, or wallet file
+ * @param globalOptions - the global options
+ * @returns the keypair
+ */
+async function loadKeyPair(globalOptions: OptionValues): Promise<KeyPair> {
+  try {
+    const envSecretKey = process.env[KEY_ENV_NAME]
+
+    if (envSecretKey) {
+      return await KeyPair.fromEnv(KEY_ENV_NAME)
+    }
+
+    if (globalOptions.secret_key) {
+      return await KeyPair.fromPrivateKey(globalOptions.secret_key)
+    }
+
+    if (
+      globalOptions.wallet &&
+      globalOptions.password &&
+      globalOptions.wallet.endsWith('.yaml')
+    ) {
+      return await importFromYamlKeyStore(
+        globalOptions.wallet,
+        globalOptions.password
+      )
+    }
+
+    throw new Error('No valid method to load keypair.')
+  } catch (error) {
+    console.warn(`Failed to initialize keyPair: ${error}`)
+    throw error
+  }
+}
+
+/**
  * Make a provider from the node URL and secret key
  * @param globalOptions - the global options
  * @returns the provider
@@ -23,33 +58,14 @@ export async function makeProviderFromNodeURLAndSecret(
     throw new Error('node_url is not defined. Please use --node_url to set one')
   }
 
-  var keyPair: KeyPair
-  if (
-    (globalOptions.wallet && !globalOptions.password) ||
-    (!globalOptions.wallet && globalOptions.password)
-  ) {
-    throw new Error('Both wallet and password must be provided together.')
+  try {
+    const keyPair = await loadKeyPair(globalOptions)
+
+    return Web3Provider.fromRPCUrl(globalOptions.node_url as string, keyPair)
+  } catch (error) {
+    console.error(`Failed to initialize provider: ${error}`)
+    throw new Error('Failed to initialize provider with any available method')
   }
-
-  if (globalOptions.wallet && globalOptions.password) {
-    if (!globalOptions.wallet.endsWith('.yaml')) {
-      throw new Error('Wallet file must be a YAML file')
-    }
-
-    keyPair = await importFromYamlKeyStore(
-      globalOptions.wallet,
-      globalOptions.password
-    )
-  } else {
-    keyPair = await KeyPair.fromEnv(KEY_ENV_NAME)
-  }
-
-  const provider = Web3Provider.fromRPCUrl(
-    globalOptions.node_url as string,
-    keyPair
-  )
-
-  return provider
 }
 
 /**
