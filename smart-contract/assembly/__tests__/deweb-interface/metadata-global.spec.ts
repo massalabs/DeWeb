@@ -1,6 +1,6 @@
 import { resetStorage, setDeployContext } from '@massalabs/massa-as-sdk';
 import { constructor } from '../../contracts/deweb-interface';
-import { Args, stringToBytes } from '@massalabs/as-types';
+import { Args } from '@massalabs/as-types';
 import { Metadata } from '../../contracts/serializable/Metadata';
 import {
   _addGlobalMetadata,
@@ -13,10 +13,7 @@ const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
 const metadataKey1 = 'version';
 const metadataValue1 = '1.0.0';
 
-const metadata1 = new Metadata(
-  stringToBytes(metadataKey1),
-  stringToBytes(metadataValue1),
-);
+const metadata1 = new Metadata(metadataKey1, metadataValue1);
 
 describe('Upload files', () => {
   beforeEach(() => {

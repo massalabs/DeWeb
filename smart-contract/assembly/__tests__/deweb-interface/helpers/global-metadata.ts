@@ -1,4 +1,4 @@
-import { Args, bytesToString } from '@massalabs/as-types';
+import { Args, bytesToString, stringToBytes } from '@massalabs/as-types';
 import {
   getMetadataGlobal,
   removeMetadataGlobal,
@@ -17,14 +17,16 @@ export function _addGlobalMetadata(metadataList: Metadata[]): void {
 export function _removeGlobalMetadata(metadataList: Metadata[]): void {
   const metadataKeys: string[] = [];
   for (let i = 0; i < metadataList.length; i++) {
-    metadataKeys.push(bytesToString(metadataList[i].key));
+    metadataKeys.push(metadataList[i].key);
   }
   removeMetadataGlobal(new Args().add<string[]>(metadataKeys).serialize());
 }
 
 export function _assertGlobalMetadataRemoved(metadataList: Metadata[]): void {
   for (let i = 0; i < metadataList.length; i++) {
-    const entry = Storage.getKeys(globalMetadataKey(metadataList[i].key));
+    const entry = Storage.getKeys(
+      globalMetadataKey(stringToBytes(metadataList[i].key)),
+    );
     assert(entry.length === 0, 'Metadata should be removed');
   }
 }
@@ -36,11 +38,13 @@ export function _assertGlobalMetadata(metadataList: Metadata[]): void {
     );
 
     assert(
-      metadataList[i].value.toString() === metadata.toString(),
+      metadataList[i].value === bytesToString(metadata),
       'Metadata should be equal',
     );
 
-    const entry = Storage.getKeys(globalMetadataKey(metadataList[i].key));
+    const entry = Storage.getKeys(
+      globalMetadataKey(stringToBytes(metadataList[i].key)),
+    );
     assert(entry.length === 1, 'Metadata should be added');
   }
 }

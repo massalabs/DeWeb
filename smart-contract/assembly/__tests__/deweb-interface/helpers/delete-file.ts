@@ -5,7 +5,6 @@ import {
   deleteFiles,
   getFileLocations,
 } from '../../../contracts/deweb-interface';
-import { Metadata } from '../../../contracts/serializable/Metadata';
 import {
   fileMetadataKey,
   fileMetadataLocationKey,
@@ -61,20 +60,6 @@ export function _assertFilesAreNotPresent(files: string[]): void {
     _assertHasNoMetadata(locationHash);
     _assertHasNoChunkCount(locationHash);
     _assertHasNoLocation(locationHash);
-  }
-}
-
-export function _assertHasMetadata(
-  locationHash: StaticArray<u8>,
-  metadata: Metadata[],
-): void {
-  for (let j = 0; j < metadata.length; j++) {
-    const storageKey = fileMetadataKey(locationHash, metadata[j].key);
-    assert(Storage.has(storageKey), 'Metadata should be stored');
-    assert(
-      Storage.get(storageKey).toString() == metadata[j].value.toString(),
-      'Metadata value should be correct',
-    );
   }
 }
 

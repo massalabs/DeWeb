@@ -37,7 +37,11 @@ export function _fileInit(
 
   // Set file metadata
   for (let i = 0; i < metadata.length; i++) {
-    _editFileMetadata(metadata[i].key, metadata[i].value, hashLocation);
+    _editFileMetadata(
+      stringToBytes(metadata[i].key),
+      stringToBytes(metadata[i].value),
+      hashLocation,
+    );
   }
 
   // Update chunk count and remove extra chunks if necessary

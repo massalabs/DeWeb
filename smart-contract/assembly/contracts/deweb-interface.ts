@@ -26,18 +26,15 @@ import {
 import { _getFileLocations } from './internals/location';
 import { _fileInit } from './internals/fileInit';
 import { FileInit } from './serializable/FileInit';
-import { MetadataDelete } from './serializable/MetadataDelete';
 
 /**
  * Initializes the smart contract.
  * Sets the contract deployer as the owner.
- * @param binaryArgs - args containing the owner address.
  */
-export function constructor(binaryArgs: StaticArray<u8>): void {
+export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
 
-  const owner = new Args(binaryArgs).next<string>().expect('Invalid owner');
-  _setOwner(owner);
+  _setOwner(Context.caller().toString());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -71,7 +68,10 @@ export function filesInit(_binaryArgs: StaticArray<u8>): void {
   }
 
   for (let i = 0; i < globalMetadata.length; i++) {
-    _editGlobalMetadata(globalMetadata[i].key, globalMetadata[i].value);
+    _editGlobalMetadata(
+      stringToBytes(globalMetadata[i].key),
+      stringToBytes(globalMetadata[i].value),
+    );
   }
 
   for (let i = 0; i < files.length; i++) {
@@ -184,7 +184,10 @@ export function setMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
     .expect('Invalid metadata');
 
   for (let i = 0; i < metadata.length; i++) {
-    _editGlobalMetadata(metadata[i].key, metadata[i].value);
+    _editGlobalMetadata(
+      stringToBytes(metadata[i].key),
+      stringToBytes(metadata[i].value),
+    );
   }
 }
 
@@ -241,7 +244,11 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .expect('Invalid metadata');
 
   for (let i = 0; i < metadata.length; i++) {
-    _editFileMetadata(metadata[i].key, metadata[i].value, hashLocation);
+    _editFileMetadata(
+      stringToBytes(metadata[i].key),
+      stringToBytes(metadata[i].value),
+      hashLocation,
+    );
   }
 }
 
@@ -259,10 +266,10 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
 
-  const metadata = args.next<MetadataDelete[]>().expect('Invalid key');
+  const metadata = args.next<string[]>().expect('Invalid key');
 
   for (let i = 0; i < metadata.length; i++) {
-    _removeFileMetadata(metadata[i].key, hashLocation);
+    _removeFileMetadata(stringToBytes(metadata[i]), hashLocation);
   }
 }
 

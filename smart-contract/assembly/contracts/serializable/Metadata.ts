@@ -11,10 +11,7 @@ export class Metadata implements Serializable {
    * @param key - The key of the metadata entry.
    * @param value - The value of the metadata entry.
    */
-  constructor(
-    public key: StaticArray<u8> = new StaticArray<u8>(0),
-    public value: StaticArray<u8> = new StaticArray<u8>(0),
-  ) {}
+  constructor(public key: string = '', public value: string = '') {}
 
   /**
    * Serializes the Metadata instance into a byte array.
@@ -33,12 +30,12 @@ export class Metadata implements Serializable {
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
 
-    const key = args.next<StaticArray<u8>>();
+    const key = args.next<string>();
     if (key.error) {
       return new Result(args.offset);
     }
 
-    const value = args.next<StaticArray<u8>>();
+    const value = args.next<string>();
     if (value.error) {
       return new Result(args.offset);
     }

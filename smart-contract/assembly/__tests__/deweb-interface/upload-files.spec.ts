@@ -1,6 +1,6 @@
 import { resetStorage, setDeployContext } from '@massalabs/massa-as-sdk';
 import { constructor } from '../../contracts/deweb-interface';
-import { Args, stringToBytes } from '@massalabs/as-types';
+import { Args } from '@massalabs/as-types';
 import { ensure, uploader } from './helpers/Uploader';
 import { Metadata } from '../../contracts/serializable/Metadata';
 
@@ -13,10 +13,10 @@ const fileData1: StaticArray<u8> = [1, 2, 3, 4];
 const fileData2: StaticArray<u8> = [5, 6, 7, 8];
 const fileData3: StaticArray<u8> = [9, 10, 11, 12];
 const fileData4: StaticArray<u8> = [13, 14, 15, 16];
-const metadataKey1 = stringToBytes('version');
-const metadataValue1 = stringToBytes('1.0.0');
-const metadataKey2 = stringToBytes('serve');
-const metadataValue2 = stringToBytes('0');
+const metadataKey1 = 'version';
+const metadataValue1 = '1.0.0';
+const metadataKey2 = 'serve';
+const metadataValue2 = '0';
 
 describe('Upload files', () => {
   beforeEach(() => {

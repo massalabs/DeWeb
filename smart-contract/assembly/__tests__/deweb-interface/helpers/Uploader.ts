@@ -21,7 +21,7 @@ import {
 import { Metadata } from '../../../contracts/serializable/Metadata';
 import { _getGlobalMetadata } from '../../../contracts/internals/metadata';
 import { FileInit } from '../../../contracts/serializable/FileInit';
-import { _assertHasMetadata } from './delete-file';
+import { _assertMetadataAddedToFile } from './file-metadata';
 const limitChunk = 10240;
 
 class FileInfo {
@@ -57,9 +57,7 @@ export class Uploader {
   }
 
   withGlobalMetadata(key: string, value: string): Uploader {
-    this.globalMetadata.push(
-      new Metadata(stringToBytes(key), stringToBytes(value)),
-    );
+    this.globalMetadata.push(new Metadata(key, value));
     return this;
   }
 
@@ -184,13 +182,17 @@ export class Uploader {
     for (let i = 0; i < dataStoreEntriesMetadata.length; i++) {
       assert(
         dataStoreEntriesMetadata[i].toString() ==
-          GLOBAL_METADATA_TAG.concat(this.globalMetadata[i].key).toString(),
+          GLOBAL_METADATA_TAG.concat(
+            stringToBytes(this.globalMetadata[i].key),
+          ).toString(),
         'Metadata key should be correct',
       );
 
-      const value = _getGlobalMetadata(this.globalMetadata[i].key);
+      const value = _getGlobalMetadata(
+        stringToBytes(this.globalMetadata[i].key),
+      );
       assert(
-        value.toString() == this.globalMetadata[i].value.toString(),
+        bytesToString(value) == this.globalMetadata[i].value,
         'Metadata value should be correct',
       );
     }
@@ -200,7 +202,7 @@ export class Uploader {
   hasFileMetadata(): Uploader {
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
-      _assertHasMetadata(fileInfo.locationHash, fileInfo.metadata);
+      _assertMetadataAddedToFile(fileInfo.locationHash, fileInfo.metadata);
     }
     return this;
   }
