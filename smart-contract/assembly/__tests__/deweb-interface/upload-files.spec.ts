@@ -1,7 +1,7 @@
 import { resetStorage, setDeployContext } from '@massalabs/massa-as-sdk';
 import { constructor } from '../../contracts/deweb-interface';
 import { Args, stringToBytes } from '@massalabs/as-types';
-import { checkThat, given } from './FileBuilder';
+import { ensure, uploader } from './helpers/Uploader';
 import { Metadata } from '../../contracts/serializable/Metadata';
 
 const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
@@ -26,40 +26,42 @@ describe('Upload files', () => {
   });
 
   test('upload some files', () => {
-    const myUpload = given()
-      .withFile(file1Path, 2, [fileData1, fileData2])
-      .withFile(file2Path, 1, [fileData2])
-      .withFile(file3Path, 2, [fileData3, fileData4])
-      .withFile(file4Path, 1, [fileData4])
+    const myUpload = uploader()
+      .withFile(file1Path, [fileData1, fileData2])
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3, fileData4])
+      .withFile(file4Path, [fileData4])
       .init()
       .uploadAll();
 
-    checkThat(myUpload).hasUploadedFiles();
+    ensure(myUpload).hasUploadedFiles();
   });
 
   throws('if wrong total chunk', () => {
-    given().withFile(file1Path, 1, [fileData1, fileData2]).init().uploadAll();
+    uploader()
+      .withFile(file1Path, [fileData1, fileData2], [], 1)
+      .init()
+      .uploadAll();
   });
 
   test('upload some files with global Metadata', () => {
-    const myUpload = given()
+    const myUpload = uploader()
       .withGlobalMetadata('version', '1.0.0')
       .withGlobalMetadata('isReady', '0')
-      .withFile(file1Path, 2, [fileData1, fileData2])
-      .withFile(file2Path, 1, [fileData2])
-      .withFile(file3Path, 2, [fileData3, fileData4])
-      .withFile(file4Path, 1, [fileData4])
+      .withFile(file1Path, [fileData1, fileData2])
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3, fileData4])
+      .withFile(file4Path, [fileData4])
       .init()
       .uploadAll();
 
-    checkThat(myUpload).hasUploadedFiles().hasGlobalMetadata();
+    ensure(myUpload).hasUploadedFiles().hasGlobalMetadata();
   });
 
   test('upload some files with file Metadata', () => {
-    const myUpload = given()
+    const myUpload = uploader()
       .withFile(
         file1Path,
-        2,
         [fileData1, fileData2],
         [
           new Metadata(metadataKey1, metadataValue1),
@@ -69,38 +71,37 @@ describe('Upload files', () => {
       .init()
       .uploadAll();
 
-    checkThat(myUpload).hasUploadedFiles().hasFileMetadata();
+    ensure(myUpload).hasUploadedFiles().hasFileMetadata();
   });
 
   test('upload some files then upload a new version', () => {
-    given()
+    uploader()
       .withFile(
         file1Path,
-        2,
         [fileData1, fileData2],
         [
           new Metadata(metadataKey1, metadataValue1),
           new Metadata(metadataKey2, metadataValue2),
         ],
       )
-      .withFile(file2Path, 1, [fileData2])
+      .withFile(file2Path, [fileData2])
       .init()
       .uploadAll();
 
-    const myUpdate = given()
-      .withFile(file1Path, 1, [fileData1])
+    const myUpdate = uploader()
+      .withFile(file1Path, [fileData1])
       .withFilesToDelete([file2Path])
       .init()
       .uploadAll();
 
-    checkThat(myUpdate)
+    ensure(myUpdate)
       .hasUploadedFiles()
       .hasFileMetadata()
-      .hasTheRightNumberOfFiles()
-      .hasTheRightNumberOfChunks();
+      .hasTheRightNumberOfFilesLocations()
+      .hasTheRightChunkCount();
   });
 
   throws('if initialize with a file with nb chunk = 0', () => {
-    given().withFile(file1Path, 0, [fileData1]).init().uploadAll();
+    uploader().withFile(file1Path, [fileData1], [], 0).init().uploadAll();
   });
 });

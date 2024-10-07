@@ -5,6 +5,7 @@ import { bytesToU32 } from '@massalabs/as-types';
 import { fileChunkCountKey } from './storageKeys/chunksKeys';
 import { _removeFileLocation } from './location';
 import { _removeAllFileMetadata } from './metadata';
+import { FILE_TAG, CHUNK_TAG } from './storageKeys/tags';
 /* -------------------------------------------------------------------------- */
 /*                                     SET                                    */
 /* -------------------------------------------------------------------------- */
@@ -68,7 +69,7 @@ export function _removeChunksRange(
   start: u32 = 0,
   end: u32 = 0,
 ): void {
-  for (let i = u32(start); i < end; i++) {
+  for (let i = u32(start); i <= end; i++) {
     Storage.del(fileChunkKey(hashLocation, i));
   }
 }
@@ -79,18 +80,21 @@ export function _removeChunksRange(
  * @throws If the chunk is not found in storage.
  */
 export function _deleteFile(hashLocation: StaticArray<u8>): void {
-  const chunkNumber = _getTotalChunk(hashLocation);
-  for (let i: u32 = 0; i < chunkNumber; i++) {
-    assert(
-      Storage.has(fileChunkKey(hashLocation, i)),
-      'Chunk not found while deleting',
-    );
-    Storage.del(fileChunkKey(hashLocation, i));
+  // Remove all chunks
+  const chunkKeys = Storage.getKeys(
+    FILE_TAG.concat(hashLocation).concat(CHUNK_TAG),
+  );
+
+  for (let i: u32 = 0; i < u32(chunkKeys.length); i++) {
+    Storage.del(chunkKeys[i]);
   }
 
-  Storage.del(fileChunkCountKey(hashLocation));
+  if (Storage.has(fileChunkCountKey(hashLocation))) {
+    Storage.del(fileChunkCountKey(hashLocation));
+  }
 
   _removeFileLocation(hashLocation);
+
   _removeAllFileMetadata(hashLocation);
 }
 

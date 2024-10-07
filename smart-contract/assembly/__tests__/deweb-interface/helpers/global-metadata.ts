@@ -1,0 +1,46 @@
+import { Args, bytesToString } from '@massalabs/as-types';
+import {
+  getMetadataGlobal,
+  removeMetadataGlobal,
+  setMetadataGlobal,
+} from '../../../contracts/deweb-interface';
+import { Metadata } from '../../../contracts/serializable/Metadata';
+import { Storage } from '@massalabs/massa-as-sdk';
+import { globalMetadataKey } from '../../../contracts/internals/storageKeys/metadataKeys';
+
+export function _addGlobalMetadata(metadataList: Metadata[]): void {
+  setMetadataGlobal(
+    new Args().addSerializableObjectArray<Metadata>(metadataList).serialize(),
+  );
+}
+
+export function _removeGlobalMetadata(metadataList: Metadata[]): void {
+  const metadataKeys: string[] = [];
+  for (let i = 0; i < metadataList.length; i++) {
+    metadataKeys.push(bytesToString(metadataList[i].key));
+  }
+  removeMetadataGlobal(new Args().add<string[]>(metadataKeys).serialize());
+}
+
+export function _assertGlobalMetadataRemoved(metadataList: Metadata[]): void {
+  for (let i = 0; i < metadataList.length; i++) {
+    const entry = Storage.getKeys(globalMetadataKey(metadataList[i].key));
+    assert(entry.length === 0, 'Metadata should be removed');
+  }
+}
+
+export function _assertGlobalMetadata(metadataList: Metadata[]): void {
+  for (let i = 0; i < metadataList.length; i++) {
+    const metadata = getMetadataGlobal(
+      new Args().add(metadataList[i]).serialize(),
+    );
+
+    assert(
+      metadataList[i].value.toString() === metadata.toString(),
+      'Metadata should be equal',
+    );
+
+    const entry = Storage.getKeys(globalMetadataKey(metadataList[i].key));
+    assert(entry.length === 1, 'Metadata should be added');
+  }
+}

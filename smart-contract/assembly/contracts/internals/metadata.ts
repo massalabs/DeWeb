@@ -14,6 +14,7 @@ export function _editGlobalMetadata(
 }
 
 export function _removeGlobalMetadata(metadataKey: StaticArray<u8>): void {
+  assert(Storage.has(globalMetadataKey(metadataKey)), 'Metadata key not found');
   Storage.del(globalMetadataKey(metadataKey));
 }
 

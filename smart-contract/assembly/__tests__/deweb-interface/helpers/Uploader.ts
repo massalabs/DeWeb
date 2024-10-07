@@ -5,28 +5,23 @@ import {
   stringToBytes,
 } from '@massalabs/as-types';
 import { getKeys, sha256, Storage } from '@massalabs/massa-as-sdk';
-
 import {
   filesInit,
   uploadFileChunks,
   getFileChunk,
-  deleteFiles,
-  getFileLocations,
-} from '../../contracts/deweb-interface';
-
-import { FileChunkGet } from '../../contracts/serializable/FileChunkGet';
-import { FileChunkPost } from '../../contracts/serializable/FileChunkPost';
-import { fileChunkCountKey } from '../../contracts/internals/storageKeys/chunksKeys';
-import { fileMetadataKey } from '../../contracts/internals/storageKeys/metadataKeys';
+} from '../../../contracts/deweb-interface';
+import { FileChunkGet } from '../../../contracts/serializable/FileChunkGet';
+import { FileChunkPost } from '../../../contracts/serializable/FileChunkPost';
+import { fileChunkCountKey } from '../../../contracts/internals/storageKeys/chunksKeys';
 import {
   FILE_METADATA_LOCATION_TAG,
   FILE_METADATA_TAG,
   GLOBAL_METADATA_TAG,
-} from '../../contracts/internals/storageKeys/tags';
-import { Metadata } from '../../contracts/serializable/Metadata';
-import { _getGlobalMetadata } from '../../contracts/internals/metadata';
-import { FileInit } from '../../contracts/serializable/FileInit';
-import { FileDelete } from '../../contracts/serializable/FileDelete';
+} from '../../../contracts/internals/storageKeys/tags';
+import { Metadata } from '../../../contracts/serializable/Metadata';
+import { _getGlobalMetadata } from '../../../contracts/internals/metadata';
+import { FileInit } from '../../../contracts/serializable/FileInit';
+import { _assertHasMetadata } from './delete-file';
 const limitChunk = 10240;
 
 class FileInfo {
@@ -42,7 +37,7 @@ class FileInfo {
   }
 }
 
-class FileBuilder {
+export class Uploader {
   private files: FileInfo[];
   private filesToDelete: FileInit[] = [];
   private globalMetadata: Metadata[] = [];
@@ -53,22 +48,22 @@ class FileBuilder {
 
   withFile(
     location: string,
-    nbChunks: u32,
     data: StaticArray<u8>[] = [],
     metadata: Metadata[] = [],
-  ): FileBuilder {
+    nbChunks: u32 = data.length,
+  ): Uploader {
     this.files.push(new FileInfo(location, nbChunks, data, metadata));
     return this;
   }
 
-  withGlobalMetadata(key: string, value: string): FileBuilder {
+  withGlobalMetadata(key: string, value: string): Uploader {
     this.globalMetadata.push(
       new Metadata(stringToBytes(key), stringToBytes(value)),
     );
     return this;
   }
 
-  withFilesToDelete(locations: string[]): FileBuilder {
+  withFilesToDelete(locations: string[]): Uploader {
     for (let i = 0; i < locations.length; i++) {
       const file = new FileInit(
         locations[i],
@@ -80,7 +75,7 @@ class FileBuilder {
     return this;
   }
 
-  public init(): FileBuilder {
+  public init(): Uploader {
     const initFiles: FileInit[] = [];
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
@@ -106,7 +101,7 @@ class FileBuilder {
     return this;
   }
 
-  uploadAll(limit: u32 = limitChunk): FileBuilder {
+  uploadAll(limit: u32 = limitChunk): Uploader {
     let chunks: FileChunkPost[] = [];
 
     // prepare list of chunks
@@ -148,17 +143,7 @@ class FileBuilder {
     return this;
   }
 
-  deleteFiles(files: FileDelete[]): void {
-    deleteFiles(
-      new Args().addSerializableObjectArray<FileDelete>(files).serialize(),
-    );
-  }
-
-  // deleteWebsite(): void {
-  //   deleteWebsite(new Args().serialize());
-  // }
-
-  hasUploadedFiles(): FileBuilder {
+  hasUploadedFiles(): Uploader {
     const dataStoreEntriesLocation = getKeys(
       FILE_METADATA_TAG.concat(FILE_METADATA_LOCATION_TAG),
     );
@@ -193,7 +178,7 @@ class FileBuilder {
     return this;
   }
 
-  hasGlobalMetadata(): FileBuilder {
+  hasGlobalMetadata(): Uploader {
     const dataStoreEntriesMetadata = getKeys(GLOBAL_METADATA_TAG);
 
     for (let i = 0; i < dataStoreEntriesMetadata.length; i++) {
@@ -212,26 +197,15 @@ class FileBuilder {
     return this;
   }
 
-  hasFileMetadata(): FileBuilder {
+  hasFileMetadata(): Uploader {
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
-      for (let j = 0; j < fileInfo.metadata.length; j++) {
-        const storageKey = fileMetadataKey(
-          fileInfo.locationHash,
-          fileInfo.metadata[j].key,
-        );
-        assert(Storage.has(storageKey), 'Metadata should be stored');
-        assert(
-          Storage.get(storageKey).toString() ==
-            fileInfo.metadata[j].value.toString(),
-          'Metadata value should be correct',
-        );
-      }
+      _assertHasMetadata(fileInfo.locationHash, fileInfo.metadata);
     }
     return this;
   }
 
-  hasTheRightNumberOfFiles(): FileBuilder {
+  hasTheRightNumberOfFilesLocations(): Uploader {
     const dataStoreEntriesLocation = getKeys(
       FILE_METADATA_TAG.concat(FILE_METADATA_LOCATION_TAG),
     );
@@ -244,7 +218,7 @@ class FileBuilder {
     return this;
   }
 
-  hasTheRightNumberOfChunks(): FileBuilder {
+  hasTheRightChunkCount(): Uploader {
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
       const chunkCountKey = fileChunkCountKey(fileInfo.locationHash);
@@ -260,28 +234,13 @@ class FileBuilder {
 
     return this;
   }
-
-  hasNoFiles(): void {
-    const fileList = new Args(getFileLocations()).next<string[]>().unwrap();
-    assert(fileList.length === 0, 'FileList should be empty');
-  }
-
-  fileIsDeleted(location: string): void {
-    const fileList = new Args(getFileLocations()).next<string[]>().unwrap();
-    for (let i = 0; i < fileList.length; i++) {
-      assert(
-        !fileList.includes(location),
-        `File ${location} should not be in the file list`,
-      );
-    }
-  }
 }
 
-export function given(): FileBuilder {
-  return new FileBuilder();
+export function uploader(): Uploader {
+  return new Uploader();
 }
 
-export function checkThat(fileBuilder: FileBuilder): FileBuilder {
+export function ensure(fileBuilder: Uploader): Uploader {
   return fileBuilder;
 }
 

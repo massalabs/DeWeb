@@ -28,6 +28,8 @@ export function _fileInit(
   const currentTotalChunk = _getTotalChunk(hashLocation);
   if (totalChunk !== currentTotalChunk) {
     if (totalChunk < currentTotalChunk) {
+      // Remove extra chunks So we don't remove the hole file.
+      // TODO: Validate this solution as it may not be the best approach.
       _removeChunksRange(hashLocation, totalChunk, currentTotalChunk - 1);
     }
     _setFileChunkCount(hashLocation, totalChunk);
