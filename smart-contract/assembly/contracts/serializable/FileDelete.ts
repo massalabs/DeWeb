@@ -1,15 +1,18 @@
 import { Serializable, Args, Result } from '@massalabs/as-types';
 
+/**
+ * Represents a request to delete a file.
+ * Implements the Serializable interface for encoding and decoding.
+ */
 export class FileDelete implements Serializable {
   /**
-   * Creates a new ChunkPost instance.
-   * @param location - The location of the file this chunk belongs to.
-   * @param hashLocation - The hash of the file location.
+   * Creates a new FileDelete instance.
+   * @param hashLocation - The hash of the file location to be deleted.
    */
   constructor(public hashLocation: StaticArray<u8> = []) {}
 
   /**
-   * Serializes the ChunkPost instance into a byte array.
+   * Serializes the FileDelete instance into a byte array.
    * @returns A StaticArray<u8> representing the serialized data.
    */
   serialize(): StaticArray<u8> {
@@ -17,7 +20,7 @@ export class FileDelete implements Serializable {
   }
 
   /**
-   * Deserializes a byte array into a ChunkPost instance.
+   * Deserializes a byte array into a FileDelete instance.
    * @param data - The byte array to deserialize.
    * @param offset - The starting offset in the byte array.
    * @returns A Result containing the new offset after deserialization.

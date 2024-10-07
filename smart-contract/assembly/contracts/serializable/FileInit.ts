@@ -2,10 +2,14 @@ import { Args, Result } from '@massalabs/as-types';
 import { Serializable } from '@massalabs/as-types/assembly/serializable';
 import { Metadata } from './Metadata';
 
+/**
+ * Represents the initialization data for a file.
+ * Implements the Serializable interface for encoding and decoding.
+ */
 export class FileInit implements Serializable {
   /**
    * Creates a new FileInit instance.
-   * @param location - The location of the file this chunk belongs to.
+   * @param location - The location of the file.
    * @param hashLocation - The hash of the file location.
    * @param totalChunk - The total number of chunks of the file.
    * @param metadata - The metadata of the file.
@@ -17,6 +21,10 @@ export class FileInit implements Serializable {
     public metadata: Metadata[] = [],
   ) {}
 
+  /**
+   * Serializes the FileInit instance into a byte array.
+   * @returns A StaticArray<u8> representing the serialized data.
+   */
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.location)
@@ -26,6 +34,12 @@ export class FileInit implements Serializable {
       .serialize();
   }
 
+  /**
+   * Deserializes a byte array into a FileInit instance.
+   * @param data - The byte array to deserialize.
+   * @param offset - The starting offset in the byte array.
+   * @returns A Result containing the new offset after deserialization.
+   */
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
 

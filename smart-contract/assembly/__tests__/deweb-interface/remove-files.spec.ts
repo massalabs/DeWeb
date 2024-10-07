@@ -27,7 +27,7 @@ describe('Upload files', () => {
   beforeEach(() => {
     resetStorage();
     setDeployContext(user);
-    constructor(new Args().serialize());
+    constructor(new Args().add(user).serialize());
   });
 
   test('Remove some files', () => {

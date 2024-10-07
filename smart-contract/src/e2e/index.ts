@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import {
   Account,
+  Args,
   Mas,
   SmartContract,
   Web3Provider,
@@ -11,9 +12,14 @@ import { CONTRACT_FILE } from './helpers/const';
 
 async function deploy(provider: Web3Provider): Promise<SmartContract> {
   const byteCode = getByteCode('build', CONTRACT_FILE);
-  const contract = await SmartContract.deploy(provider, byteCode, undefined, {
-    coins: Mas.fromString('50'),
-  });
+  const contract = await SmartContract.deploy(
+    provider,
+    byteCode,
+    new Args().addString(provider.address).serialize(),
+    {
+      coins: Mas.fromString('50'),
+    },
+  );
 
   console.log('Contract deployed at:', contract.address);
 

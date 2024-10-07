@@ -6,6 +6,7 @@ import { fileChunkCountKey } from './storageKeys/chunksKeys';
 import { _removeFileLocation } from './location';
 import { _removeAllFileMetadata } from './metadata';
 import { FILE_TAG, CHUNK_TAG } from './storageKeys/tags';
+import { fileMetadataLocationKey } from './storageKeys/metadataKeys';
 /* -------------------------------------------------------------------------- */
 /*                                     SET                                    */
 /* -------------------------------------------------------------------------- */
@@ -15,7 +16,7 @@ import { FILE_TAG, CHUNK_TAG } from './storageKeys/tags';
  * @param location - The location of the file.
  * @param index - The index of the chunk.
  * @param chunk - The chunk data.
- * @throws If the chunk index is not in the expected order.
+ * @throws If the total chunks weren't set for this file or if the index is out of bounds.
  */
 export function _setFileChunk(
   location: string,
@@ -39,7 +40,7 @@ export function _setFileChunk(
  * Retrieves a specific chunk of a file.
  * @param hashLocation - The hash of the file location.
  * @param index - The index of the chunk to retrieve.
- * @returns The chunk data.
+ * @returns The chunk data as a StaticArray<u8>.
  * @throws If the chunk is not found in storage.
  */
 export function _getFileChunk(
@@ -64,6 +65,12 @@ export function _getTotalChunk(hashLocation: StaticArray<u8>): u32 {
 /*                                   DELETE                                   */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Removes a range of chunks for a given file from storage.
+ * @param hashLocation - The hash of the file location.
+ * @param start - The starting index of the range to remove (inclusive).
+ * @param end - The ending index of the range to remove (inclusive).
+ */
 export function _removeChunksRange(
   hashLocation: StaticArray<u8>,
   start: u32 = 0,
@@ -75,9 +82,8 @@ export function _removeChunksRange(
 }
 
 /**
- * Deletes a chunks of a given file from storage.
+ * Deletes all chunks and metadata of a given file from storage.
  * @param hashLocation - The hash of the file location.
- * @throws If the chunk is not found in storage.
  */
 export function _deleteFile(hashLocation: StaticArray<u8>): void {
   // Remove all chunks
@@ -93,7 +99,9 @@ export function _deleteFile(hashLocation: StaticArray<u8>): void {
     Storage.del(fileChunkCountKey(hashLocation));
   }
 
-  _removeFileLocation(hashLocation);
+  if (Storage.has(fileMetadataLocationKey(hashLocation))) {
+    _removeFileLocation(hashLocation);
+  }
 
   _removeAllFileMetadata(hashLocation);
 }
@@ -102,6 +110,12 @@ export function _deleteFile(hashLocation: StaticArray<u8>): void {
 /*                                 CHUNK COUNT                                */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Sets the total number of chunks for a file.
+ * @param hashLocation - The hash of the file location.
+ * @param totalChunk - The total number of chunks for the file.
+ * @throws If the total chunk is less than 1.
+ */
 export function _setFileChunkCount(
   hashLocation: StaticArray<u8>,
   totalChunk: u32,

@@ -17,6 +17,10 @@ export class FileChunkPost implements Serializable {
     public data: StaticArray<u8> = [],
   ) {}
 
+  /**
+   * Serializes the FileChunkPost instance into a byte array.
+   * @returns A StaticArray<u8> representing the serialized data.
+   */
   serialize(): StaticArray<u8> {
     return new Args()
       .add(this.location)
@@ -25,6 +29,12 @@ export class FileChunkPost implements Serializable {
       .serialize();
   }
 
+  /**
+   * Deserializes a byte array into a FileChunkPost instance.
+   * @param data - The byte array to deserialize.
+   * @param offset - The starting offset in the byte array.
+   * @returns A Result containing the new offset after deserialization.
+   */
   deserialize(data: StaticArray<u8>, offset: i32): Result<i32> {
     const args = new Args(data, offset);
 

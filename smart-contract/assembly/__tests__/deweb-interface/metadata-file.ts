@@ -26,7 +26,7 @@ describe('File Metadata', () => {
   beforeEach(() => {
     resetStorage();
     setDeployContext(user);
-    constructor(new Args().serialize());
+    constructor(new Args().add(user).serialize());
   });
 
   test('Edit file metadata', () => {
@@ -53,6 +53,7 @@ describe('File Metadata', () => {
 
   throws('if try to remove non existing file metadata', () => {
     uploader().withFile(file1Path, [fileData1]).init().uploadAll();
+
     _removeMetadataFromFile(hashFile1, [metadata1]);
   });
 });

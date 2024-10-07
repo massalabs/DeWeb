@@ -26,14 +26,18 @@ import {
 import { _getFileLocations } from './internals/location';
 import { _fileInit } from './internals/fileInit';
 import { FileInit } from './serializable/FileInit';
+import { MetadataDelete } from './serializable/MetadataDelete';
 
 /**
  * Initializes the smart contract.
  * Sets the contract deployer as the owner.
+ * @param binaryArgs - args containing the owner address.
  */
-export function constructor(_: StaticArray<u8>): void {
+export function constructor(binaryArgs: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
-  _setOwner(Context.caller().toString());
+
+  const owner = new Args(binaryArgs).next<string>().expect('Invalid owner');
+  _setOwner(owner);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -42,8 +46,8 @@ export function constructor(_: StaticArray<u8>): void {
 
 /**
  * Initializes the contract storage with the given files and metadata.
- * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized arguments containing an array of FileInit objects.
+ * @param _binaryArgs - Serialized arguments containing arrays of FileInit objects,
+ *                      files to delete, and global metadata.
  * @throws If the files are invalid or if the caller is not the owner.
  */
 export function filesInit(_binaryArgs: StaticArray<u8>): void {
@@ -106,7 +110,7 @@ export function uploadFileChunks(_binaryArgs: StaticArray<u8>): void {
 /**
  * Retrieves a specific chunk of a file.
  * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and index.
- * @returns The requested chunk.
+ * @returns The requested chunk as a StaticArray<u8>.
  * @throws If the chunk request is invalid.
  */
 export function getFileChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
@@ -135,7 +139,7 @@ export function getFileChunkCount(
 /**
  * Deletes files from the contract storage.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized arguments containing an array of FileChunkDelete objects.
+ * @param _binaryArgs - Serialized arguments containing an array of FileDelete objects.
  * @throws If the files are invalid or if the caller is not the owner.
  */
 export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
@@ -155,7 +159,7 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
 
 /**
  * Retrieves the list of file locations.
- * @returns An array of file locations.
+ * @returns A StaticArray<u8> containing serialized array of strings.
  */
 export function getFileLocations(): StaticArray<u8> {
   return new Args().add(_getFileLocations()).serialize();
@@ -166,9 +170,9 @@ export function getFileLocations(): StaticArray<u8> {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Sets the metadata of the contract.
+ * Sets the global metadata of the contract.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized FileChunkGet object containing metadata.
+ * @param _binaryArgs - Serialized arguments containing an array of Metadata objects.
  * @throws If the caller is not the owner.
  */
 export function setMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
@@ -185,11 +189,10 @@ export function setMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
 }
 
 /**
- * Retrieves the metadata of a specific file.
- * @param _binaryArgs - Serialized FileChunkGet object containing key.
- * @returns The requested global metadata.
- * @throws If the metadata request is invalid.
- * @throws If the metadata is not found.
+ * Retrieves the global metadata for a specific key.
+ * @param _binaryArgs - Serialized arguments containing the metadata key.
+ * @returns The requested global metadata as a StaticArray<u8>.
+ * @throws If the metadata request is invalid or the metadata is not found.
  */
 export function getMetadataGlobal(
   _binaryArgs: StaticArray<u8>,
@@ -201,12 +204,10 @@ export function getMetadataGlobal(
 }
 
 /**
- * Removes the metadata of a specific file.
+ * Removes specific global metadata entries.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and key.
- * @throws If the caller is not the owner.
- * @throws If the metadata request is invalid.
- * @throws If the metadata is not found.
+ * @param _binaryArgs - Serialized arguments containing an array of metadata keys to remove.
+ * @throws If the caller is not the owner or if the metadata request is invalid.
  */
 export function removeMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
@@ -224,9 +225,9 @@ export function removeMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Sets the metadata of a specific file.
+ * Sets the metadata for a specific file.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and metadata.
+ * @param _binaryArgs - Serialized arguments containing the file's hashLocation and an array of Metadata objects.
  * @throws If the caller is not the owner.
  */
 export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
@@ -245,30 +246,31 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
 }
 
 /**
- * Removes the metadata of a specific file.
+ * Removes specific metadata entries for a file.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and key.
+ * @param _binaryArgs - Serialized arguments containing the file's hashLocation and an array of MetadataDelete objects.
  * @throws If the caller is not the owner.
  */
 export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
   const args = new Args(_binaryArgs);
+
   const hashLocation = args
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
-  const key = args.next<string[]>().expect('Invalid key');
 
-  for (let i = 0; i < key.length; i++) {
-    _removeFileMetadata(stringToBytes(key[i]), hashLocation);
+  const metadata = args.next<MetadataDelete[]>().expect('Invalid key');
+
+  for (let i = 0; i < metadata.length; i++) {
+    _removeFileMetadata(metadata[i].key, hashLocation);
   }
 }
 
 /**
- * Retrieves the metadata of a specific file.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and key.
- * @returns The requested file metadata.
- * @throws If the metadata request is invalid.
- * @throws If the metadata is not found.
+ * Retrieves the metadata of a specific file for a given key.
+ * @param _binaryArgs - Serialized arguments containing the file's hashLocation and metadata key.
+ * @returns The requested file metadata as a StaticArray<u8>.
+ * @throws If the metadata request is invalid or the metadata is not found.
  */
 export function getMetadataFile(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(_binaryArgs);
@@ -285,10 +287,10 @@ export function getMetadataFile(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Allow the owner to withdraw funds from the contract balance.
+ * Allows the owner to withdraw funds from the contract balance.
  * Only the contract owner can call this function.
- * @param _binaryArgs - Serialized amount to withdraw.
- * @throws If the caller is not the owner.
+ * @param binaryArgs - Serialized amount to withdraw.
+ * @throws If the caller is not the owner, the amount is invalid, or the contract has insufficient balance.
  */
 export function withdrawCoins(binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
@@ -308,7 +310,7 @@ export function withdrawCoins(binaryArgs: StaticArray<u8>): void {
  * Changes the owner of the contract.
  * Only the current owner can call this function.
  * @param _binaryArgs - Serialized new owner address.
- * @throws If the caller is not the owner.
+ * @throws If the caller is not the owner or the new owner address is invalid.
  */
 export function setOwner(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();

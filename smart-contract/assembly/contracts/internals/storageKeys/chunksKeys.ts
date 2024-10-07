@@ -4,7 +4,7 @@ import { CHUNK_NB_TAG, FILE_TAG, CHUNK_TAG } from './tags';
 /**
  * Generates the storage key for the number of chunks of a file.
  * @param hashLocation - The hash of the file location.
- * @returns The storage key for the number of chunks.
+ * @returns The storage key for the number of chunks as a StaticArray<u8>.
  *
  * @remarks
  * Storage representation: [FILE_TAG][hash(location)][CHUNK_NB_TAG] = chunk_count_value
@@ -19,7 +19,7 @@ export function fileChunkCountKey(
  * Generates the storage key for a specific chunk of a file.
  * @param hashLocation - The hash of the file location.
  * @param index - The index of the chunk.
- * @returns The storage key for the chunk.
+ * @returns The storage key for the chunk as a StaticArray<u8>.
  *
  * @remarks
  * Storage representation: [FILE_TAG][hash(location)][CHUNK_TAG][index] = chunk_data

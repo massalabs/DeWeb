@@ -8,7 +8,7 @@ export class FileChunkGet implements Serializable {
   /**
    * Creates a new FileChunkGet instance.
    * @param hashLocation - The hash of the file location.
-   * @param id - The unique identifier of the chunk to retrieve.
+   * @param index - The index of the chunk to retrieve.
    */
   constructor(
     public hashLocation: StaticArray<u8> = [],

@@ -7,6 +7,7 @@ import {
 import { Args } from '@massalabs/as-types';
 import { Storage } from '@massalabs/massa-as-sdk';
 import { fileMetadataKey } from '../../../contracts/internals/storageKeys/metadataKeys';
+import { MetadataDelete } from '../../../contracts/serializable/MetadataDelete';
 
 export function _addMetadataToFile(
   hashLocation: StaticArray<u8>,
@@ -22,13 +23,14 @@ export function _addMetadataToFile(
 
 export function _removeMetadataFromFile(
   locationHash: StaticArray<u8>,
-  metadata: Metadata[],
+  metadata: MetadataDelete[],
 ): void {
-  for (let i = 0; i < metadata.length; i++) {
-    removeMetadataFile(
-      new Args().add(locationHash).add(metadata[i].key).serialize(),
-    );
-  }
+  removeMetadataFile(
+    new Args()
+      .add(locationHash)
+      .addSerializableObjectArray<MetadataDelete>(metadata)
+      .serialize(),
+  );
 }
 
 export function _assertMetadataAddedToFile(
