@@ -59,18 +59,3 @@ func ComputeChunkCost(chunkIndex int, chunkSize int) (int, error) {
 
 	return uploadCost, nil
 }
-
-// getChunkKey returns the key of a chunk in the datastore.
-func getChunkKey(
-	filePathHash [32]byte,
-	index int,
-) []byte {
-	return append(append(append([]byte(fileTag), filePathHash[:]...), []byte(chunkTag)...), convert.U32ToBytes(index)...)
-}
-
-// getTotalChunkKey returns the key of the total number of chunks in the datastore.
-func getTotalChunkKey(
-	filePathHash [32]byte,
-) []byte {
-	return append([]byte(chunkNumberTag), filePathHash[:]...)
-}

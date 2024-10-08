@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
 	"github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/node"
@@ -42,7 +43,8 @@ func IsNotFoundError(err error, fileName string) bool {
 
 // GetNumberOfChunks fetches and returns the number of chunks for the website.
 func GetNumberOfChunks(client *node.Client, websiteAddress string, filePath string) (int32, error) {
-	nbChunkKey := getTotalChunkKey(sha256.Sum256([]byte(filePath)))
+	filePathHash := sha256.Sum256([]byte(filePath))
+	nbChunkKey := storagekeys.FileChunkCountKey(filePathHash[:])
 
 	nbChunkResponse, err := node.FetchDatastoreEntry(client, websiteAddress, nbChunkKey)
 	if err != nil {
@@ -86,7 +88,7 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 
 	keys := make([][]byte, chunkNumber)
 	for i := 0; i < int(chunkNumber); i++ {
-		keys[i] = getChunkKey(filePathHash, i)
+		keys[i] = storagekeys.FileChunkKey(filePathHash[:], i)
 	}
 
 	var dataStore []byte
