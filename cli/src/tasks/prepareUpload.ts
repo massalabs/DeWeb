@@ -2,7 +2,7 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { formatMas, OperationStatus } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { preStoreChunks, preStoreCost } from '../lib/website/preStore'
+import { filesInitCost, sendFilesInits } from '../lib/website/filesInit'
 
 import { UploadCtx } from './tasks'
 
@@ -14,7 +14,7 @@ export function prepareUploadTask(): ListrTask {
   return {
     title: 'Prepare upload',
     task: (ctx: UploadCtx, task) => {
-      if (ctx.preStores.length === 0) {
+      if (ctx.fileInits.length === 0) {
         task.skip('All files are ready for upload')
         return
       }
@@ -25,7 +25,8 @@ export function prepareUploadTask(): ListrTask {
             title: 'Confirm SC preparation',
             task: async (ctx, subTask) => {
               const cost =
-                (await preStoreCost(ctx.sc, ctx.preStores)) + ctx.minimalFees
+                (await filesInitCost(ctx.sc, ctx.fileInits, [], [])) +
+                ctx.minimalFees
               subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`
 
               if (!ctx.skipConfirm) {
@@ -48,12 +49,17 @@ export function prepareUploadTask(): ListrTask {
           },
           {
             title: 'Preparing SC for upload',
-            task: async (ctx, subTask) => {
+            task: async (ctx: UploadCtx, subTask) => {
               if (ctx.sc === undefined) {
                 throw new Error('Smart contract not found')
               }
 
-              const operations = await preStoreChunks(ctx.sc, ctx.preStores)
+              const operations = await sendFilesInits(
+                ctx.sc,
+                ctx.fileInits,
+                [],
+                []
+              )
 
               const results = await Promise.all(
                 operations.map(async (op) => {
