@@ -1,8 +1,8 @@
 import { SmartContract, Web3Provider } from '@massalabs/massa-web3'
 
 import { Batch } from '../lib/batcher'
-import { ChunkPost } from '../lib/website/chunkPost'
-import { PreStore } from '../lib/website/preStore'
+import { FileChunkPost } from '../lib/website/models/FileChunkPost'
+import { FileInit } from '../lib/website/models/FileInit'
 
 export interface UploadCtx {
   provider: Web3Provider
@@ -12,8 +12,8 @@ export interface UploadCtx {
   websiteDirPath: string
   currentTotalEstimation: bigint
 
-  chunks: ChunkPost[]
-  preStores: PreStore[]
+  chunks: FileChunkPost[]
+  fileInits: FileInit[]
   batches: Batch[]
   chunkSize: number
   minimalFees: bigint

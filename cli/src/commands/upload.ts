@@ -36,7 +36,7 @@ export const uploadCommand = new Command('upload')
       provider: provider,
       batches: [],
       chunks: [],
-      preStores: [],
+      fileInits: [],
       chunkSize: chunkSize,
       websiteDirPath: websiteDirPath,
       skipConfirm: options.yes,

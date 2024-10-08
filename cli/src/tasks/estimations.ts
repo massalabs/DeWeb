@@ -22,8 +22,8 @@ export function showEstimatedCost(): ListrTask {
           return (
             sum +
             computeChunkCost(
-              chunk.filePath,
-              chunk.chunkId,
+              chunk.location,
+              chunk.index,
               BigInt(chunk.data.length)
             )
           )
