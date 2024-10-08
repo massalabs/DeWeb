@@ -216,6 +216,8 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
+	logger.Warnf("This DeWeb CLI is deprecated, please use the new DeWeb CLI")
+
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
@@ -247,7 +249,9 @@ func deployWebsite(config *yamlConfig.Config, filepath string) (string, error) {
 }
 
 func confirmUploadFinality(networkInfos msConfig.NetworkInfos, scAddress string) (bool, error) {
-	websiteBytes, err := website.Fetch(&networkInfos, scAddress)
+	fileName := "index.html"
+
+	websiteBytes, err := website.Fetch(&networkInfos, scAddress, fileName)
 	if err != nil {
 		return false, fmt.Errorf("failed to fetch website: %v", err)
 	}
@@ -306,12 +310,14 @@ func uploadChunks(chunks [][]byte, address string, config *yamlConfig.Config) er
 func deleteIfRequired(config *yamlConfig.Config, siteAddress string, editChunksNbr int) error {
 	client := node.NewClient(config.NetworkConfig.NodeURL)
 
-	deployedChunks, err := website.GetNumberOfChunks(client, siteAddress)
+	fileName := "index.html"
+
+	deployedChunks, err := website.GetNumberOfChunks(client, siteAddress, fileName)
 	if err != nil {
 		return fmt.Errorf("failed to get number of chunks for website %s: %v", siteAddress, err)
 	}
 
-	logger.Debugf("Website %s has %d deployed chunks", siteAddress, deployedChunks)
+	logger.Debugf("Website %s: %s has %d deployed chunks", siteAddress, fileName, deployedChunks)
 
 	if deployedChunks > int32(editChunksNbr) {
 		logger.Infof("Website %s has more chunks than the new website, deleting and redeploying", siteAddress)
@@ -341,31 +347,31 @@ func viewWebsite(scAddress string, networkInfos *msConfig.NetworkInfos) error {
 
 	logger.Infof("Website owner: %s", owner)
 
+	fileName := "index.html"
+
 	// For debugging  cache purposes:
 	// zipFile, err := webmanager.RequestWebsite(scAddress, networkInfos)
-	zipFile, err := website.Fetch(networkInfos, scAddress)
+	zipFile, err := website.Fetch(networkInfos, scAddress, fileName)
 	if err != nil {
 		return fmt.Errorf("failed to request website: %v", err)
 	}
 
-	firstCreationTimestamp, err := website.GetFirstCreationTimestamp(networkInfos, scAddress)
-	if err != nil {
-		logger.Warnf("failed to get first creation timestamp of %s: %v", scAddress, err)
-	}
+	// firstCreationTimestamp, err := website.GetFirstCreationTimestamp(networkInfos, scAddress)
+	// if err != nil {
+	// 	logger.Warnf("failed to get first creation timestamp of %s: %v", scAddress, err)
+	// }
 
-	lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(networkInfos, scAddress)
-	if err != nil {
-		logger.Warnf("failed to get last update timestamp of %s: %v", scAddress, err)
-	}
-
-	fileName := "index.html"
+	// lastUpdateTimestamp, err := website.GetLastUpdateTimestamp(networkInfos, scAddress)
+	// if err != nil {
+	// 	logger.Warnf("failed to get last update timestamp of %s: %v", scAddress, err)
+	// }
 
 	indexFile, err := zipper.ReadFileFromZip(zipFile, fileName)
 	if err != nil {
 		return fmt.Errorf("failed to get file %s from zip: %v", fileName, err)
 	}
 
-	prettyPrintUnixTimestamp(int64(firstCreationTimestamp), int64(lastUpdateTimestamp))
+	// prettyPrintUnixTimestamp(int64(firstCreationTimestamp), int64(lastUpdateTimestamp))
 
 	logger.Infof("viewing content for %s:\n %s", scAddress, indexFile)
 
@@ -382,20 +388,4 @@ func deleteWebsite(siteAddress string, config *yamlConfig.Config) error {
 	logger.Infof("Website %s deleted with operation ID: %s", siteAddress, *operationID)
 
 	return nil
-}
-
-func prettyPrintUnixTimestamp(firstCreationTimestamp int64, lastUpdateTimestamp int64) {
-	readableFCTimestamp := getDateFromTimestamp(firstCreationTimestamp)
-	readableLUTimestamp := getDateFromTimestamp(lastUpdateTimestamp)
-
-	logger.Infof("First creation date: %s", readableFCTimestamp)
-	logger.Infof("Last update date: %s", readableLUTimestamp)
-}
-
-func getDateFromTimestamp(timestamp int64) string {
-	seconds := timestamp / 1000
-	t := time.Unix(seconds, 0)
-	date := t.Format(time.RFC3339)
-
-	return date
 }
