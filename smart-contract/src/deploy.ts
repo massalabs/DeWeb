@@ -15,7 +15,6 @@ async function deploy(provider: Web3Provider): Promise<SmartContract> {
     byteCode,
     new Args().addString(provider.address).serialize(),
     {
-      // TODO: Calculate the amount of coins to send
       coins: Mas.fromString('0.01'),
     },
   );
