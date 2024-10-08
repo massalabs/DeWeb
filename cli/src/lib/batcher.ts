@@ -1,11 +1,11 @@
-import { ChunkPost } from './website/chunkPost'
+import { FileChunkPost } from './website/models/FileChunkPost'
 
 /**
  * Represents a batch of chunks to be uploaded.
  */
 export interface Batch {
   id: number
-  chunks: ChunkPost[]
+  chunks: FileChunkPost[]
 }
 
 /**
@@ -14,7 +14,7 @@ export interface Batch {
  * @param chunks - the chunks to divide into batches
  * @param chunkSize - the maximum size of each batch
  */
-export function batcher(chunks: ChunkPost[], chunkSize: number): Batch[] {
+export function batcher(chunks: FileChunkPost[], chunkSize: number): Batch[] {
   chunks.sort((a, b) => b.data.length - a.data.length)
 
   const batches: Batch[] = []
