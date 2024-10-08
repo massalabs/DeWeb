@@ -6,7 +6,7 @@ import {
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
-import { getChunkKey } from './chunk'
+import { fileChunkCountKey, fileChunkKey } from './storageKeys'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -14,7 +14,7 @@ import { getChunkKey } from './chunk'
  * @returns List of file paths in the website
  */
 export async function listFiles(sc: SmartContract): Promise<string[]> {
-  const fileListRaw = await sc.read('getFilePathList', undefined)
+  const fileListRaw = await sc.read('getFileLocations', undefined)
   const fileListArgs = new Args(fileListRaw.value)
 
   return fileListArgs.nextArray(ArrayTypes.STRING)
@@ -27,19 +27,31 @@ export async function listFiles(sc: SmartContract): Promise<string[]> {
  * @returns Total number of chunks for the file
  */
 export async function getFileTotalChunks(
+  provider: Web3Provider,
   sc: SmartContract,
   filePath: string
 ): Promise<bigint> {
   const filePathHash = sha256.arrayBuffer(filePath)
-  const args = new Args().addUint8Array(new Uint8Array(filePathHash))
+  const fileTotalChunksResp = await provider.client.getDatastoreEntries([
+    {
+      address: sc.address,
+      key: fileChunkCountKey(new Uint8Array(filePathHash)),
+    },
+  ])
 
-  const fileTotalChunksResp = await sc.read('getTotalChunksForFile', args)
-
-  if (fileTotalChunksResp.value.length !== U32.SIZE_BYTE) {
-    throw new Error('Invalid response from getTotalChunksForFile')
+  if (fileTotalChunksResp.length !== 1) {
+    throw new Error('Invalid response from getDatastoreEntries')
   }
 
-  return U32.fromBytes(fileTotalChunksResp.value)
+  const fileTotalChunksByteArray = fileTotalChunksResp[0]
+
+  if (fileTotalChunksByteArray.length !== U32.SIZE_BYTE) {
+    throw new Error(
+      `Invalid length of fileTotalChunksByteArray, got ${fileTotalChunksByteArray.length}, expected ${U32.SIZE_BYTE}`
+    )
+  }
+
+  return U32.fromBytes(fileTotalChunksByteArray)
 }
 
 /**
@@ -54,11 +66,12 @@ export async function getFileFromAddress(
   sc: SmartContract,
   filePath: string
 ): Promise<Uint8Array> {
-  const fileTotalChunks = await getFileTotalChunks(sc, filePath)
+  const filePathHash = sha256.arrayBuffer(filePath)
+  const fileTotalChunks = await getFileTotalChunks(provider, sc, filePath)
 
   const datastoreKeys = []
   for (let i = 0n; i < fileTotalChunks; i++) {
-    datastoreKeys.push(getChunkKey(filePath, i))
+    datastoreKeys.push(fileChunkKey(new Uint8Array(filePathHash), i))
   }
 
   const rawChunks = await provider.client.getDatastoreEntries(
