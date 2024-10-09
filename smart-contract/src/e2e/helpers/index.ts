@@ -22,7 +22,7 @@ export async function uploadFileChunks(
 export async function filesInit(
   contract: SmartContract,
   chunks: FileInit[],
-  fileToDelete: FileInit[] = [],
+  fileToDelete: FileDelete[] = [],
   globalMetadata: Metadata[] = [],
 ) {
   const op = await contract.call(

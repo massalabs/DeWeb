@@ -1,10 +1,7 @@
 import { bytesToString, stringToBytes } from '@massalabs/as-types';
 import { Storage } from '@massalabs/massa-as-sdk';
-import {
-  fileMetadataKey,
-  fileMetadataLocationKey,
-} from './storageKeys/metadataKeys';
-import { FILE_METADATA_LOCATION_TAG } from './storageKeys/tags';
+import { FILE_LOCATION_TAG } from './storageKeys/tags';
+import { fileLocationKey } from './storageKeys/metadataKeys';
 
 /**
  * Adds a new file location to the list of file locations.
@@ -15,7 +12,7 @@ export function _pushFileLocation(
   location: string,
   hashLocation: StaticArray<u8>,
 ): void {
-  Storage.set(fileMetadataLocationKey(hashLocation), stringToBytes(location));
+  Storage.set(fileLocationKey(hashLocation), stringToBytes(location));
 }
 
 /**
@@ -25,9 +22,9 @@ export function _pushFileLocation(
  * @throws If the file location is not found.
  */
 export function _removeFileLocation(hashLocation: StaticArray<u8>): void {
-  const fileLocationKey = fileMetadataLocationKey(hashLocation);
-  assert(Storage.has(fileLocationKey), 'File not found');
-  Storage.del(fileLocationKey);
+  const key = fileLocationKey(hashLocation);
+  assert(Storage.has(key), 'File not found');
+  Storage.del(key);
 }
 
 /**
@@ -35,7 +32,7 @@ export function _removeFileLocation(hashLocation: StaticArray<u8>): void {
  * @returns An array of file locations as strings.
  */
 export function _getFileLocations(): string[] {
-  const keys = Storage.getKeys(fileMetadataKey(FILE_METADATA_LOCATION_TAG));
+  const keys = Storage.getKeys(FILE_LOCATION_TAG);
   const locations: string[] = [];
   for (let i = 0; i < keys.length; i++) {
     locations.push(bytesToString(Storage.get(keys[i])));

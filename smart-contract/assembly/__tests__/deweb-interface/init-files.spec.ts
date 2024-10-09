@@ -4,6 +4,8 @@ import { Args } from '@massalabs/as-types';
 import { ensure, uploader } from './helpers/Uploader';
 import { Metadata } from '../../contracts/serializable/Metadata';
 import { _assertFileChunkNbIs } from './helpers/upload-file';
+import { _assertGlobalMetadataRemoved } from './helpers/file-metadata';
+import { _assertFilesAreNotPresent } from './helpers/delete-file';
 
 const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
 const file1Path = 'file1';
@@ -73,5 +75,47 @@ describe('Upload files', () => {
 
     ensure(myUpload2).hasUploadedFiles();
     _assertFileChunkNbIs(file3Path, 1);
+  });
+
+  test('init with global metadata to remove', () => {
+    const myUpload = uploader()
+      .withGlobalMetadata('version', '1.0.0')
+      .withFile(file1Path, [fileData1, fileData2])
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3, fileData4])
+      .withFile(file4Path, [fileData4])
+      .init();
+
+    ensure(myUpload).hasGlobalMetadata();
+
+    uploader()
+      .withGlobalMetadataToDelete('version')
+      .withFile(file1Path, [fileData1])
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3])
+      .withFile(file4Path, [fileData4])
+      .init();
+
+    _assertGlobalMetadataRemoved(['version']);
+  });
+
+  test('init with files to remove', () => {
+    const myUpload = uploader()
+      .withGlobalMetadata('version', '1.0.0')
+      .withFile(file1Path, [fileData1, fileData2])
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3, fileData4])
+      .withFile(file4Path, [fileData4])
+      .init()
+      .uploadAll();
+
+    ensure(myUpload).hasUploadedFiles();
+
+    uploader()
+      .withFilesToDelete([file1Path, file2Path, file3Path])
+      .init()
+      .uploadAll();
+
+    _assertFilesAreNotPresent([file1Path, file2Path, file3Path]);
   });
 });

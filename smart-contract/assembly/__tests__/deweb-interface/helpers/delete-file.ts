@@ -7,7 +7,7 @@ import {
 } from '../../../contracts/deweb-interface';
 import {
   fileMetadataKey,
-  fileMetadataLocationKey,
+  fileLocationKey,
 } from '../../../contracts/internals/storageKeys/metadataKeys';
 import { fileChunkCountKey } from '../../../contracts/internals/storageKeys/chunksKeys';
 import {
@@ -26,16 +26,6 @@ export function _deleteFiles(files: string[]): void {
       .addSerializableObjectArray<FileDelete>(filesToDelete)
       .serialize(),
   );
-}
-
-export function _fileIsDeleted(location: string): void {
-  const fileList = new Args(getFileLocations()).next<string[]>().unwrap();
-  for (let i = 0; i < fileList.length; i++) {
-    assert(
-      !fileList.includes(location),
-      `File ${location} should not be in the file list`,
-    );
-  }
 }
 
 export function hasNoFiles(): void {
@@ -74,7 +64,7 @@ export function _assertHasNoChunkCount(locationHash: StaticArray<u8>): void {
 }
 
 export function _assertHasNoLocation(locationHash: StaticArray<u8>): void {
-  const locationKey = fileMetadataLocationKey(locationHash);
+  const locationKey = fileLocationKey(locationHash);
   assert(!Storage.has(locationKey), 'Location should not be stored');
 }
 

@@ -4,9 +4,8 @@ import { fileChunkKey } from './storageKeys/chunksKeys';
 import { bytesToU32 } from '@massalabs/as-types';
 import { fileChunkCountKey } from './storageKeys/chunksKeys';
 import { _removeFileLocation } from './location';
-import { _removeAllFileMetadata } from './metadata';
-import { FILE_TAG, CHUNK_TAG } from './storageKeys/tags';
-import { fileMetadataLocationKey } from './storageKeys/metadataKeys';
+import { FILE_TAG } from './storageKeys/tags';
+import { fileLocationKey } from './storageKeys/metadataKeys';
 /* -------------------------------------------------------------------------- */
 /*                                     SET                                    */
 /* -------------------------------------------------------------------------- */
@@ -69,14 +68,15 @@ export function _getTotalChunk(hashLocation: StaticArray<u8>): u32 {
  * Removes a range of chunks for a given file from storage.
  * @param hashLocation - The hash of the file location.
  * @param start - The starting index of the range to remove (inclusive).
- * @param end - The ending index of the range to remove (inclusive).
+ * @param end - The ending index of the range to remove (exclusive).
  */
 export function _removeChunksRange(
   hashLocation: StaticArray<u8>,
-  start: u32 = 0,
-  end: u32 = 0,
+  start: u32,
+  end: u32,
 ): void {
-  for (let i = u32(start); i <= end; i++) {
+  for (let i = start; i < end; i++) {
+    assert(Storage.has(fileChunkKey(hashLocation, i)), 'Chunk not found');
     Storage.del(fileChunkKey(hashLocation, i));
   }
 }
@@ -86,24 +86,15 @@ export function _removeChunksRange(
  * @param hashLocation - The hash of the file location.
  */
 export function _deleteFile(hashLocation: StaticArray<u8>): void {
-  // Remove all chunks
-  const chunkKeys = Storage.getKeys(
-    FILE_TAG.concat(hashLocation).concat(CHUNK_TAG),
-  );
-
-  for (let i: u32 = 0; i < u32(chunkKeys.length); i++) {
-    Storage.del(chunkKeys[i]);
+  // Get all entries associated with the file
+  const fileKeys = Storage.getKeys(FILE_TAG.concat(hashLocation));
+  for (let i: u32 = 0; i < u32(fileKeys.length); i++) {
+    Storage.del(fileKeys[i]);
   }
 
-  if (Storage.has(fileChunkCountKey(hashLocation))) {
-    Storage.del(fileChunkCountKey(hashLocation));
-  }
-
-  if (Storage.has(fileMetadataLocationKey(hashLocation))) {
+  if (Storage.has(fileLocationKey(hashLocation))) {
     _removeFileLocation(hashLocation);
   }
-
-  _removeAllFileMetadata(hashLocation);
 }
 
 /* -------------------------------------------------------------------------- */

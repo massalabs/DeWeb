@@ -1,6 +1,9 @@
 import { Storage } from '@massalabs/massa-as-sdk';
-import { fileMetadataKey, globalMetadataKey } from './storageKeys/metadataKeys';
-import { FILE_METADATA_TAG } from './storageKeys/tags';
+import {
+  fileMetadataKey,
+  fileMetadataKeyPrefix,
+  globalMetadataKey,
+} from './storageKeys/metadataKeys';
 
 /* -------------------------------------------------------------------------- */
 /*                               GLOBAL METADATA                              */
@@ -78,7 +81,7 @@ export function _removeFileMetadata(
  * @param hashLocation - The hash of the file location.
  */
 export function _removeAllFileMetadata(hashLocation: StaticArray<u8>): void {
-  const keys = Storage.getKeys(FILE_METADATA_TAG.concat(hashLocation));
+  const keys = Storage.getKeys(fileMetadataKeyPrefix(hashLocation));
   for (let i = 0; i < keys.length; i++) {
     Storage.del(keys[i]);
   }

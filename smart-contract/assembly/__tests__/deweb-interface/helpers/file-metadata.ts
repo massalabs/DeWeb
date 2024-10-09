@@ -61,3 +61,10 @@ export function _assertMetadataRemovedFromFile(
     assert(entry.length === 0, 'Metadata should be removed');
   }
 }
+
+export function _assertGlobalMetadataRemoved(keys: string[]): void {
+  for (let i = 0; i < keys.length; i++) {
+    const entry = Storage.getKeys(fileMetadataKey(stringToBytes(keys[i])));
+    assert(entry.length === 0, 'Metadata should be removed');
+  }
+}

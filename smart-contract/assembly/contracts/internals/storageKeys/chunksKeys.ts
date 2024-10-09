@@ -16,6 +16,17 @@ export function fileChunkCountKey(
 }
 
 /**
+ * Generates the storage key prefix for a specific chunk of a file.
+ * @param hashLocation - The hash of the file location.
+ * @returns The storage key prefix for the chunk as a StaticArray<u8>.
+ */
+export function fileChunkKeyPrefix(
+  hashLocation: StaticArray<u8>,
+): StaticArray<u8> {
+  return FILE_TAG.concat(hashLocation).concat(CHUNK_TAG);
+}
+
+/**
  * Generates the storage key for a specific chunk of a file.
  * @param hashLocation - The hash of the file location.
  * @param index - The index of the chunk.
@@ -28,7 +39,5 @@ export function fileChunkKey(
   hashLocation: StaticArray<u8>,
   index: u32,
 ): StaticArray<u8> {
-  return FILE_TAG.concat(hashLocation)
-    .concat(CHUNK_TAG)
-    .concat(u32ToBytes(index));
+  return fileChunkKeyPrefix(hashLocation).concat(u32ToBytes(index));
 }

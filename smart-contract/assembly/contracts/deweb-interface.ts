@@ -1,4 +1,11 @@
-import { balance, Context, transferCoins } from '@massalabs/massa-as-sdk';
+import {
+  balance,
+  Context,
+  generateEvent,
+  setBytecode,
+  sha256,
+  transferCoins,
+} from '@massalabs/massa-as-sdk';
 import {
   _onlyOwner,
   _setOwner,
@@ -22,6 +29,7 @@ import {
   _getFileChunk,
   _getTotalChunk,
   _deleteFile,
+  _removeChunksRange,
 } from './internals/chunks';
 import { _getFileLocations } from './internals/location';
 import { _fileInit } from './internals/fileInit';
@@ -56,12 +64,20 @@ export function filesInit(_binaryArgs: StaticArray<u8>): void {
     .expect('Invalid files to initialize');
 
   const filesToDelete = args
-    .nextSerializableObjectArray<FileInit>()
+    .nextSerializableObjectArray<FileDelete>()
     .expect('Invalid files to delete');
 
   const globalMetadata = args
     .nextSerializableObjectArray<Metadata>()
     .expect('Invalid global metadata');
+
+  const globalMetadataToDelete = args
+    .nextSerializableObjectArray<Metadata>()
+    .expect('Invalid global metadata to delete');
+
+  for (let i = 0; i < globalMetadataToDelete.length; i++) {
+    _removeGlobalMetadata(stringToBytes(globalMetadataToDelete[i].key));
+  }
 
   for (let i = 0; i < filesToDelete.length; i++) {
     _deleteFile(filesToDelete[i].hashLocation);
@@ -75,12 +91,7 @@ export function filesInit(_binaryArgs: StaticArray<u8>): void {
   }
 
   for (let i = 0; i < files.length; i++) {
-    _fileInit(
-      files[i].location,
-      files[i].hashLocation,
-      files[i].totalChunk,
-      files[i].metadata,
-    );
+    _fileInit(files[i].location, files[i].totalChunk, files[i].metadata);
   }
 }
 
@@ -117,6 +128,19 @@ export function getFileChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
   const args = new Args(_binaryArgs);
   const chunk = args.next<FileChunkGet>().expect('Invalid chunk');
   return _getFileChunk(chunk.hashLocation, chunk.index);
+}
+
+export function removeFileChunkRange(_binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+  const args = new Args(_binaryArgs);
+  const hashLocation = args
+    .next<StaticArray<u8>>()
+    .expect('Invalid hashLocation');
+
+  const start = args.next<u32>().expect('Invalid start');
+  const end = args.next<u32>().expect('Invalid end');
+
+  _removeChunksRange(hashLocation, start, end);
 }
 
 /**
@@ -309,6 +333,10 @@ export function withdrawCoins(binaryArgs: StaticArray<u8>): void {
   transferCoins(Context.caller(), amount);
 }
 
+export function receiveCoins(): void {
+  generateEvent('CoinsReceived: ' + Context.transferredCoins().toString());
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                  OWNERSHIP                                 */
 /* -------------------------------------------------------------------------- */
@@ -323,4 +351,19 @@ export function setOwner(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
   const args = new Args(_binaryArgs);
   _setOwner(args.next<string>().expect('Invalid owner'));
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  UPGRADE                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Upgrades the smart contract bytecode.
+ * Only the contract owner can call this function.
+ * @param args - The new bytecode to set.
+ * @throws If the caller is not the owner.
+ */
+export function upgradeSC(args: StaticArray<u8>): void {
+  _onlyOwner();
+  setBytecode(args);
 }

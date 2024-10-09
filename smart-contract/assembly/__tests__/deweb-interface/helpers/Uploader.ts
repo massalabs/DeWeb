@@ -14,14 +14,14 @@ import { FileChunkGet } from '../../../contracts/serializable/FileChunkGet';
 import { FileChunkPost } from '../../../contracts/serializable/FileChunkPost';
 import { fileChunkCountKey } from '../../../contracts/internals/storageKeys/chunksKeys';
 import {
-  FILE_METADATA_LOCATION_TAG,
-  FILE_METADATA_TAG,
+  FILE_LOCATION_TAG,
   GLOBAL_METADATA_TAG,
 } from '../../../contracts/internals/storageKeys/tags';
 import { Metadata } from '../../../contracts/serializable/Metadata';
 import { _getGlobalMetadata } from '../../../contracts/internals/metadata';
 import { FileInit } from '../../../contracts/serializable/FileInit';
 import { _assertMetadataAddedToFile } from './file-metadata';
+import { FileDelete } from '../../../contracts/serializable/FileDelete';
 const limitChunk = 10240;
 
 class FileInfo {
@@ -39,8 +39,9 @@ class FileInfo {
 
 export class Uploader {
   private files: FileInfo[];
-  private filesToDelete: FileInit[] = [];
+  private filesToDelete: FileDelete[] = [];
   private globalMetadata: Metadata[] = [];
+  private globalMetadataToDelete: Metadata[] = [];
 
   constructor() {
     this.files = [];
@@ -61,13 +62,16 @@ export class Uploader {
     return this;
   }
 
+  withGlobalMetadataToDelete(key: string): Uploader {
+    this.globalMetadataToDelete.push(new Metadata(key, ''));
+    return this;
+  }
+
   withFilesToDelete(locations: string[]): Uploader {
     for (let i = 0; i < locations.length; i++) {
-      const file = new FileInit(
-        locations[i],
-        sha256(stringToBytes(locations[i])),
+      this.filesToDelete.push(
+        new FileDelete(sha256(stringToBytes(locations[i]))),
       );
-      this.filesToDelete.push(file);
     }
 
     return this;
@@ -79,20 +83,16 @@ export class Uploader {
       const fileInfo = this.files[i];
 
       initFiles.push(
-        new FileInit(
-          fileInfo.location,
-          fileInfo.locationHash,
-          fileInfo.nbChunks,
-          fileInfo.metadata,
-        ),
+        new FileInit(fileInfo.location, fileInfo.nbChunks, fileInfo.metadata),
       );
     }
 
     filesInit(
       new Args()
         .addSerializableObjectArray<FileInit>(initFiles)
-        .addSerializableObjectArray<FileInit>(this.filesToDelete)
+        .addSerializableObjectArray<FileDelete>(this.filesToDelete)
         .addSerializableObjectArray<Metadata>(this.globalMetadata)
+        .addSerializableObjectArray<Metadata>(this.globalMetadataToDelete)
         .serialize(),
     );
 
@@ -142,9 +142,7 @@ export class Uploader {
   }
 
   hasUploadedFiles(): Uploader {
-    const dataStoreEntriesLocation = getKeys(
-      FILE_METADATA_TAG.concat(FILE_METADATA_LOCATION_TAG),
-    );
+    const dataStoreEntriesLocation = getKeys(FILE_LOCATION_TAG);
     // Check the list of file locations are correct
     assert(
       dataStoreEntriesLocation.length == this.files.length,
@@ -153,7 +151,6 @@ export class Uploader {
 
     for (let i = 0; i < dataStoreEntriesLocation.length; i++) {
       const location = bytesToString(Storage.get(dataStoreEntriesLocation[i]));
-      // TODO: Improve this check as might not be in same order ?
       assert(
         this.files[i].location == location,
         `File ${location} should be in the file list`,
@@ -208,9 +205,7 @@ export class Uploader {
   }
 
   hasTheRightNumberOfFilesLocations(): Uploader {
-    const dataStoreEntriesLocation = getKeys(
-      FILE_METADATA_TAG.concat(FILE_METADATA_LOCATION_TAG),
-    );
+    const dataStoreEntriesLocation = getKeys(FILE_LOCATION_TAG);
 
     assert(
       dataStoreEntriesLocation.length == this.files.length,

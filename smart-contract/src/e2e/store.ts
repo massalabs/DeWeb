@@ -61,7 +61,6 @@ export async function testStoreFiles(contract: SmartContract) {
   const jsPart1 = jsFile.subarray(0, remainingBytes);
   const jsPart2 = jsFile.subarray(remainingBytes);
 
-  // TODO: Put file name in const
   const chunkJsPart1 = new FileChunkPost(JS_FILE, 0n, jsPart1);
   const chunkJsPart2 = new FileChunkPost(JS_FILE, 1n, jsPart2);
 
