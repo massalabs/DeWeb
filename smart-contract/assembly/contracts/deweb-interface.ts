@@ -3,7 +3,6 @@ import {
   Context,
   generateEvent,
   setBytecode,
-  sha256,
   transferCoins,
 } from '@massalabs/massa-as-sdk';
 import {

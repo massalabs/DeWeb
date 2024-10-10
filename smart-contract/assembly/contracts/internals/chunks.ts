@@ -44,6 +44,21 @@ export function _getTotalChunk(hashLocation: StaticArray<u8>): u32 {
   return bytesToU32(Storage.get(fileChunkCountKey(hashLocation)));
 }
 
+/**
+ * Retrieves a specific chunk of a file.
+ * @param hashLocation - The hash of the file location.
+ * @param index - The index of the chunk to retrieve.
+ * @returns The chunk data as a StaticArray<u8>.
+ * @throws If the chunk is not found in storage.
+ */
+export function _getFileChunk(
+  hashLocation: StaticArray<u8>,
+  index: u32,
+): StaticArray<u8> {
+  assert(Storage.has(fileChunkKey(hashLocation, index)), 'Chunk not found');
+  return Storage.get(fileChunkKey(hashLocation, index));
+}
+
 /* -------------------------------------------------------------------------- */
 /*                                   DELETE                                   */
 /* -------------------------------------------------------------------------- */
