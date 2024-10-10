@@ -25,7 +25,6 @@ export function _setFileChunk(
   const hashLocation = sha256(stringToBytes(location));
   const totalChunk = _getTotalChunk(hashLocation);
 
-  assert(totalChunk > 0, "Total chunks wasn't set for this file");
   assert(index < totalChunk, 'Index out of bounds');
 
   Storage.set(fileChunkKey(hashLocation, index), chunk);
@@ -34,21 +33,6 @@ export function _setFileChunk(
 /* -------------------------------------------------------------------------- */
 /*                                     GET                                    */
 /* -------------------------------------------------------------------------- */
-
-/**
- * Retrieves a specific chunk of a file.
- * @param hashLocation - The hash of the file location.
- * @param index - The index of the chunk to retrieve.
- * @returns The chunk data as a StaticArray<u8>.
- * @throws If the chunk is not found in storage.
- */
-export function _getFileChunk(
-  hashLocation: StaticArray<u8>,
-  index: u32,
-): StaticArray<u8> {
-  assert(Storage.has(fileChunkKey(hashLocation, index)), 'Chunk not found');
-  return Storage.get(fileChunkKey(hashLocation, index));
-}
 
 /**
  * Gets the total number of chunks for a file.
