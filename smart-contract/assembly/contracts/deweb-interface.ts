@@ -40,10 +40,10 @@ import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
  * Initializes the smart contract.
  * Sets the contract deployer as the owner.
  */
-export function constructor(_: StaticArray<u8>): void {
+export function constructor(binaryArgs: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
 
-  const version = new Args().next<string>().expect('Invalid version');
+  const version = new Args(binaryArgs).next<string>().expect('Invalid version');
   Storage.set(DEWEB_VERSION_TAG, stringToBytes(version));
 
   _setOwner(Context.caller().toString());

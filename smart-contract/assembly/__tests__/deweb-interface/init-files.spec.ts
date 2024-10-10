@@ -20,12 +20,13 @@ const metadataKey1 = 'version';
 const metadataValue1 = '1.0.0';
 const metadataKey2 = 'serve';
 const metadataValue2 = '0';
+const version = '1';
 
 describe('Upload files', () => {
   beforeEach(() => {
     resetStorage();
     setDeployContext(user);
-    constructor(new Args().add(user).serialize());
+    constructor(new Args().add(version).serialize());
   });
 
   test('upload some files', () => {

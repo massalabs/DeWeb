@@ -14,12 +14,13 @@ const metadataKey1 = 'version';
 const metadataValue1 = '1.0.0';
 
 const metadata1 = new Metadata(metadataKey1, metadataValue1);
+const version = '1';
 
 describe('Upload files', () => {
   beforeEach(() => {
     resetStorage();
     setDeployContext(user);
-    constructor(new Args().add(user).serialize());
+    constructor(new Args().add(version).serialize());
   });
 
   test('Edit global metadata', () => {
