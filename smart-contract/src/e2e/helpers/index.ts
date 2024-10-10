@@ -1,35 +1,37 @@
 /* eslint-disable no-console */
-import {
-  SmartContract,
-  Args,
-  ArrayTypes,
-  strToBytes,
-} from '@massalabs/massa-web3';
-import {
-  ChunkPost,
-  ChunkGet,
-  PreStore,
-  ChunkDelete,
-} from './serializable/Chunk';
-
+import { SmartContract, Args, ArrayTypes } from '@massalabs/massa-web3';
 import { sha256 } from 'js-sha256';
+import { FileInit } from './serializable/FileInit';
+import { FileChunkGet } from './serializable/FileChunkGet';
+import { FileChunkPost } from './serializable/FileChunkPost';
+import { FileDelete } from './serializable/FileDelete';
+import { Metadata } from './serializable/Metadata';
 
-export async function storeChunk(contract: SmartContract, chunks: ChunkPost[]) {
+export async function uploadFileChunks(
+  contract: SmartContract,
+  chunks: FileChunkPost[],
+) {
   const op = await contract.call(
-    'storeFileChunks',
+    'uploadFileChunks',
     new Args().addSerializableObjectArray(chunks).serialize(),
   );
 
   await op.waitSpeculativeExecution();
 }
 
-export async function preStoreChunks(
+export async function filesInit(
   contract: SmartContract,
-  chunks: PreStore[],
+  chunks: FileInit[],
+  fileToDelete: FileDelete[] = [],
+  globalMetadata: Metadata[] = [],
 ) {
   const op = await contract.call(
-    'preStoreFileChunks',
-    new Args().addSerializableObjectArray(chunks).serialize(),
+    'filesInit',
+    new Args()
+      .addSerializableObjectArray(chunks)
+      .addSerializableObjectArray(fileToDelete)
+      .addSerializableObjectArray(globalMetadata)
+      .serialize(),
   );
 
   await op.waitSpeculativeExecution();
@@ -37,13 +39,13 @@ export async function preStoreChunks(
 
 export async function deleteFiles(
   contract: SmartContract,
-  filePathArray: string[],
+  locationArray: string[],
 ) {
-  const deleteArray: ChunkDelete[] = [];
+  const deleteArray: FileDelete[] = [];
 
-  for (const filePath of filePathArray) {
+  for (const location of locationArray) {
     deleteArray.push(
-      new ChunkDelete(filePath, new Uint8Array(sha256.arrayBuffer(filePath))),
+      new FileDelete(new Uint8Array(sha256.arrayBuffer(location))),
     );
   }
 
@@ -55,11 +57,11 @@ export async function deleteFiles(
   await op.waitSpeculativeExecution();
 }
 
-export async function getFilePathList(
+export async function getFileLocations(
   contract: SmartContract,
 ): Promise<string[]> {
   const fileList = await contract.read(
-    'getFilePathList',
+    'getFileLocations',
     new Args().serialize(),
   );
   return new Args(fileList.value).nextArray(ArrayTypes.STRING);
@@ -67,57 +69,57 @@ export async function getFilePathList(
 
 export async function assertFilePathInList(
   contract: SmartContract,
-  filePaths: string[],
+  locations: string[],
 ): Promise<void> {
-  const list = await getFilePathList(contract);
+  const list = await getFileLocations(contract);
   // eslint-disable-next-line guard-for-in
-  for (let filePath of filePaths) {
-    if (!list.includes(filePath)) {
-      throw new Error(`File not found in list: ${filePath}`);
+  for (let location of locations) {
+    if (!list.includes(location)) {
+      throw new Error(`File not found in list: ${location}`);
     }
-    console.log(`File found in list: ${filePath}`);
+    console.log(`File found in list: ${location}`);
   }
 }
 
 export async function assertChunkExists(
   contract: SmartContract,
-  chunk: ChunkPost,
+  chunk: FileChunkPost,
 ): Promise<void> {
-  const chunkGet = new ChunkGet(
-    new Uint8Array(sha256.arrayBuffer(chunk.filePath)),
+  const chunkGet = new FileChunkGet(
+    new Uint8Array(sha256.arrayBuffer(chunk.location)),
     chunk.index,
   );
 
   const result = await contract.read(
-    'getChunk',
+    'getFileChunk',
     new Args().addSerializable(chunkGet).serialize(),
   );
 
   if (result.value.length !== chunk.data.length)
     throw new Error('Invalid chunk');
 
-  console.log(`Chunk found: ${chunk.filePath} ${chunk.index}`);
+  console.log(`Chunk found: ${chunk.location} ${chunk.index}`);
 }
 
 export async function assertFileIsDeleted(
   contract: SmartContract,
-  filePath: string,
+  location: string,
 ) {
   // assert that the file is deleted from the list
-  const list = await getFilePathList(contract);
+  const list = await getFileLocations(contract);
   for (let file of list) {
-    if (file === filePath) {
-      throw new Error(`File still exists in list: ${filePath}`);
+    if (file === location) {
+      throw new Error(`File still exists in list: ${location}`);
     }
 
     // IMPROVE: assert that the file is deleted from the chunks
   }
 
-  console.log(`File successfully deleted ${filePath} from list`);
+  console.log(`File successfully deleted ${location} from list`);
 }
 
 export async function assertListIsEmpty(contract: SmartContract) {
-  const list = await getFilePathList(contract);
+  const list = await getFileLocations(contract);
 
   if (list.length !== 0) {
     throw new Error('List is not empty');
