@@ -1,28 +1,23 @@
-import {
-  Args,
-  bytesToString,
-  bytesToU32,
-  stringToBytes,
-} from '@massalabs/as-types';
-import { getKeys, sha256, Storage } from '@massalabs/massa-as-sdk';
+import { Args, stringToBytes } from '@massalabs/as-types';
+import { getKeys, sha256 } from '@massalabs/massa-as-sdk';
 import {
   filesInit,
   uploadFileChunks,
-  getFileChunk,
 } from '../../../contracts/deweb-interface';
 import { FileChunkGet } from '../../../contracts/serializable/FileChunkGet';
 import { FileChunkPost } from '../../../contracts/serializable/FileChunkPost';
-import { fileChunkCountKey } from '../../../contracts/internals/storageKeys/chunksKeys';
-import {
-  FILE_LOCATION_TAG,
-  GLOBAL_METADATA_TAG,
-} from '../../../contracts/internals/storageKeys/tags';
+import { FILE_LOCATION_TAG } from '../../../contracts/internals/storageKeys/tags';
 import { Metadata } from '../../../contracts/serializable/Metadata';
-import { _getGlobalMetadata } from '../../../contracts/internals/metadata';
 import { FileInit } from '../../../contracts/serializable/FileInit';
-import { _assertMetadataAddedToFile } from './file-metadata';
+import { _assertGlobalMetadata, _assertFileMetadata } from './file-metadata';
 import { FileDelete } from '../../../contracts/serializable/FileDelete';
-const limitChunk = 10240;
+import {
+  _assertFileChunkCountIsCorrect,
+  _assertFileChunksAreCorrect,
+  _assertRightNbOfFilesLocations,
+} from './upload-file';
+
+const CHUNK_SIZE_LIMIT = 10240;
 
 class FileInfo {
   locationHash: StaticArray<u8>;
@@ -80,10 +75,12 @@ export class Uploader {
   public init(): Uploader {
     const initFiles: FileInit[] = [];
     for (let i = 0; i < this.files.length; i++) {
-      const fileInfo = this.files[i];
-
       initFiles.push(
-        new FileInit(fileInfo.location, fileInfo.nbChunks, fileInfo.metadata),
+        new FileInit(
+          this.files[i].location,
+          this.files[i].nbChunks,
+          this.files[i].metadata,
+        ),
       );
     }
 
@@ -99,107 +96,82 @@ export class Uploader {
     return this;
   }
 
-  uploadAll(limit: u32 = limitChunk): Uploader {
-    let chunks: FileChunkPost[] = [];
+  uploadAll(limit: u32 = CHUNK_SIZE_LIMIT): this {
+    const chunks = this.prepareChunksPost();
+    const chunkBatches = this.groupChunks(chunks, limit);
+    this.uploadChunkBatches(chunkBatches);
+    return this;
+  }
 
-    // prepare list of chunks
+  private prepareChunksPost(): FileChunkPost[] {
+    const chunks: FileChunkPost[] = [];
     for (let i = 0; i < this.files.length; i++) {
       const fileInfo = this.files[i];
       for (let j = 0; j < fileInfo.data.length; j++) {
         chunks.push(new FileChunkPost(fileInfo.location, j, fileInfo.data[j]));
       }
     }
+    return chunks;
+  }
 
-    // Prepare list of list of chunks to store based on limit, one list should not exceed limit
-    let chunkList: FileChunkPost[][] = [];
-    let currentChunkList: FileChunkPost[] = [];
-    let currentChunkSize = 0;
+  private groupChunks(chunks: FileChunkPost[], limit: u32): FileChunkPost[][] {
+    const batches: FileChunkPost[][] = [];
+    let currentGroup: FileChunkPost[] = [];
+    let currentSize: u32 = 0;
+
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      if (u32(currentChunkSize + chunk.data.length) > limit) {
-        chunkList.push(currentChunkList);
-        currentChunkList = [];
-        currentChunkSize = 0;
+      if (currentSize + chunk.data.length > limit && currentGroup.length > 0) {
+        batches.push(currentGroup);
+        currentGroup = [];
+        currentSize = 0;
       }
-      currentChunkList.push(chunk);
-      currentChunkSize += chunk.data.length;
+      currentGroup.push(chunk);
+      currentSize += chunk.data.length;
     }
 
-    if (currentChunkList.length > 0) {
-      chunkList.push(currentChunkList);
+    if (currentGroup.length > 0) {
+      batches.push(currentGroup);
     }
 
-    // Store list of list of chunks
-    for (let i = 0; i < chunkList.length; i++) {
+    return batches;
+  }
+
+  private uploadChunkBatches(chunkBatches: FileChunkPost[][]): void {
+    for (let i = 0; i < chunkBatches.length; i++) {
       uploadFileChunks(
         new Args()
-          .addSerializableObjectArray<FileChunkPost>(chunkList[i])
+          .addSerializableObjectArray<FileChunkPost>(chunkBatches[i])
           .serialize(),
       );
     }
-
-    return this;
   }
 
   hasUploadedFiles(): Uploader {
-    const dataStoreEntriesLocation = getKeys(FILE_LOCATION_TAG);
-    // Check the list of file locations are correct
-    assert(
-      dataStoreEntriesLocation.length == this.files.length,
-      'File count should be correct',
-    );
+    _assertRightNbOfFilesLocations(this.files.length);
 
-    for (let i = 0; i < dataStoreEntriesLocation.length; i++) {
-      const location = bytesToString(Storage.get(dataStoreEntriesLocation[i]));
-      assert(
-        this.files[i].location == location,
-        `File ${location} should be in the file list`,
+    for (let i = 0; i < this.files.length; i++) {
+      _assertFileChunksAreCorrect(
+        this.files[i].location,
+        this.files[i].data,
+        this.files[i].nbChunks,
       );
     }
 
-    // Check the chunks are correct
-    for (let i = 0; i < this.files.length; i++) {
-      const fileInfo = this.files[i];
-      for (let j = u32(0); j < fileInfo.nbChunks; j++) {
-        const storedChunk = getFileChunk(
-          chunkGetArgs(fileInfo.locationHash, j),
-        );
-        assert(
-          storedChunk.toString() == fileInfo.data[j].toString(),
-          `Chunk ${j} of ${fileInfo.location} should be correct`,
-        );
-      }
-    }
     return this;
   }
 
   hasGlobalMetadata(): Uploader {
-    const dataStoreEntriesMetadata = getKeys(GLOBAL_METADATA_TAG);
-
-    for (let i = 0; i < dataStoreEntriesMetadata.length; i++) {
-      assert(
-        dataStoreEntriesMetadata[i].toString() ==
-          GLOBAL_METADATA_TAG.concat(
-            stringToBytes(this.globalMetadata[i].key),
-          ).toString(),
-        'Metadata key should be correct',
-      );
-
-      const value = _getGlobalMetadata(
-        stringToBytes(this.globalMetadata[i].key),
-      );
-      assert(
-        bytesToString(value) == this.globalMetadata[i].value,
-        'Metadata value should be correct',
-      );
+    for (let i = 0; i < this.globalMetadata.length; i++) {
+      _assertGlobalMetadata([this.globalMetadata[i].key]);
     }
+
     return this;
   }
 
   hasFileMetadata(): Uploader {
     for (let i = 0; i < this.files.length; i++) {
-      const fileInfo = this.files[i];
-      _assertMetadataAddedToFile(fileInfo.locationHash, fileInfo.metadata);
+      _assertFileMetadata(this.files[i].locationHash, this.files[i].metadata);
     }
     return this;
   }
@@ -217,18 +189,11 @@ export class Uploader {
 
   hasTheRightChunkCount(): Uploader {
     for (let i = 0; i < this.files.length; i++) {
-      const fileInfo = this.files[i];
-      const chunkCountKey = fileChunkCountKey(fileInfo.locationHash);
-      assert(
-        Storage.has(chunkCountKey),
-        'Chunk count should be stored for each file',
-      );
-      assert(
-        bytesToU32(Storage.get(chunkCountKey)) == fileInfo.nbChunks,
-        'Chunk count should be correct',
+      _assertFileChunkCountIsCorrect(
+        this.files[i].location,
+        this.files[i].nbChunks,
       );
     }
-
     return this;
   }
 }

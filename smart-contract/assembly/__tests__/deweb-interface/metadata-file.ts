@@ -9,7 +9,7 @@ import { uploader } from './helpers/Uploader';
 import { Metadata } from '../../contracts/serializable/Metadata';
 import {
   _addMetadataToFile,
-  _assertMetadataAddedToFile,
+  _assertFileMetadata,
   _assertMetadataRemovedFromFile,
   _removeMetadataFromFile,
 } from './helpers/file-metadata';
@@ -32,7 +32,7 @@ describe('File Metadata', () => {
   test('Edit file metadata', () => {
     uploader().withFile(file1Path, [fileData1]).init().uploadAll();
     _addMetadataToFile(hashFile1, [metadata1]);
-    _assertMetadataAddedToFile(hashFile1, [metadata1]);
+    _assertFileMetadata(hashFile1, [metadata1]);
   });
 
   throws('if try to edit metadata of non existing file', () => {
@@ -42,7 +42,7 @@ describe('File Metadata', () => {
   test('Remove file metadata', () => {
     uploader().withFile(file1Path, [fileData1]).init().uploadAll();
     _addMetadataToFile(hashFile1, [metadata1]);
-    _assertMetadataAddedToFile(hashFile1, [metadata1]);
+    _assertFileMetadata(hashFile1, [metadata1]);
     _removeMetadataFromFile(hashFile1, [metadataKey1]);
     _assertMetadataRemovedFromFile(hashFile1, [metadata1]);
   });

@@ -6,7 +6,10 @@ import {
 } from '../../../contracts/deweb-interface';
 import { Args, bytesToString, stringToBytes } from '@massalabs/as-types';
 import { Storage } from '@massalabs/massa-as-sdk';
-import { fileMetadataKey } from '../../../contracts/internals/storageKeys/metadataKeys';
+import {
+  fileMetadataKey,
+  globalMetadataKey,
+} from '../../../contracts/internals/storageKeys/metadataKeys';
 
 export function _addMetadataToFile(
   hashLocation: StaticArray<u8>,
@@ -29,7 +32,7 @@ export function _removeMetadataFromFile(
   );
 }
 
-export function _assertMetadataAddedToFile(
+export function _assertFileMetadata(
   hashLocation: StaticArray<u8>,
   metadata: Metadata[],
 ): void {
@@ -66,5 +69,12 @@ export function _assertGlobalMetadataRemoved(keys: string[]): void {
   for (let i = 0; i < keys.length; i++) {
     const entry = Storage.getKeys(fileMetadataKey(stringToBytes(keys[i])));
     assert(entry.length === 0, 'Metadata should be removed');
+  }
+}
+
+export function _assertGlobalMetadata(keys: string[]): void {
+  for (let i = 0; i < keys.length; i++) {
+    const entry = Storage.getKeys(globalMetadataKey(stringToBytes(keys[i])));
+    assert(entry.length === 1, 'Metadata should be added');
   }
 }
