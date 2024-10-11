@@ -36,15 +36,16 @@ import { _fileInit } from './internals/fileInit';
 import { FileInit } from './serializable/FileInit';
 import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
 
+const DEWEB_VERSION = '1';
+
 /**
  * Initializes the smart contract.
  * Sets the contract deployer as the owner.
  */
-export function constructor(binaryArgs: StaticArray<u8>): void {
+export function constructor(_: StaticArray<u8>): void {
   if (!Context.isDeployingContract()) return;
 
-  const version = new Args(binaryArgs).next<string>().expect('Invalid version');
-  Storage.set(DEWEB_VERSION_TAG, stringToBytes(version));
+  Storage.set(DEWEB_VERSION_TAG, stringToBytes(DEWEB_VERSION));
 
   _setOwner(Context.caller().toString());
 }

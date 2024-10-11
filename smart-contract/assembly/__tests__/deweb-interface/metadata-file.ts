@@ -21,13 +21,12 @@ const fileData1: StaticArray<u8> = [1, 2, 3, 4];
 const metadataKey1 = 'version';
 const metadataValue1 = '1.0.0';
 const metadata1 = new Metadata(metadataKey1, metadataValue1);
-const version = '1';
 
 describe('File Metadata', () => {
   beforeEach(() => {
     resetStorage();
     setDeployContext(user);
-    constructor(new Args().add(version).serialize());
+    constructor(new Args().serialize());
   });
 
   test('Edit file metadata', () => {
