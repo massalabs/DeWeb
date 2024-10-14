@@ -1,10 +1,7 @@
 import { stringToBytes, Args } from '@massalabs/as-types';
 import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { FileDelete } from '../../../contracts/serializable/FileDelete';
-import {
-  deleteFiles,
-  getFileLocations,
-} from '../../../contracts/deweb-interface';
+import { deleteFiles } from '../../../contracts/deweb-interface';
 import {
   fileMetadataKey,
   fileLocationKey,
@@ -14,6 +11,7 @@ import {
   FILE_TAG,
   CHUNK_TAG,
 } from '../../../contracts/internals/storageKeys/tags';
+import { _getFileLocations } from '../../../contracts/internals/location';
 
 export function _deleteFiles(files: string[]): void {
   const filesToDelete: FileDelete[] = [];
@@ -29,12 +27,13 @@ export function _deleteFiles(files: string[]): void {
 }
 
 export function hasNoFiles(): void {
-  const fileList = new Args(getFileLocations()).next<string[]>().unwrap();
+  const fileList = _getFileLocations();
   assert(fileList.length === 0, 'FileList should be empty');
 }
 
 export function _assertFilesArePresent(files: string[]): void {
-  const fileList = new Args(getFileLocations()).next<string[]>().unwrap();
+  const fileList = _getFileLocations();
+
   for (let i = 0; i < files.length; i++) {
     assert(
       fileList.includes(files[i]),

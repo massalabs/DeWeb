@@ -10,28 +10,24 @@ import {
   _onlyOwner,
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
+export { setOwner } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
-import { Args, stringToBytes, u32ToBytes } from '@massalabs/as-types';
+import { Args, stringToBytes } from '@massalabs/as-types';
 import { FileChunkPost } from './serializable/FileChunkPost';
 import { FileDelete } from './serializable/FileDelete';
-import { FileChunkGet } from './serializable/FileChunkGet';
 import { Metadata } from './serializable/Metadata';
 import {
   _editFileMetadata,
   _editGlobalMetadata,
-  _getFileMetadata,
-  _getGlobalMetadata,
   _removeFileMetadata,
   _removeGlobalMetadata,
 } from './internals/metadata';
 import {
   _setFileChunk,
-  _getFileChunk,
   _getTotalChunk,
   _deleteFile,
   _removeChunksRange,
 } from './internals/chunks';
-import { _getFileLocations } from './internals/location';
 import { _fileInit } from './internals/fileInit';
 import { FileInit } from './serializable/FileInit';
 import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
@@ -123,18 +119,6 @@ export function uploadFileChunks(_binaryArgs: StaticArray<u8>): void {
   }
 }
 
-/**
- * Retrieves a specific chunk of a file.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation and index.
- * @returns The requested chunk as a StaticArray<u8>.
- * @throws If the chunk request is invalid.
- */
-export function getFileChunk(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
-  const args = new Args(_binaryArgs);
-  const chunk = args.next<FileChunkGet>().expect('Invalid chunk');
-  return _getFileChunk(chunk.hashLocation, chunk.index);
-}
-
 export function removeFileChunkRange(_binaryArgs: StaticArray<u8>): void {
   _onlyOwner();
   const args = new Args(_binaryArgs);
@@ -146,23 +130,6 @@ export function removeFileChunkRange(_binaryArgs: StaticArray<u8>): void {
   const end = args.next<u32>().expect('Invalid end');
 
   _removeChunksRange(hashLocation, start, end);
-}
-
-/**
- * Retrieves the total number of chunks for a file.
- * @param _binaryArgs - Serialized FileChunkGet object containing hashLocation.
- * @returns The total number of chunks.
- * @throws If the hashLocation is invalid.
- */
-export function getFileChunkCount(
-  _binaryArgs: StaticArray<u8>,
-): StaticArray<u8> {
-  const args = new Args(_binaryArgs);
-  const hashLocation = args
-    .next<StaticArray<u8>>()
-    .expect('Invalid hashLocation');
-
-  return u32ToBytes(_getTotalChunk(hashLocation));
 }
 
 /**
@@ -184,14 +151,6 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
 
     _deleteFile(files[i].hashLocation);
   }
-}
-
-/**
- * Retrieves the list of file locations.
- * @returns A StaticArray<u8> containing serialized array of strings.
- */
-export function getFileLocations(): StaticArray<u8> {
-  return new Args().add(_getFileLocations()).serialize();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -218,21 +177,6 @@ export function setMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
       stringToBytes(metadata[i].value),
     );
   }
-}
-
-/**
- * Retrieves the global metadata for a specific key.
- * @param _binaryArgs - Serialized arguments containing the metadata key.
- * @returns The requested global metadata as a StaticArray<u8>.
- * @throws If the metadata request is invalid or the metadata is not found.
- */
-export function getMetadataGlobal(
-  _binaryArgs: StaticArray<u8>,
-): StaticArray<u8> {
-  const args = new Args(_binaryArgs);
-  const key = args.next<StaticArray<u8>>().expect('Invalid key');
-
-  return _getGlobalMetadata(key);
 }
 
 /**
@@ -302,22 +246,6 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
   }
 }
 
-/**
- * Retrieves the metadata of a specific file for a given key.
- * @param _binaryArgs - Serialized arguments containing the file's hashLocation and metadata key.
- * @returns The requested file metadata as a StaticArray<u8>.
- * @throws If the metadata request is invalid or the metadata is not found.
- */
-export function getMetadataFile(_binaryArgs: StaticArray<u8>): StaticArray<u8> {
-  const args = new Args(_binaryArgs);
-  const hashLocation = args
-    .next<StaticArray<u8>>()
-    .expect('Invalid hashLocation');
-  const key = args.next<StaticArray<u8>>().expect('Invalid key');
-
-  return _getFileMetadata(hashLocation, key);
-}
-
 /* -------------------------------------------------------------------------- */
 /*                              COINS MANAGEMENT                              */
 /* -------------------------------------------------------------------------- */
@@ -340,22 +268,6 @@ export function withdrawCoins(binaryArgs: StaticArray<u8>): void {
 
 export function receiveCoins(): void {
   generateEvent('CoinsReceived: ' + Context.transferredCoins().toString());
-}
-
-/* -------------------------------------------------------------------------- */
-/*                                  OWNERSHIP                                 */
-/* -------------------------------------------------------------------------- */
-
-/**
- * Changes the owner of the contract.
- * Only the current owner can call this function.
- * @param _binaryArgs - Serialized new owner address.
- * @throws If the caller is not the owner or the new owner address is invalid.
- */
-export function setOwner(_binaryArgs: StaticArray<u8>): void {
-  _onlyOwner();
-  const args = new Args(_binaryArgs);
-  _setOwner(args.next<string>().expect('Invalid owner'));
 }
 
 /* -------------------------------------------------------------------------- */

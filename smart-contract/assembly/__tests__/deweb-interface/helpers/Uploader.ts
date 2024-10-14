@@ -33,14 +33,10 @@ class FileInfo {
 }
 
 export class Uploader {
-  private files: FileInfo[];
+  private files: FileInfo[] = [];
   private filesToDelete: FileDelete[] = [];
   private globalMetadata: Metadata[] = [];
   private globalMetadataToDelete: Metadata[] = [];
-
-  constructor() {
-    this.files = [];
-  }
 
   withFile(
     location: string,

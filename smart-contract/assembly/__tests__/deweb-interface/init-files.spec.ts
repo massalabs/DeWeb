@@ -3,9 +3,10 @@ import { constructor } from '../../contracts/deweb-interface';
 import { Args } from '@massalabs/as-types';
 import { ensure, uploader } from './helpers/Uploader';
 import { Metadata } from '../../contracts/serializable/Metadata';
-import { _assertFileChunkNbIs } from './helpers/upload-file';
+
 import { _assertGlobalMetadataRemoved } from './helpers/file-metadata';
 import { _assertFilesAreNotPresent } from './helpers/delete-file';
+import { _assertFileChunkCountIsCorrect } from './helpers/upload-file';
 
 const user = 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq';
 const file1Path = 'file1';
@@ -74,7 +75,9 @@ describe('Upload files', () => {
       .uploadAll();
 
     ensure(myUpload2).hasUploadedFiles();
-    _assertFileChunkNbIs(file3Path, 1);
+    _assertFileChunkCountIsCorrect(file3Path, 1);
+    // Here we want to assert that the last file has only one chunk
+    // TODO Assert Uploaded chunks are corrects
   });
 
   test('init with global metadata to remove', () => {

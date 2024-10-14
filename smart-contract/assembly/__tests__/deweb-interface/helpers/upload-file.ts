@@ -1,9 +1,10 @@
 import { getKeys, sha256 } from '@massalabs/massa-as-sdk';
-import { _getTotalChunk } from '../../../contracts/internals/chunks';
+import {
+  _getFileChunk,
+  _getTotalChunk,
+} from '../../../contracts/internals/chunks';
 import { stringToBytes } from '@massalabs/as-types';
-import { getFileChunk } from '../../../contracts/deweb-interface';
 import { FILE_LOCATION_TAG } from '../../../contracts/internals/storageKeys/tags';
-import { chunkGetArgs } from './Uploader';
 
 export function _assertFileChunkCountIsCorrect(
   location: string,
@@ -22,7 +23,7 @@ export function _assertFileChunksAreCorrect(
   const locationHash = sha256(stringToBytes(location));
 
   for (let i = u32(0); i < nbChunks; i++) {
-    const storedChunk = getFileChunk(chunkGetArgs(locationHash, i));
+    const storedChunk = _getFileChunk(locationHash, i);
     assert(
       storedChunk.toString() == chunkData[i].toString(),
       `Chunk ${i} of ${location} should be correct`,

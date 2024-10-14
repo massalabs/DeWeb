@@ -1,12 +1,12 @@
 import { Args, bytesToString, stringToBytes } from '@massalabs/as-types';
 import {
-  getMetadataGlobal,
   removeMetadataGlobal,
   setMetadataGlobal,
 } from '../../../contracts/deweb-interface';
 import { Metadata } from '../../../contracts/serializable/Metadata';
 import { Storage } from '@massalabs/massa-as-sdk';
 import { globalMetadataKey } from '../../../contracts/internals/storageKeys/metadataKeys';
+import { _getGlobalMetadata } from '../../../contracts/internals/metadata';
 
 export function _addGlobalMetadata(metadataList: Metadata[]): void {
   setMetadataGlobal(
@@ -33,9 +33,7 @@ export function _assertGlobalMetadataRemoved(metadataList: Metadata[]): void {
 
 export function _assertGlobalMetadata(metadataList: Metadata[]): void {
   for (let i = 0; i < metadataList.length; i++) {
-    const metadata = getMetadataGlobal(
-      new Args().add(metadataList[i]).serialize(),
-    );
+    const metadata = _getGlobalMetadata(stringToBytes(metadataList[i].key));
 
     assert(
       metadataList[i].value === bytesToString(metadata),

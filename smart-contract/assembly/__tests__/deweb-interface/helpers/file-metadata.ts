@@ -1,6 +1,5 @@
 import { Metadata } from '../../../contracts/serializable/Metadata';
 import {
-  getMetadataFile,
   removeMetadataFile,
   setMetadataFile,
 } from '../../../contracts/deweb-interface';
@@ -10,6 +9,7 @@ import {
   fileMetadataKey,
   globalMetadataKey,
 } from '../../../contracts/internals/storageKeys/metadataKeys';
+import { _getFileMetadata } from '../../../contracts/internals/metadata';
 
 export function _addMetadataToFile(
   hashLocation: StaticArray<u8>,
@@ -37,8 +37,9 @@ export function _assertFileMetadata(
   metadata: Metadata[],
 ): void {
   for (let i = 0; i < metadata.length; i++) {
-    const value = getMetadataFile(
-      new Args().add(hashLocation).add(metadata[i].key).serialize(),
+    const value = _getFileMetadata(
+      hashLocation,
+      stringToBytes(metadata[i].key),
     );
 
     assert(
