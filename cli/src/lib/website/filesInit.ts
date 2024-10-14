@@ -12,7 +12,7 @@ import { FileInit } from './models/FileInit'
 import { Metadata } from './models/Metadata'
 import {
   fileChunkCountKey,
-  fileMetadataLocationKey,
+  fileLocationKey,
   globalMetadataKey,
 } from './storageKeys'
 
@@ -78,7 +78,7 @@ export async function filesInitCost(
     return (
       acc +
       storageCostForEntry(
-        BigInt(fileMetadataLocationKey(chunk.hashLocation).length),
+        BigInt(fileLocationKey(chunk.hashLocation).length),
         BigInt(chunk.location.length + 4)
       )
     )
