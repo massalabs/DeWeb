@@ -15,6 +15,7 @@ import { FileChunkPost } from '../lib/website/models/FileChunkPost'
 import { FileInit } from '../lib/website/models/FileInit'
 
 import { UploadCtx } from './tasks'
+
 /**
  * Create a task to prepare batches from the website file
  * @returns a Listr task to prepare chunks
@@ -102,8 +103,7 @@ async function prepareChunks(
       fileInits.push(
         new FileInit(
           relativePath,
-          new Uint8Array(sha256.arrayBuffer(relativePath)),
-          BigInt(chunkPosts.length)
+          BigInt(chunkPosts.length),
         )
       )
     }

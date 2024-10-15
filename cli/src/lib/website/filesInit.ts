@@ -15,6 +15,7 @@ import {
   fileLocationKey,
   globalMetadataKey,
 } from './storageKeys'
+import { FileDelete } from './models/FileDelete'
 
 const functionName = 'filesInit'
 const batchSize = 20
@@ -30,35 +31,51 @@ const batchSize = 20
 export async function sendFilesInits(
   sc: SmartContract,
   files: FileInit[],
-  filesToDelete: FileInit[],
-  metadatas: Metadata[]
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
 ): Promise<Operation[]> {
   const chunkBatches: FileInit[][] = []
   const operations: Operation[] = []
+
+  for (const file of files) {
+    console.log(`File: ${file.location} -> ${file.totalChunk} chunks`)
+  }
 
   for (let i = 0; i < files.length; i += batchSize) {
     chunkBatches.push(files.slice(i, i + batchSize))
   }
 
   for (const batch of chunkBatches) {
-    const coins = await filesInitCost(sc, batch, filesToDelete, metadatas)
-    const gas = await estimatePrepareGas(sc, batch, filesToDelete, metadatas)
-    const op = await sc.call(
-      functionName,
-      new Args()
-        .addSerializableObjectArray(batch)
-        .addSerializableObjectArray(filesToDelete)
-        .addSerializableObjectArray(metadatas)
-        .serialize(),
-      {
-        coins: coins,
-        maxGas: gas,
-        fee:
-          BigInt(gas) > BigInt(Mas.fromString('0.01'))
-            ? BigInt(gas)
-            : BigInt(Mas.fromString('0.01')),
-      }
+    const coins = await filesInitCost(
+      sc,
+      batch,
+      filesToDelete,
+      metadatas,
+      metadatasToDelete
     )
+    const gas = await estimatePrepareGas(
+      sc,
+      batch,
+      filesToDelete,
+      metadatas,
+      metadatasToDelete
+    )
+    const args = new Args()
+      .addSerializableObjectArray(batch)
+      .addSerializableObjectArray(filesToDelete)
+      .addSerializableObjectArray(metadatas)
+      .addSerializableObjectArray(metadatasToDelete)
+      .serialize()
+
+    const op = await sc.call(functionName, args, {
+      coins: coins,
+      maxGas: gas,
+      fee:
+        BigInt(gas) > BigInt(Mas.fromString('0.01'))
+          ? BigInt(gas)
+          : BigInt(Mas.fromString('0.01')),
+    })
 
     operations.push(op)
   }
@@ -71,8 +88,9 @@ export async function sendFilesInits(
 export async function filesInitCost(
   _: SmartContract,
   files: FileInit[],
-  filesToDelete: FileInit[],
-  metadatas: Metadata[]
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
 ): Promise<bigint> {
   const filePathListCost = files.reduce((acc, chunk) => {
     return (
@@ -114,8 +132,22 @@ export async function filesInitCost(
     )
   }, 0n)
 
+  const metadatasToDeleteCost = metadatasToDelete.reduce((acc, metadata) => {
+    return (
+      acc +
+      storageCostForEntry(
+        BigInt(globalMetadataKey(metadata.key).length),
+        BigInt(metadata.value.length + 4)
+      )
+    )
+  }, 0n)
+
   return BigInt(
-    filePathListCost + storageCost + metadatasCost - filesToDeleteCost
+    filePathListCost +
+      storageCost +
+      metadatasCost -
+      filesToDeleteCost -
+      metadatasToDeleteCost
   )
 }
 
@@ -129,26 +161,33 @@ export async function filesInitCost(
 export async function estimatePrepareGas(
   sc: SmartContract,
   files: FileInit[],
-  filesToDelete: FileInit[],
-  metadatas: Metadata[]
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
 ): Promise<bigint> {
-  const coins = await filesInitCost(sc, files, filesToDelete, metadatas)
-
-  const result = await sc.read(
-    functionName,
-    new Args()
-      .addSerializableObjectArray(files)
-      .addSerializableObjectArray(filesToDelete)
-      .addSerializableObjectArray(metadatas)
-      .serialize(),
-    {
-      coins: coins,
-      maxGas: MAX_GAS_CALL,
-    }
+  const coins = await filesInitCost(
+    sc,
+    files,
+    filesToDelete,
+    metadatas,
+    metadatasToDelete
   )
+  const args = new Args()
+    .addSerializableObjectArray(files)
+    .addSerializableObjectArray(filesToDelete)
+    .addSerializableObjectArray(metadatas)
+    .addSerializableObjectArray(metadatasToDelete)
+    .serialize()
+
+  const result = await sc.read(functionName, args, {
+    coins: coins,
+    maxGas: MAX_GAS_CALL,
+  })
   if (result.info.error) {
     throw new Error(result.info.error)
   }
+
   const gasCost = BigInt(result.info.gasCost)
+
   return minBigInt(gasCost * BigInt(files.length), MAX_GAS_CALL)
 }

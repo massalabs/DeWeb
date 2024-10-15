@@ -21,6 +21,10 @@ export async function uploadChunks(
   sc: SmartContract,
   batch: UploadBatch
 ): Promise<Operation> {
+  for (const chunk of batch.chunks) {
+    console.log(`Uploading chunk ${chunk.location} ${chunk.index}`)
+  }
+
   const { args, coins } = makeArgsCoinsFromBatch(batch)
 
   return sc.call(functionName, args, {
@@ -39,6 +43,10 @@ export async function estimateBatchGas(
   sc: SmartContract,
   batch: Batch
 ): Promise<bigint> {
+  for (const chunk of batch.chunks) {
+    console.log(`Estimating gas for chunk ${chunk.location} ${chunk.index}`)
+  }
+
   const { args, coins } = makeArgsCoinsFromBatch(batch)
 
   const result = await sc.read(functionName, args, {

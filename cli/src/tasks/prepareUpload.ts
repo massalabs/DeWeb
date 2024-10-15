@@ -25,7 +25,7 @@ export function prepareUploadTask(): ListrTask {
             title: 'Confirm SC preparation',
             task: async (ctx, subTask) => {
               const cost =
-                (await filesInitCost(ctx.sc, ctx.fileInits, [], [])) +
+                (await filesInitCost(ctx.sc, ctx.fileInits, [], [], [])) +
                 ctx.minimalFees
               subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`
 
@@ -57,6 +57,7 @@ export function prepareUploadTask(): ListrTask {
               const operations = await sendFilesInits(
                 ctx.sc,
                 ctx.fileInits,
+                [],
                 [],
                 []
               )
