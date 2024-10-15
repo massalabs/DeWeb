@@ -7,6 +7,7 @@ import (
 	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
 	"github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
+	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
 )
 
@@ -23,6 +24,8 @@ func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string)
 	if err != nil {
 		return nil, fmt.Errorf("fetching number of chunks: %w", err)
 	}
+
+	logger.Debugf("Number of chunks for file '%s': %d", filePath, chunkNumber)
 
 	if chunkNumber == 0 {
 		return nil, fmt.Errorf(notFoundErrorTemplate, filePath)
@@ -52,7 +55,8 @@ func GetNumberOfChunks(client *node.Client, websiteAddress string, filePath stri
 	}
 
 	if nbChunkResponse.FinalValue == nil {
-		return 0, nil
+		// TODO: Check if there is a better way to handle this case, for example with CandidateValue
+		return 0, fmt.Errorf(notFoundErrorTemplate, filePath)
 	}
 
 	chunkNumber, err := convert.BytesToI32(nbChunkResponse.FinalValue)
