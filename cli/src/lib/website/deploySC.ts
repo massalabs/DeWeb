@@ -1,4 +1,4 @@
-import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
+import { Provider, SmartContract } from '@massalabs/massa-web3'
 import { readFileSync } from 'fs'
 import { storageCostForEntry } from '../utils/storage'
 import { DEWEB_VERSION_TAG } from './storageKeys'
@@ -19,7 +19,10 @@ export function deployCost(provider: Provider): bigint {
   )
 
   // u32 for string size, 1 byte for the version number, so 5 bytes
-  const versionCost = storageCostForEntry(BigInt(DEWEB_VERSION_TAG.length), BigInt(5))
+  const versionCost = storageCostForEntry(
+    BigInt(DEWEB_VERSION_TAG.length),
+    BigInt(5)
+  )
 
   return ownerKeyCost + versionCost
 }

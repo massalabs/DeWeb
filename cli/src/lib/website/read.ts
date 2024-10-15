@@ -1,18 +1,12 @@
-import {
-  Args,
-  ArrayTypes,
-  SmartContract,
-  U32,
-  Web3Provider,
-} from '@massalabs/massa-web3'
+import { SmartContract, U32, Web3Provider } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
+import { TextDecoder } from 'util'
+
 import {
   FILE_LOCATION_TAG,
   fileChunkCountKey,
   fileChunkKey,
 } from './storageKeys'
-import { text } from 'stream/consumers'
-import { TextDecoder } from 'util'
 
 /**
  * Lists files from the given website on Massa blockchain

@@ -100,12 +100,7 @@ async function prepareChunks(
       const chunkPosts = toChunkPosts(relativePath, chunksData)
       chunks.push(...chunkPosts)
 
-      fileInits.push(
-        new FileInit(
-          relativePath,
-          BigInt(chunkPosts.length),
-        )
-      )
+      fileInits.push(new FileInit(relativePath, BigInt(chunkPosts.length)))
     }
   }
 
