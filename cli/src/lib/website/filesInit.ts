@@ -38,10 +38,6 @@ export async function sendFilesInits(
   const chunkBatches: FileInit[][] = []
   const operations: Operation[] = []
 
-  for (const file of files) {
-    console.log(`File: ${file.location} -> ${file.totalChunk} chunks`)
-  }
-
   for (let i = 0; i < files.length; i += batchSize) {
     chunkBatches.push(files.slice(i, i + batchSize))
   }
