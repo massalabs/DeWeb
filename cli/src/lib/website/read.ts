@@ -6,18 +6,41 @@ import {
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
-import { fileChunkCountKey, fileChunkKey } from './storageKeys'
+import {
+  FILE_LOCATION_TAG,
+  fileChunkCountKey,
+  fileChunkKey,
+} from './storageKeys'
+import { text } from 'stream/consumers'
+import { TextDecoder } from 'util'
 
 /**
  * Lists files from the given website on Massa blockchain
  * @param sc - SmartContract instance
  * @returns List of file paths in the website
  */
-export async function listFiles(sc: SmartContract): Promise<string[]> {
-  const fileListRaw = await sc.read('getFileLocations', undefined)
-  const fileListArgs = new Args(fileListRaw.value)
+export async function listFiles(
+  provider: Web3Provider,
+  sc: SmartContract
+): Promise<string[]> {
+  const allStorageKeys = await provider.client.getDataStoreKeys(sc.address)
+  const fileKeys = allStorageKeys.filter(
+    (key) =>
+      key.slice(0, FILE_LOCATION_TAG.length).toString() ===
+      FILE_LOCATION_TAG.toString()
+  )
+  const fileLocations = await provider.client.getDatastoreEntries(
+    fileKeys.map((key) => {
+      return {
+        address: sc.address,
+        key: key,
+      }
+    })
+  )
 
-  return fileListArgs.nextArray(ArrayTypes.STRING)
+  const textDecoder = new TextDecoder()
+
+  return fileLocations.map((location) => textDecoder.decode(location))
 }
 
 /**
