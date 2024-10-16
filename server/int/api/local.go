@@ -15,7 +15,7 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 
 	content, err := zipper.ReadFileFromZip(zipBytes, resourceName)
 	if err != nil {
-		logger.Warnf("File not found: %b", zipper.IsNotFoundError(err, resourceName))
+		logger.Warnf("File not found: %t", zipper.IsNotFoundError(err, resourceName))
 		w.WriteHeader(http.StatusNotFound)
 
 		return
