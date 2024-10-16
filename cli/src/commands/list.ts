@@ -28,5 +28,5 @@ export const listFilesCommand = new Command('list')
     console.log('Targeting website at address', sc.address)
 
     const files = await listFiles(provider, sc)
-    files.forEach((f) => console.log(f))
+    files.sort().forEach((f) => console.log(f))
   })
