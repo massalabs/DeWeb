@@ -1,16 +1,12 @@
-import { U32 } from '@massalabs/massa-web3'
+import { strToBytes, U32 } from '@massalabs/massa-web3'
 
-function stringToBytes(str: string): Uint8Array {
-  return new Uint8Array(str.split('').map((c) => c.charCodeAt(0)))
-}
-
-export const FILE_TAG: Uint8Array = stringToBytes('\x01FILE')
-export const FILE_LOCATION_TAG: Uint8Array = stringToBytes('\x02LOCATION')
-export const CHUNK_TAG: Uint8Array = stringToBytes('\x03CHUNK')
-export const CHUNK_NB_TAG: Uint8Array = stringToBytes('\x04CHUNK_NB')
-export const FILE_METADATA_TAG: Uint8Array = stringToBytes('\x05FM')
-export const GLOBAL_METADATA_TAG: Uint8Array = stringToBytes('\x06GM')
-export const DEWEB_VERSION_TAG: Uint8Array = stringToBytes('\xFFDEWEB_VERSION')
+export const FILE_TAG: Uint8Array = strToBytes('\x01FILE')
+export const FILE_LOCATION_TAG: Uint8Array = strToBytes('\x02LOCATION')
+export const CHUNK_TAG: Uint8Array = strToBytes('\x03CHUNK')
+export const CHUNK_NB_TAG: Uint8Array = strToBytes('\x04CHUNK_NB')
+export const FILE_METADATA_TAG: Uint8Array = strToBytes('\x05FM')
+export const GLOBAL_METADATA_TAG: Uint8Array = strToBytes('\x06GM')
+export const DEWEB_VERSION_TAG: Uint8Array = strToBytes('\xFFDEWEB_VERSION')
 
 export function globalMetadataKey(metadataKey: Uint8Array): Uint8Array {
   const newKey = new Uint8Array(GLOBAL_METADATA_TAG.length + metadataKey.length)

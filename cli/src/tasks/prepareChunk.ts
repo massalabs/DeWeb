@@ -3,7 +3,7 @@ import { sha256 } from 'js-sha256'
 import { ListrTask } from 'listr2'
 import { join, relative } from 'path'
 
-import { SmartContract, U32, Web3Provider } from '@massalabs/massa-web3'
+import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 
 import { batcher } from '../lib/batcher'
 
@@ -61,7 +61,7 @@ export function prepareBatchesTask(): ListrTask {
  * @param basePath - the base path to compute relative paths (optional)
  */
 async function prepareChunks(
-  provider: Web3Provider,
+  provider: Provider,
   path: string,
   chunkSize: number,
   sc?: SmartContract,
@@ -116,7 +116,7 @@ async function prepareChunks(
  * @returns true if the file requires update, false otherwise
  */
 async function requiresUpdate(
-  provider: Web3Provider,
+  provider: Provider,
   location: string,
   localFileContent: Uint8Array,
   sc?: SmartContract
@@ -155,7 +155,7 @@ async function requiresUpdate(
  * @returns the pre-stores that are not stored on the blockchain
  */
 async function filterUselessFileInits(
-  provider: Web3Provider,
+  provider: Provider,
   scAddress: string,
   fileInits: FileInit[]
 ): Promise<FileInit[]> {
@@ -178,7 +178,7 @@ async function filterUselessFileInits(
   const fileInitsToKeep: FileInit[] = []
 
   for (const batch of batches) {
-    const keys = await provider.client.getDataStoreKeys(scAddress, FILE_TAG)
+    const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
 
     // Remove missing keys from the batch and add them to the list of files to keep
     for (let i = batch.length - 1; i >= 0; i--) {
@@ -188,13 +188,9 @@ async function filterUselessFileInits(
       }
     }
 
-    const results = await provider.client.getDatastoreEntries(
-      batch.map((key) => {
-        return {
-          address: scAddress,
-          key: key.totalChunkKey,
-        }
-      })
+    const results = await provider.readStorage(
+      scAddress,
+      batch.map((key) => key.totalChunkKey)
     )
 
     for (let i = 0; i < batch.length; i++) {

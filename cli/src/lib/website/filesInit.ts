@@ -35,14 +35,14 @@ export async function sendFilesInits(
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
 ): Promise<Operation[]> {
-  const chunkBatches: FileInit[][] = []
+  const fileInitsBatches: FileInit[][] = []
   const operations: Operation[] = []
 
   for (let i = 0; i < files.length; i += batchSize) {
-    chunkBatches.push(files.slice(i, i + batchSize))
+    fileInitsBatches.push(files.slice(i, i + batchSize))
   }
 
-  for (const batch of chunkBatches) {
+  for (const batch of fileInitsBatches) {
     const coins = await filesInitCost(
       sc,
       batch,

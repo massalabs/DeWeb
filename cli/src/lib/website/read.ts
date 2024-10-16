@@ -1,4 +1,4 @@
-import { SmartContract, U32, Web3Provider } from '@massalabs/massa-web3'
+import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
 import { TextDecoder } from 'util'
 
@@ -14,23 +14,14 @@ import {
  * @returns List of file paths in the website
  */
 export async function listFiles(
-  provider: Web3Provider,
+  provider: Provider,
   sc: SmartContract
 ): Promise<string[]> {
-  const allStorageKeys = await provider.client.getDataStoreKeys(sc.address)
-  const fileKeys = allStorageKeys.filter(
-    (key) =>
-      key.slice(0, FILE_LOCATION_TAG.length).toString() ===
-      FILE_LOCATION_TAG.toString()
+  const allStorageKeys = await provider.getStorageKeys(
+    sc.address,
+    FILE_LOCATION_TAG
   )
-  const fileLocations = await provider.client.getDatastoreEntries(
-    fileKeys.map((key) => {
-      return {
-        address: sc.address,
-        key: key,
-      }
-    })
-  )
+  const fileLocations = await provider.readStorage(sc.address, allStorageKeys)
 
   const textDecoder = new TextDecoder()
 
@@ -44,16 +35,13 @@ export async function listFiles(
  * @returns Total number of chunks for the file
  */
 export async function getFileTotalChunks(
-  provider: Web3Provider,
+  provider: Provider,
   sc: SmartContract,
   filePath: string
 ): Promise<bigint> {
   const filePathHash = sha256.arrayBuffer(filePath)
-  const fileTotalChunksResp = await provider.client.getDatastoreEntries([
-    {
-      address: sc.address,
-      key: fileChunkCountKey(new Uint8Array(filePathHash)),
-    },
+  const fileTotalChunksResp = await provider.readStorage(sc.address, [
+    fileChunkCountKey(new Uint8Array(filePathHash)),
   ])
 
   if (fileTotalChunksResp.length !== 1) {
@@ -73,13 +61,13 @@ export async function getFileTotalChunks(
 
 /**
  * Get the content of a file from the given website on Massa blockchain
- * @param provider - Web3Provider instance
+ * @param provider - Provider instance
  * @param sc - SmartContract instance
  * @param filePath - Path of the file to show
  * @returns - Uint8Array of the file content
  */
 export async function getFileFromAddress(
-  provider: Web3Provider,
+  provider: Provider,
   sc: SmartContract,
   filePath: string
 ): Promise<Uint8Array> {
@@ -91,14 +79,7 @@ export async function getFileFromAddress(
     datastoreKeys.push(fileChunkKey(new Uint8Array(filePathHash), i))
   }
 
-  const rawChunks = await provider.client.getDatastoreEntries(
-    datastoreKeys.map((key) => {
-      return {
-        address: sc.address,
-        key: key,
-      }
-    })
-  )
+  const rawChunks = await provider.readStorage(sc.address, datastoreKeys)
 
   for (let i = 0; i < rawChunks.length; i++) {
     if (rawChunks[i].length === 0) {
