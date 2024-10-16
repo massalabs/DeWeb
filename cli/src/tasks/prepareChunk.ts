@@ -3,13 +3,17 @@ import { sha256 } from 'js-sha256'
 import { ListrTask } from 'listr2'
 import { join, relative } from 'path'
 
-import { batcher } from '../lib/batcher'
-import { divideIntoChunks, getTotalChunkKey } from '../lib/website/chunk'
-import { ChunkPost, toChunkPosts } from '../lib/website/chunkPost'
-import { PreStore } from '../lib/website/preStore'
+import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 
-import { SmartContract, U32, Web3Provider } from '@massalabs/massa-web3'
+import { batcher } from '../lib/batcher'
+
+import { divideIntoChunks, toChunkPosts } from '../lib/website/chunk'
 import { getFileFromAddress } from '../lib/website/read'
+import { FILE_TAG, fileChunkCountKey } from '../lib/website/storageKeys'
+
+import { FileChunkPost } from '../lib/website/models/FileChunkPost'
+import { FileInit } from '../lib/website/models/FileInit'
+
 import { UploadCtx } from './tasks'
 
 /**
@@ -20,27 +24,27 @@ export function prepareBatchesTask(): ListrTask {
   return {
     title: 'Preparing batches',
     task: async (ctx: UploadCtx, task) => {
-      const { chunks, preStores } = await prepareChunks(
+      const { chunks, fileInits } = await prepareChunks(
         ctx.provider,
         ctx.websiteDirPath,
         ctx.chunkSize,
         ctx.sc
       )
       ctx.batches = batcher(chunks, ctx.chunkSize)
-      ctx.preStores = ctx.sc
-        ? await filterUselessPreStores(ctx.provider, ctx.sc.address, preStores)
-        : preStores
+      ctx.fileInits = ctx.sc
+        ? await filterUselessFileInits(ctx.provider, ctx.sc.address, fileInits)
+        : fileInits
 
       if (ctx.batches.length < 16) {
         for (const batch of ctx.batches) {
           task.output = `Batch ${batch.id} with ${batch.chunks.length} chunks`
           for (const chunk of batch.chunks) {
-            task.output = `- Chunk ${chunk.filePath} ${chunk.chunkId} with ${chunk.data.length} bytes`
+            task.output = `- Chunk ${chunk.location} ${chunk.index} with ${chunk.data.length} bytes`
           }
         }
       }
 
-      task.output = `Total of ${preStores.length} files, only ${ctx.preStores.length} require update`
+      task.output = `Total of ${fileInits.length} files, only ${ctx.fileInits.length} require update`
       task.output = `Total of ${chunks.length} chunks divided into ${ctx.batches.length} batches`
     },
     rendererOptions: {
@@ -57,16 +61,16 @@ export function prepareBatchesTask(): ListrTask {
  * @param basePath - the base path to compute relative paths (optional)
  */
 async function prepareChunks(
-  provider: Web3Provider,
+  provider: Provider,
   path: string,
   chunkSize: number,
   sc?: SmartContract,
   basePath: string = path
-): Promise<{ chunks: ChunkPost[]; preStores: PreStore[] }> {
+): Promise<{ chunks: FileChunkPost[]; fileInits: FileInit[] }> {
   const files = readdirSync(path)
 
-  const chunks: ChunkPost[] = []
-  const preStores: PreStore[] = []
+  const chunks: FileChunkPost[] = []
+  const fileInits: FileInit[] = []
 
   for (const file of files) {
     const fullPath = join(path, file)
@@ -82,7 +86,7 @@ async function prepareChunks(
         basePath
       )
       chunks.push(...result.chunks)
-      preStores.push(...result.preStores)
+      fileInits.push(...result.fileInits)
     } else if (stats.isFile()) {
       const data = readFileSync(fullPath)
       const relativePath = relative(basePath, fullPath)
@@ -96,30 +100,24 @@ async function prepareChunks(
       const chunkPosts = toChunkPosts(relativePath, chunksData)
       chunks.push(...chunkPosts)
 
-      preStores.push(
-        new PreStore(
-          relativePath,
-          new Uint8Array(sha256.arrayBuffer(relativePath)),
-          BigInt(chunkPosts.length)
-        )
-      )
+      fileInits.push(new FileInit(relativePath, BigInt(chunkPosts.length)))
     }
   }
 
-  return { chunks, preStores }
+  return { chunks, fileInits }
 }
 
 /**
  * Check if the file requires update
  * @param provider - the web3 provider
- * @param filePath - the file path
+ * @param location - the file path
  * @param localFileContent - the local file content
  * @param sc - the smart contract
  * @returns true if the file requires update, false otherwise
  */
 async function requiresUpdate(
-  provider: Web3Provider,
-  filePath: string,
+  provider: Provider,
+  location: string,
   localFileContent: Uint8Array,
   sc?: SmartContract
 ): Promise<boolean> {
@@ -133,7 +131,7 @@ async function requiresUpdate(
 
   var onChainFileContent: Uint8Array
   try {
-    onChainFileContent = await getFileFromAddress(provider, sc, filePath)
+    onChainFileContent = await getFileFromAddress(provider, sc, location)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
     return true
@@ -153,52 +151,57 @@ async function requiresUpdate(
  * Filter out pre-stores that are already stored on the blockchain
  * @param provider - the web3 provider
  * @param scAddress - the smart contract address
- * @param preStores - the pre-stores to filter
+ * @param fileInits - the pre-stores to filter
  * @returns the pre-stores that are not stored on the blockchain
  */
-async function filterUselessPreStores(
-  provider: Web3Provider,
+async function filterUselessFileInits(
+  provider: Provider,
   scAddress: string,
-  preStores: PreStore[]
-): Promise<PreStore[]> {
-  const preStoresWithKey = preStores.map((preStore) => {
+  fileInits: FileInit[]
+): Promise<FileInit[]> {
+  const fileInitsWithKey = fileInits.map((preStore) => {
     return {
       preStore: preStore,
-      totalChunkKey: getTotalChunkKey(preStore.filePath),
+      totalChunkKey: fileChunkCountKey(preStore.hashLocation),
     }
   })
 
   const batches: {
-    preStore: PreStore
+    preStore: FileInit
     totalChunkKey: Uint8Array
   }[][] = []
 
-  for (let i = 0; i < preStoresWithKey.length; i += 100) {
-    batches.push(preStoresWithKey.slice(i, i + 100))
+  for (let i = 0; i < fileInitsWithKey.length; i += 100) {
+    batches.push(fileInitsWithKey.slice(i, i + 100))
   }
 
-  const preStoresToKeep: PreStore[] = []
+  const fileInitsToKeep: FileInit[] = []
 
   for (const batch of batches) {
-    // TODO: Could be improved by first checking if keys exist
-    const results = await provider.client.getDatastoreEntries(
-      batch.map((key) => {
-        return {
-          address: scAddress,
-          key: key.totalChunkKey,
-        }
-      })
+    const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
+
+    // Remove missing keys from the batch and add them to the list of files to keep
+    for (let i = batch.length - 1; i >= 0; i--) {
+      if (!keys.includes(batch[i].totalChunkKey)) {
+        fileInitsToKeep.push(batch[i].preStore)
+        batch.splice(i, 1)
+      }
+    }
+
+    const results = await provider.readStorage(
+      scAddress,
+      batch.map((key) => key.totalChunkKey)
     )
 
     for (let i = 0; i < batch.length; i++) {
       if (
         results[i].length !== U32.SIZE_BYTE ||
-        U32.fromBytes(results[i]) !== batch[i].preStore.newTotalChunks
+        U32.fromBytes(results[i]) !== batch[i].preStore.totalChunk
       ) {
-        preStoresToKeep.push(batch[i].preStore)
+        fileInitsToKeep.push(batch[i].preStore)
       }
     }
   }
 
-  return preStoresToKeep
+  return fileInitsToKeep
 }

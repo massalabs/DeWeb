@@ -5,17 +5,25 @@ import {
   Operation,
   SmartContract,
 } from '@massalabs/massa-web3'
-import { computeChunkCost } from './chunk'
-import { UploadBatch } from '../uploadManager'
 import { Batch } from '../batcher'
+import { UploadBatch } from '../uploadManager'
+import { computeChunkCost } from './chunk'
 
+const functionName = 'uploadFileChunks'
+
+/**
+ * Upload chunks to the smart contract
+ * @param sc - SmartContract instance
+ * @param batch - the batch to upload
+ * @returns the operation
+ */
 export async function uploadChunks(
   sc: SmartContract,
   batch: UploadBatch
 ): Promise<Operation> {
   const { args, coins } = makeArgsCoinsFromBatch(batch)
 
-  return sc.call('storeFileChunks', args, {
+  return sc.call(functionName, args, {
     coins: coins,
     maxGas: batch.gas,
   })
@@ -33,7 +41,7 @@ export async function estimateBatchGas(
 ): Promise<bigint> {
   const { args, coins } = makeArgsCoinsFromBatch(batch)
 
-  const result = await sc.read('storeFileChunks', args, {
+  const result = await sc.read(functionName, args, {
     coins: coins,
   })
   if (result.info.error) {
@@ -57,8 +65,8 @@ function makeArgsCoinsFromBatch(batch: Batch): {
     (acc, chunk) =>
       acc +
       computeChunkCost(
-        chunk.filePath,
-        BigInt(chunk.chunkId),
+        chunk.location,
+        BigInt(chunk.index),
         BigInt(chunk.data.length)
       ),
     0n
