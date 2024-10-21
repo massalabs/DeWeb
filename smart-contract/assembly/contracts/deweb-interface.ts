@@ -10,8 +10,6 @@ import {
   _onlyOwner,
   _setOwner,
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
-export { setOwner } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
-
 import { Args, stringToBytes } from '@massalabs/as-types';
 import { FileChunkPost } from './serializable/FileChunkPost';
 import { FileDelete } from './serializable/FileDelete';
@@ -31,6 +29,7 @@ import {
 import { _fileInit } from './internals/fileInit';
 import { FileInit } from './serializable/FileInit';
 import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
+export { setOwner } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
 const DEWEB_VERSION = '1';
 
@@ -271,7 +270,7 @@ export function receiveCoins(): void {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                  UPGRADE                                   */
+/*                                 UPGRADE SC                                 */
 /* -------------------------------------------------------------------------- */
 
 /**
