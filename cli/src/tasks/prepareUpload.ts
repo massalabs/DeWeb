@@ -1,8 +1,14 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { formatMas, OperationStatus } from '@massalabs/massa-web3'
+import {
+  formatMas,
+  OperationStatus,
+  strToBytes,
+  U64,
+} from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
 import { filesInitCost, sendFilesInits } from '../lib/website/filesInit'
+import { Metadata } from '../lib/website/models/Metadata'
 
 import { UploadCtx } from './tasks'
 
@@ -14,10 +20,16 @@ export function prepareUploadTask(): ListrTask {
   return {
     title: 'Prepare upload',
     task: (ctx: UploadCtx, task) => {
-      if (ctx.fileInits.length === 0) {
+      if (ctx.fileInits.length === 0 && ctx.filesToDelete.length === 0) {
         task.skip('All files are ready for upload')
         return
       }
+
+      const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
+
+      ctx.metadatas.push(
+        new Metadata(strToBytes('LAST_UPDATE'), U64.toBytes(utcNowDate))
+      )
 
       return task.newListr(
         [
@@ -25,8 +37,13 @@ export function prepareUploadTask(): ListrTask {
             title: 'Confirm SC preparation',
             task: async (ctx, subTask) => {
               const cost =
-                (await filesInitCost(ctx.sc, ctx.fileInits, [], [], [])) +
-                ctx.minimalFees
+                (await filesInitCost(
+                  ctx.sc,
+                  ctx.fileInits,
+                  ctx.filesToDelete,
+                  ctx.metadatas,
+                  ctx.metadatasToDelete
+                )) + ctx.minimalFees
               subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`
 
               if (!ctx.skipConfirm) {
@@ -57,9 +74,9 @@ export function prepareUploadTask(): ListrTask {
               const operations = await sendFilesInits(
                 ctx.sc,
                 ctx.fileInits,
-                [],
-                [],
-                []
+                ctx.filesToDelete,
+                ctx.metadatas,
+                ctx.metadatasToDelete
               )
 
               const results = await Promise.all(

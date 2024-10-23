@@ -50,6 +50,7 @@ export function showEstimatedCost(): ListrTask {
       }
 
       ctx.currentTotalEstimation += opFees
+      ctx.currentTotalEstimation += totalEstimatedGas
     },
     rendererOptions: {
       outputBar: Infinity,
