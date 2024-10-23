@@ -1,25 +1,37 @@
 package website
 
 import (
+	"crypto/sha256"
 	"fmt"
 
+	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
 	"github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
+	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
 )
 
-const datastoreBatchSize = 64
+const (
+	datastoreBatchSize    = 64
+	notFoundErrorTemplate = "no chunks found for file %s"
+)
 
 // Fetch retrieves the complete data of a website as bytes.
-func Fetch(network *config.NetworkInfos, websiteAddress string) ([]byte, error) {
+func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
 	client := node.NewClient(network.NodeURL)
 
-	chunkNumber, err := GetNumberOfChunks(client, websiteAddress)
+	chunkNumber, err := GetNumberOfChunks(client, websiteAddress, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("fetching number of chunks: %w", err)
 	}
 
-	dataStore, err := fetchAllChunks(client, websiteAddress, chunkNumber)
+	logger.Debugf("Number of chunks for file '%s': %d", filePath, chunkNumber)
+
+	if chunkNumber == 0 {
+		return nil, fmt.Errorf(notFoundErrorTemplate, filePath)
+	}
+
+	dataStore, err := fetchAllChunks(client, websiteAddress, filePath, chunkNumber)
 	if err != nil {
 		return nil, fmt.Errorf("fetching all chunks: %w", err)
 	}
@@ -27,15 +39,24 @@ func Fetch(network *config.NetworkInfos, websiteAddress string) ([]byte, error) 
 	return dataStore, nil
 }
 
+// IsNotFoundError checks if the error is a not found error.
+func IsNotFoundError(err error, fileName string) bool {
+	return fmt.Sprintf(notFoundErrorTemplate, fileName) == err.Error()
+}
+
 // GetNumberOfChunks fetches and returns the number of chunks for the website.
-func GetNumberOfChunks(client *node.Client, websiteAddress string) (int32, error) {
-	nbChunkResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(nbChunkKey))
+func GetNumberOfChunks(client *node.Client, websiteAddress string, filePath string) (int32, error) {
+	filePathHash := sha256.Sum256([]byte(filePath))
+	nbChunkKey := storagekeys.FileChunkCountKey(filePathHash[:])
+
+	nbChunkResponse, err := node.FetchDatastoreEntry(client, websiteAddress, nbChunkKey)
 	if err != nil {
 		return 0, fmt.Errorf("fetching website number of chunks: %w", err)
 	}
 
 	if nbChunkResponse.FinalValue == nil {
-		return 0, nil
+		// TODO: Check if there is a better way to handle this case, for example with CandidateValue
+		return 0, fmt.Errorf(notFoundErrorTemplate, filePath)
 	}
 
 	chunkNumber, err := convert.BytesToI32(nbChunkResponse.FinalValue)
@@ -46,11 +67,32 @@ func GetNumberOfChunks(client *node.Client, websiteAddress string) (int32, error
 	return chunkNumber, nil
 }
 
+// GetFilesPathList fetches and returns the list of files for the website.
+func GetFilesPathList(
+	client *node.Client,
+	websiteAddress string,
+) ([]string, error) {
+	filesPathListResponse, err := node.FetchDatastoreEntry(client, websiteAddress, []byte(filesPathList))
+	if err != nil {
+		return nil, fmt.Errorf("fetching website files path list: %w", err)
+	}
+
+	if filesPathListResponse.FinalValue == nil {
+		return nil, nil
+	}
+
+	filesPathList := convert.ToStringArray(filesPathListResponse.FinalValue)
+
+	return filesPathList, nil
+}
+
 // fetchAllChunks retrieves all chunks of data for the website.
-func fetchAllChunks(client *node.Client, websiteAddress string, chunkNumber int32) ([]byte, error) {
+func fetchAllChunks(client *node.Client, websiteAddress string, filePath string, chunkNumber int32) ([]byte, error) {
+	filePathHash := sha256.Sum256([]byte(filePath))
+
 	keys := make([][]byte, chunkNumber)
 	for i := 0; i < int(chunkNumber); i++ {
-		keys[i] = convert.I32ToBytes(i)
+		keys[i] = storagekeys.FileChunkKey(filePathHash[:], i)
 	}
 
 	var dataStore []byte
@@ -92,42 +134,44 @@ func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, erro
 	return string(ownerResponse.FinalValue), nil
 }
 
-func GetFirstCreationTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
-	client := node.NewClient(network.NodeURL)
+// TODO: Update those functions once implemented in the new SC
 
-	firstCreationTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
-	if err != nil {
-		return 0, fmt.Errorf("fetching website first creation timestamp: %w", err)
-	}
+// func GetFirstCreationTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
+// 	client := node.NewClient(network.NodeURL)
 
-	if firstCreationTimestampResponse.FinalValue == nil {
-		return 0, nil
-	}
+// 	firstCreationTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(firstCreationTimestampKey))
+// 	if err != nil {
+// 		return 0, fmt.Errorf("fetching website first creation timestamp: %w", err)
+// 	}
 
-	castedFCTimestamp, err := convert.BytesToU64(firstCreationTimestampResponse.FinalValue)
-	if err != nil {
-		return 0, fmt.Errorf("converting website first creation timestamp: %w", err)
-	}
+// 	if firstCreationTimestampResponse.FinalValue == nil {
+// 		return 0, nil
+// 	}
 
-	return castedFCTimestamp, nil
-}
+// 	castedFCTimestamp, err := convert.BytesToU64(firstCreationTimestampResponse.FinalValue)
+// 	if err != nil {
+// 		return 0, fmt.Errorf("converting website first creation timestamp: %w", err)
+// 	}
 
-func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
-	client := node.NewClient(network.NodeURL)
+// 	return castedFCTimestamp, nil
+// }
 
-	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(lastUpdateTimestampKey))
-	if err != nil {
-		return 0, fmt.Errorf("fetching website last update timestamp: %w", err)
-	}
+// func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (uint64, error) {
+// 	client := node.NewClient(network.NodeURL)
 
-	if lastUpdateTimestampResponse.FinalValue == nil {
-		return 0, nil
-	}
+// 	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(lastUpdateTimestampKey))
+// 	if err != nil {
+// 		return 0, fmt.Errorf("fetching website last update timestamp: %w", err)
+// 	}
 
-	castedLUTimestamp, err := convert.BytesToU64(lastUpdateTimestampResponse.FinalValue)
-	if err != nil {
-		return 0, fmt.Errorf("converting website last update timestamp: %w", err)
-	}
+// 	if lastUpdateTimestampResponse.FinalValue == nil {
+// 		return 0, nil
+// 	}
 
-	return castedLUTimestamp, nil
-}
+// 	castedLUTimestamp, err := convert.BytesToU64(lastUpdateTimestampResponse.FinalValue)
+// 	if err != nil {
+// 		return 0, fmt.Errorf("converting website last update timestamp: %w", err)
+// 	}
+
+// 	return castedLUTimestamp, nil
+// }

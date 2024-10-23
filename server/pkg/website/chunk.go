@@ -7,6 +7,7 @@ import (
 	"github.com/massalabs/station/pkg/node/sendoperation"
 )
 
+// WILL BE DELETED SOON
 func DivideIntoChunks(data []byte, chunkSize int) [][]byte {
 	if data == nil || chunkSize <= 0 {
 		return nil
@@ -26,6 +27,7 @@ func DivideIntoChunks(data []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
+// WILL BE DELETED SOON
 // ComputeChunkCost computes the cost of uploading a chunk to a website.
 // The cost is computed based on the size of the chunk and the index of the chunk.
 // The cost of the first chunk includes the cost of nbChunk key creation.
@@ -39,21 +41,21 @@ func ComputeChunkCost(chunkIndex int, chunkSize int) (int, error) {
 		return 0, fmt.Errorf("unable to compute storage cost for chunk upload: %w", err)
 	}
 
-	if chunkIndex == 0 {
-		chunkKeyCost, err := sendoperation.StorageCostForEntry(len([]byte(nbChunkKey)), convert.BytesPerUint32)
-		if err != nil {
-			return 0, fmt.Errorf("unable to compute storage cost for nbChunk key creation: %w", err)
-		}
+	// if chunkIndex == 0 {
+	// 	chunkKeyCost, err := sendoperation.StorageCostForEntry(len([]byte(nbChunkKey)), convert.BytesPerUint32)
+	// 	if err != nil {
+	// 		return 0, fmt.Errorf("unable to compute storage cost for nbChunk key creation: %w", err)
+	// 	}
 
-		uploadCost += chunkKeyCost
+	// 	uploadCost += chunkKeyCost
 
-		lastUpdateKeyCost, err := sendoperation.StorageCostForEntry(len([]byte(lastUpdateTimestampKey)), convert.BytesPerUint64)
-		if err != nil {
-			return 0, fmt.Errorf("unable to compute storage cost for lastUpdate key creation: %w", err)
-		}
+	// 	lastUpdateKeyCost, err := sendoperation.StorageCostForEntry(len([]byte(lastUpdateTimestampKey)), convert.BytesPerUint64)
+	// 	if err != nil {
+	// 		return 0, fmt.Errorf("unable to compute storage cost for lastUpdate key creation: %w", err)
+	// 	}
 
-		uploadCost += lastUpdateKeyCost
-	}
+	// 	uploadCost += lastUpdateKeyCost
+	// }
 
 	return uploadCost, nil
 }

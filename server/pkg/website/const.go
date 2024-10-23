@@ -1,10 +1,12 @@
 package website
 
 const (
-	firstCreationTimestampKey = "\000"
-	lastUpdateTimestampKey    = "\001"
-	nbChunkKey                = "\002"
-	ownerKey                  = "OWNER"
+	fileTag        = "\000"
+	chunkTag       = "\001"
+	chunkNumberTag = "\002"
+	matadataTag    = "\003"
+	filesPathList  = "\005"
+	ownerKey       = "OWNER"
 
 	ChunkSize = 64_000 // 64KB
 )
