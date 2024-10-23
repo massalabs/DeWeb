@@ -1,7 +1,13 @@
 import { Args, DeserializedResult, Serializable } from '@massalabs/massa-web3'
+import { sha256 } from 'js-sha256'
 
 export class FileDelete implements Serializable<FileDelete> {
-  constructor(public hashLocation: Uint8Array = new Uint8Array(0)) {}
+  constructor(
+    public location: string,
+    public hashLocation: Uint8Array = new Uint8Array(
+      sha256.arrayBuffer(location)
+    )
+  ) {}
 
   serialize(): Uint8Array {
     return new Args().addUint8Array(this.hashLocation).serialize()

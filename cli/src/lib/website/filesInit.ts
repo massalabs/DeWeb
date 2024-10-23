@@ -21,6 +21,70 @@ const functionName = 'filesInit'
 const batchSize = 20
 
 /**
+ * Divide the files, filesToDelete, metadatas, and metadatasToDelete into multiple batches
+ * @param files - Array of FileInit instances
+ * @param filesToDelete - Array of FileDelete instances
+ * @param metadatas - Array of Metadata instances
+ * @param metadatasToDelete - Array of Metadata instances to delete
+ * @param batchSize - Maximum number of elements in each batch
+ * @returns - Array of Batch instances
+ */
+function createBatches(
+  files: FileInit[],
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
+): Batch[] {
+  const batches: Batch[] = []
+
+  let currentBatch = new Batch([], [], [], [])
+
+  const addBatch = () => {
+    if (
+      currentBatch.fileInits.length > 0 ||
+      currentBatch.fileDeletes.length > 0 ||
+      currentBatch.metadatas.length > 0 ||
+      currentBatch.metadataDeletes.length > 0
+    ) {
+      batches.push(currentBatch)
+      currentBatch = new Batch([], [], [], [])
+    }
+  }
+
+  for (const file of files) {
+    if (currentBatch.fileInits.length >= batchSize) {
+      addBatch()
+    }
+    currentBatch.fileInits.push(file)
+  }
+
+  for (const fileDelete of filesToDelete) {
+    if (currentBatch.fileDeletes.length >= batchSize) {
+      addBatch()
+    }
+    currentBatch.fileDeletes.push(fileDelete)
+  }
+
+  for (const metadata of metadatas) {
+    if (currentBatch.metadatas.length >= batchSize) {
+      addBatch()
+    }
+    currentBatch.metadatas.push(metadata)
+  }
+
+  for (const metadataDelete of metadatasToDelete) {
+    if (currentBatch.metadataDeletes.length >= batchSize) {
+      addBatch()
+    }
+    currentBatch.metadataDeletes.push(metadataDelete)
+  }
+
+  addBatch()
+
+  return batches
+}
+
+/**
  * Send the filesInits to the smart contract
  * @param sc - SmartContract instance
  * @param files - Array of FileInit instances
@@ -35,42 +99,24 @@ export async function sendFilesInits(
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
 ): Promise<Operation[]> {
-  const fileInitsBatches: FileInit[][] = []
+  const batches: Batch[] = createBatches(
+    files,
+    filesToDelete,
+    metadatas,
+    metadatasToDelete
+  )
+
   const operations: Operation[] = []
 
-  for (let i = 0; i < files.length; i += batchSize) {
-    fileInitsBatches.push(files.slice(i, i + batchSize))
-  }
-
-  for (const batch of fileInitsBatches) {
-    const coins = await filesInitCost(
-      sc,
-      batch,
-      filesToDelete,
-      metadatas,
-      metadatasToDelete
-    )
-    const gas = await estimatePrepareGas(
-      sc,
-      batch,
-      filesToDelete,
-      metadatas,
-      metadatasToDelete
-    )
-    const args = new Args()
-      .addSerializableObjectArray(batch)
-      .addSerializableObjectArray(filesToDelete)
-      .addSerializableObjectArray(metadatas)
-      .addSerializableObjectArray(metadatasToDelete)
-      .serialize()
+  for (const batch of batches) {
+    const coins = await batch.batchCost(sc)
+    const gas = await batch.estimateGas(sc)
+    const args = batch.serialize()
 
     const op = await sc.call(functionName, args, {
-      coins: coins,
+      coins: coins <= 0n ? 0n : coins,
       maxGas: gas,
-      fee:
-        BigInt(gas) > BigInt(Mas.fromString('0.01'))
-          ? BigInt(gas)
-          : BigInt(Mas.fromString('0.01')),
+      fee: gas > Mas.fromString('0.01') ? gas : Mas.fromString('0.01'),
     })
 
     operations.push(op)
@@ -148,13 +194,17 @@ export async function filesInitCost(
 }
 
 /**
- * Estimate the gas cost for the operation
+ * Estimate the gas cost for the prepare operation
  * Required until https://github.com/massalabs/massa/issues/4742 is fixed
  * @param sc - SmartContract instance
- * @param files - Array of PreStore instances
+ * @param files - Array of FileInit instances
+ * @param filesToDelete - Array of FileDelete instances
+ * @param metadatas - Array of Metadata instances
+ * @param metadatasToDelete - Array of Metadata instances to delete
+ *
  * @returns - Estimated gas cost for the operation
  */
-export async function estimatePrepareGas(
+async function estimatePrepareGas(
   sc: SmartContract,
   files: FileInit[],
   filesToDelete: FileDelete[],
@@ -176,7 +226,7 @@ export async function estimatePrepareGas(
     .serialize()
 
   const result = await sc.read(functionName, args, {
-    coins: coins,
+    coins: coins <= 0n ? 0n : coins,
     maxGas: MAX_GAS_CALL,
   })
   if (result.info.error) {
@@ -186,4 +236,45 @@ export async function estimatePrepareGas(
   const gasCost = BigInt(result.info.gasCost)
 
   return minBigInt(gasCost * BigInt(files.length), MAX_GAS_CALL)
+}
+
+/**
+ * Represents parameters for the filesInit function
+ */
+class Batch {
+  constructor(
+    public fileInits: FileInit[],
+    public fileDeletes: FileDelete[],
+    public metadatas: Metadata[],
+    public metadataDeletes: Metadata[]
+  ) {}
+
+  serialize(): Uint8Array {
+    return new Args()
+      .addSerializableObjectArray(this.fileInits)
+      .addSerializableObjectArray(this.fileDeletes)
+      .addSerializableObjectArray(this.metadatas)
+      .addSerializableObjectArray(this.metadataDeletes)
+      .serialize()
+  }
+
+  batchCost(sc: SmartContract): Promise<bigint> {
+    return filesInitCost(
+      sc,
+      this.fileInits,
+      this.fileDeletes,
+      this.metadatas,
+      this.metadataDeletes
+    )
+  }
+
+  estimateGas(sc: SmartContract): Promise<bigint> {
+    return estimatePrepareGas(
+      sc,
+      this.fileInits,
+      this.fileDeletes,
+      this.metadatas,
+      this.metadataDeletes
+    )
+  }
 }
