@@ -22,6 +22,7 @@ export function _setFileChunk(
   index: u32,
   chunk: StaticArray<u8>,
 ): void {
+  // TODO - What if the file is not initialized?
   const hashLocation = sha256(stringToBytes(location));
   const totalChunk = _getTotalChunk(hashLocation);
 

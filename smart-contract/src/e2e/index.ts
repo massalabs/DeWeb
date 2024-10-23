@@ -15,7 +15,7 @@ async function deploy(provider: Web3Provider): Promise<SmartContract> {
   const contract = await SmartContract.deploy(
     provider,
     byteCode,
-    new Args().addString(provider.address).serialize(),
+    new Args().serialize(),
     {
       coins: Mas.fromString('50'),
     },
