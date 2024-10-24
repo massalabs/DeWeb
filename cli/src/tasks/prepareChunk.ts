@@ -53,7 +53,7 @@ export function prepareBatchesTask(): ListrTask {
         }
       }
 
-      task.output = `Total of ${fileInits.length} files, only ${ctx.fileInits.length} require update`
+      task.output = `Total of ${fileInits.length} files, ${ctx.fileInits.length} require update`
       task.output = `${ctx.filesToDelete.length} files will be deleted:`
       for (const file of ctx.filesToDelete) {
         task.output = `- ${file.location}`
