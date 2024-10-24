@@ -168,7 +168,7 @@ export async function filesInitCost(
     return (
       acc +
       storageCostForEntry(
-        BigInt(globalMetadataKey(metadata.key).length),
+        BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
         BigInt(metadata.value.length + 4)
       )
     )
@@ -178,7 +178,7 @@ export async function filesInitCost(
     return (
       acc +
       storageCostForEntry(
-        BigInt(globalMetadataKey(metadata.key).length),
+        BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
         BigInt(metadata.value.length + 4)
       )
     )
