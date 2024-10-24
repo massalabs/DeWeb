@@ -37,10 +37,14 @@ export const uploadCommand = new Command('upload')
       batches: [],
       chunks: [],
       fileInits: [],
+      filesToDelete: [],
+      metadatas: [],
+      metadatasToDelete: [],
       chunkSize: chunkSize,
       websiteDirPath: websiteDirPath,
       skipConfirm: options.yes,
       currentTotalEstimation: 0n,
+      maxConcurrentOps: 4,
       minimalFees: await provider.client.getMinimalFee(),
     }
 

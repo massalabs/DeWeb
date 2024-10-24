@@ -8,12 +8,13 @@ import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 import { batcher } from '../lib/batcher'
 
 import { divideIntoChunks, toChunkPosts } from '../lib/website/chunk'
-import { getFileFromAddress } from '../lib/website/read'
+import { getFileFromAddress, listFiles } from '../lib/website/read'
 import { FILE_TAG, fileChunkCountKey } from '../lib/website/storageKeys'
 
 import { FileChunkPost } from '../lib/website/models/FileChunkPost'
 import { FileInit } from '../lib/website/models/FileInit'
 
+import { FileDelete } from '../lib/website/models/FileDelete'
 import { UploadCtx } from './tasks'
 
 /**
@@ -24,12 +25,20 @@ export function prepareBatchesTask(): ListrTask {
   return {
     title: 'Preparing batches',
     task: async (ctx: UploadCtx, task) => {
-      const { chunks, fileInits } = await prepareChunks(
+      const { chunks, fileInits, localFiles } = await prepareChunks(
         ctx.provider,
         ctx.websiteDirPath,
         ctx.chunkSize,
         ctx.sc
       )
+
+      if (ctx.sc) {
+        const filesInSC = await listFiles(ctx.provider, ctx.sc)
+        ctx.filesToDelete = filesInSC
+          .filter((file) => !localFiles.includes(file))
+          .map((file) => new FileDelete(file))
+      }
+
       ctx.batches = batcher(chunks, ctx.chunkSize)
       ctx.fileInits = ctx.sc
         ? await filterUselessFileInits(ctx.provider, ctx.sc.address, fileInits)
@@ -44,7 +53,11 @@ export function prepareBatchesTask(): ListrTask {
         }
       }
 
-      task.output = `Total of ${fileInits.length} files, only ${ctx.fileInits.length} require update`
+      task.output = `Total of ${fileInits.length} files, ${ctx.fileInits.length} require update`
+      task.output = `${ctx.filesToDelete.length} files will be deleted:`
+      for (const file of ctx.filesToDelete) {
+        task.output = `- ${file.location}`
+      }
       task.output = `Total of ${chunks.length} chunks divided into ${ctx.batches.length} batches`
     },
     rendererOptions: {
@@ -66,11 +79,17 @@ async function prepareChunks(
   chunkSize: number,
   sc?: SmartContract,
   basePath: string = path
-): Promise<{ chunks: FileChunkPost[]; fileInits: FileInit[] }> {
+): Promise<{
+  chunks: FileChunkPost[]
+  fileInits: FileInit[]
+  localFiles: string[]
+}> {
   const files = readdirSync(path)
 
   const chunks: FileChunkPost[] = []
   const fileInits: FileInit[] = []
+
+  const localFiles: string[] = []
 
   for (const file of files) {
     const fullPath = join(path, file)
@@ -87,9 +106,12 @@ async function prepareChunks(
       )
       chunks.push(...result.chunks)
       fileInits.push(...result.fileInits)
+      localFiles.push(...result.localFiles)
     } else if (stats.isFile()) {
       const data = readFileSync(fullPath)
       const relativePath = relative(basePath, fullPath)
+
+      localFiles.push(relativePath)
 
       if (!(await requiresUpdate(provider, relativePath, data, sc))) {
         continue
@@ -104,7 +126,7 @@ async function prepareChunks(
     }
   }
 
-  return { chunks, fileInits }
+  return { chunks, fileInits, localFiles }
 }
 
 /**

@@ -46,7 +46,6 @@ jobs:
         run: npm test
 
   functional-test-cli:
-    if: false
     runs-on: ubuntu-22.04
 
     defaults:
