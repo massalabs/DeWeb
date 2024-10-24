@@ -28,7 +28,7 @@ export function prepareUploadTask(): ListrTask {
       const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
 
       ctx.metadatas.push(
-        new Metadata(strToBytes('LAST_UPDATE'), U64.toBytes(utcNowDate))
+        new Metadata('LAST_UPDATE', utcNowDate.toString())
       )
 
       return task.newListr(
