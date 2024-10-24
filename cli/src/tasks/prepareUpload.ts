@@ -1,10 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import {
-  formatMas,
-  OperationStatus,
-  strToBytes,
-  U64,
-} from '@massalabs/massa-web3'
+import { formatMas, OperationStatus, U64 } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
 import { filesInitCost, sendFilesInits } from '../lib/website/filesInit'
@@ -27,9 +22,7 @@ export function prepareUploadTask(): ListrTask {
 
       const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
 
-      ctx.metadatas.push(
-        new Metadata('LAST_UPDATE', utcNowDate.toString())
-      )
+      ctx.metadatas.push(new Metadata('LAST_UPDATE', utcNowDate.toString()))
 
       return task.newListr(
         [
