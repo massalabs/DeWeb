@@ -44,6 +44,7 @@ export const uploadCommand = new Command('upload')
       websiteDirPath: websiteDirPath,
       skipConfirm: options.yes,
       currentTotalEstimation: 0n,
+      maxConcurrentOps: 4,
       minimalFees: await provider.client.getMinimalFee(),
     }
 

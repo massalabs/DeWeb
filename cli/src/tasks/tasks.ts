@@ -22,6 +22,8 @@ export interface UploadCtx {
   batches: Batch[]
   chunkSize: number
   minimalFees: bigint
+
+  maxConcurrentOps: number
 }
 
 export interface DeleteCtx {
