@@ -2,9 +2,11 @@ import {
   Args,
   Mas,
   MAX_GAS_CALL,
+  MIN_GAS_CALL,
   minBigInt,
   Operation,
   SmartContract,
+  strToBytes,
   U32,
 } from '@massalabs/massa-web3'
 import { storageCostForEntry } from '../utils/storage'
@@ -16,6 +18,7 @@ import {
   globalMetadataKey,
 } from './storageKeys'
 import { FileDelete } from './models/FileDelete'
+import { maxBigInt } from '../../tasks/utils'
 
 const functionName = 'filesInit'
 const batchSize = 20
@@ -230,12 +233,22 @@ async function estimatePrepareGas(
     maxGas: MAX_GAS_CALL,
   })
   if (result.info.error) {
+    console.error(result.info)
     throw new Error(result.info.error)
   }
 
   const gasCost = BigInt(result.info.gasCost)
+  const numberOfElements = BigInt(
+    files.length +
+      filesToDelete.length +
+      metadatas.length +
+      metadatasToDelete.length
+  )
 
-  return minBigInt(gasCost * BigInt(files.length), MAX_GAS_CALL)
+  return minBigInt(
+    maxBigInt(gasCost * numberOfElements, MIN_GAS_CALL),
+    MAX_GAS_CALL
+  )
 }
 
 /**
