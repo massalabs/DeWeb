@@ -28,5 +28,6 @@ export const listFilesCommand = new Command('list')
     console.log('Targeting website at address', sc.address)
 
     const files = await listFiles(provider, sc)
+    console.log(`Total of ${files.length} files:`)
     files.sort().forEach((f) => console.log(f))
   })
