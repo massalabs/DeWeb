@@ -43,12 +43,7 @@ function createBatches(
   let currentBatch = new Batch([], [], [], [])
 
   const addBatch = () => {
-    if (
-      currentBatch.fileInits.length > 0 ||
-      currentBatch.fileDeletes.length > 0 ||
-      currentBatch.metadatas.length > 0 ||
-      currentBatch.metadataDeletes.length > 0
-    ) {
+    if (Object.values(currentBatch).some((v) => v.length > 0)) {
       batches.push(currentBatch)
       currentBatch = new Batch([], [], [], [])
     }
@@ -100,7 +95,8 @@ export async function sendFilesInits(
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
-  metadatasToDelete: Metadata[]
+  metadatasToDelete: Metadata[],
+  minimalFees: bigint = Mas.fromString('0.01')
 ): Promise<Operation[]> {
   const batches: Batch[] = createBatches(
     files,
@@ -119,7 +115,7 @@ export async function sendFilesInits(
     const op = await sc.call(functionName, args, {
       coins: coins <= 0n ? 0n : coins,
       maxGas: gas,
-      fee: gas > Mas.fromString('0.01') ? gas : Mas.fromString('0.01'),
+      fee: gas > minimalFees ? gas : minimalFees,
     })
 
     operations.push(op)
