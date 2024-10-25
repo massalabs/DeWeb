@@ -120,44 +120,57 @@ func resolveAddress(subdomain string, network msConfig.NetworkInfos) (string, er
 	return domainTarget, nil
 }
 
-func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, error) {
-	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
-
-	content, notFound, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourceName string) (string, error) {
+	exists, err := webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 	if err != nil {
-		if !notFound {
-			return nil, "", fmt.Errorf("failed to get website: %w", err)
-		}
+		return "", fmt.Errorf("failed to check if resource exists: %w", err)
+	}
 
+	if !exists {
+		logger.Warnf("Resource %s not found in website %s", resourceName, websiteAddress)
 		// Handling missing .html extension
-		if notFound && !strings.HasSuffix(resourceName, ".html") {
-			logger.Warnf("Failed to get file %s from website: %v", resourceName, err)
+		if !strings.HasSuffix(resourceName, ".html") {
 			resourceName += ".html"
 
-			content, notFound, err = webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+			exists, err = webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 			if err != nil {
-				if notFound {
-					return nil, "", fmt.Errorf("could not find %s in website: %w", resourceName, err)
-				}
+				return "", fmt.Errorf("failed to check if resource exists: %w", err)
+			}
 
-				return nil, "", fmt.Errorf("failed to get file from website: %w", err)
+			if exists {
+				return resourceName, nil
 			}
 		}
 
 		// Handling Single Page Apps
-		if notFound && resourceName != "index.html" {
-			logger.Warnf("Failed to get file %s from zip: %v", resourceName, err)
+		if resourceName != "index.html" {
 			resourceName = "index.html"
 
-			content, notFound, err = webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+			exists, err = webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 			if err != nil {
-				if notFound {
-					return nil, "", fmt.Errorf("could not find index.html in website: %w", err)
-				}
+				return "", fmt.Errorf("failed to check if resource exists: %w", err)
+			}
 
-				return nil, "", fmt.Errorf("failed to get file from zip: %w", err)
+			if exists {
+				return resourceName, nil
 			}
 		}
+	}
+
+	return resourceName, nil
+}
+
+func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, error) {
+	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
+
+	resourceName, err := resolveResourceName(network, websiteAddress, resourceName)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to resolve resource name: %w", err)
+	}
+
+	content, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get website %s resource %s: %w", websiteAddress, resourceName, err)
 	}
 
 	contentType := ContentType(resourceName, content)

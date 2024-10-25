@@ -33,14 +33,12 @@ export function confirmUploadTask(): ListrTask {
  * @returns a Listr task to upload batches
  */
 export function uploadBatchesTask(): ListrTask {
-  const maxConcurrentOps = 4
-
   return {
     title: 'Uploading batches',
     skip: (ctx: UploadCtx) => ctx.batches.length === 0,
     task: async (ctx, task) => {
       const uploadManager = new UploadManager(ctx.uploadBatches, {
-        maxConcurrentOps: maxConcurrentOps,
+        maxConcurrentOps: ctx.maxConcurrentOps,
       })
 
       await uploadManager.startUpload(ctx.sc, () => {

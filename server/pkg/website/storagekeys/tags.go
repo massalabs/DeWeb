@@ -1,5 +1,7 @@
 package storagekeys
 
+import "github.com/massalabs/station/pkg/convert"
+
 const (
 	FILE_TAG                   = "\x01FILE"
 	FILE_LOCATION_TAG          = "\x02LOCATION"
@@ -10,3 +12,8 @@ const (
 	FILE_METADATA_LOCATION_TAG = "\x07FML"
 	DEWEB_VERSION_TAG          = "\xFFDEWEB_VERSION"
 )
+
+// FileLocationTag is the tag for the file location as a byte array.
+func FileLocationTag() []byte {
+	return convert.ToBytes(FILE_LOCATION_TAG)
+}
