@@ -4,7 +4,6 @@ import { Metadata } from './Metadata';
 export class FileInit implements Serializable<FileInit> {
   constructor(
     public location: string = '',
-    public hashLocation: Uint8Array = new Uint8Array(0),
     public totalChunk: bigint = 0n,
     public metadata: Metadata[] = [],
   ) {}
@@ -12,7 +11,6 @@ export class FileInit implements Serializable<FileInit> {
   serialize(): Uint8Array {
     return new Args()
       .addString(this.location)
-      .addUint8Array(this.hashLocation)
       .addU32(this.totalChunk)
       .addSerializableObjectArray(this.metadata)
       .serialize();
@@ -22,7 +20,6 @@ export class FileInit implements Serializable<FileInit> {
     const args = new Args(data, offset);
 
     this.location = args.nextString();
-    this.hashLocation = args.nextUint8Array();
     this.totalChunk = args.nextU32();
     this.metadata = args.nextSerializableObjectArray(Metadata);
 

@@ -1,4 +1,4 @@
-# My Massa Smart-contract Project
+# Deweb Smart Contract
 
 ## Build
 
@@ -58,3 +58,65 @@ npm run test
 ```shell
 npm run fmt
 ```
+
+# Contract Description
+
+## Overview
+
+This smart contract implements a decentralized web storage system on the Massa blockchain. It allows users to upload, update, and delete files, as well as manage metadata for both individual files and the entire storage system.
+
+## Datastore Layout
+
+This smart contract does not provide explicit "Read" functions. Instead, users can directly read from the datastore to retrieve information. The following table outlines the datastore layout, providing the datastore representation for each data category.
+
+| Category            | Datastore Representation                                     | Description                                                |
+| ------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| **Version**         |                                                              |                                                            |
+| DeWeb Version       | `["DEWEB_VERSION_TAG"]`                                      | Stores the version of the decentralized web implementation |
+| **Files**           |                                                              |                                                            |
+| Chunk Count         | `[FILE_TAG][hash(location)][CHUNK_NB_TAG]`                   | Stores the number of chunks for a file                     |
+| Chunk Data          | `[FILE_TAG][hash(location)][CHUNK_TAG][index]`               | Stores the data for a specific chunk of a file             |
+| **Global Metadata** |                                                              |                                                            |
+| Global Metadata     | `[GLOBAL_METADATA_TAG][metadataKey]`                         | Stores global metadata values                              |
+| **File Metadata**   |                                                              |                                                            |
+| File Metadata       | `[FILE_TAG][hash(location)][FILE_METADATA_TAG][metadataKey]` | Stores metadata specific to a file                         |
+| **File Location**   |                                                              |                                                            |
+| File Path           | `[FILE_LOCATION_TAG][hash(location)]`                        | Stores the path of a file                                  |
+
+### Notes:
+1. `hash(location)` represents the hashed value of the file's location or path.
+2. `index` in chunk data represents the sequential number of the chunk within the file.
+3. `metadataKey` represents the key for a specific metadata entry.
+
+To read data from the smart contract, users should construct the appropriate key using this datastore layout and query the contract's storage directly. This approach allows for efficient data retrieval without the need for additional function calls.
+
+For example, to retrieve the number of chunks for a file, you would use the key:
+```
+[FILE_TAG][hash(file_location)][CHUNK_NB_TAG]
+```
+
+Similarly, to retrieve a specific chunk of a file, you would use:
+```
+[FILE_TAG][hash(file_location)][CHUNK_TAG][chunk_index]
+```
+
+This direct access to the datastore provides flexibility and efficiency in reading data from the smart contract.
+## Available Interface Functions
+
+The following table provides a detailed overview of the smart contract's interface functions:
+
+| Function | Description | Parameters | Access |
+|----------|-------------|------------|--------|
+| `constructor` | Initializes the smart contract and sets the deployer as the owner. | `_: StaticArray<u8>` (unused) | Public |
+| `filesInit` | Initializes the contract storage with given files and metadata. Allows for setting up initial file structure and global metadata. | `_binaryArgs: StaticArray<u8>` (Serialized `FileInit` objects, files to delete, and global metadata) | Owner Only |
+| `uploadFileChunks` | Uploads chunks of a file to the contract storage. Used for adding or updating file content. | `_binaryArgs: StaticArray<u8>` (Serialized array of `FileChunkPost` objects) | Owner Only |
+| `removeFileChunkRange` | Removes a specified range of file chunks from storage. Useful for partial file deletions or updates. | `_binaryArgs: StaticArray<u8>` (Serialized file hash location, start index, and end index) | Owner Only |
+| `deleteFiles` | Deletes specified files from the contract storage. Removes all associated chunks and metadata. | `_binaryArgs: StaticArray<u8>` (Serialized array of `FileDelete` objects) | Owner Only |
+| `setMetadataGlobal` | Sets or updates global metadata for the contract. Applies to the entire storage system. | `_binaryArgs: StaticArray<u8>` (Serialized array of `Metadata` objects) | Owner Only |
+| `removeMetadataGlobal` | Removes specified global metadata entries from the contract. | `_binaryArgs: StaticArray<u8>` (Serialized array of metadata keys to remove) | Owner Only |
+| `setMetadataFile` | Sets or updates metadata for a specific file in the storage. | `_binaryArgs: StaticArray<u8>` (Serialized file hash location and array of `Metadata` objects) | Owner Only |
+| `removeMetadataFile` | Removes specified metadata entries for a particular file. | `_binaryArgs: StaticArray<u8>` (Serialized file hash location and array of metadata keys to remove) | Owner Only |
+| `withdrawCoins` | Allows the owner to withdraw funds from the contract balance. | `binaryArgs: StaticArray<u8>` (Serialized amount to withdraw) | Owner Only |
+| `receiveCoins` | Handles receiving coins and generates an event logging the transaction. | None | Public |
+| `upgradeSC` | Upgrades the smart contract bytecode. Allows for contract updates. | `args: StaticArray<u8>` (New bytecode) | Owner Only |
+| `setOwner` | Sets a new owner for the contract. Imported from `@massalabs/sc-standards`. | `binaryArgs: StaticArray<u8>` (Serialized new owner address) | Owner Only |
