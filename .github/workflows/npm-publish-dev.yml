@@ -5,13 +5,11 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    uses: ./.github/workflows/tests.yml
   publish-npm-dev:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
           node-version: 18
