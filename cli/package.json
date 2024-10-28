@@ -1,5 +1,5 @@
 {
-  "name": "deweb-cli",
+  "name": "@massalabs/deweb-cli",
   "version": "0.2.0",
   "description": "DeWeb is your gateway to the decentralized web, enabling seamless access to websites stored on-chain from any device, anywhere in the world.",
   "license": "MIT",

@@ -1,0 +1,24 @@
+name: NPM Publish latest
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    uses: ./.github/workflows/tests.yml
+
+  publish-npm:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org/
+
+      - run: ./.github/scripts/publish-cli.sh
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
