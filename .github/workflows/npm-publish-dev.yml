@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: 18
           registry-url: https://registry.npmjs.org
-      - run: ./scripts/publish-dev.sh
+
+      - run: ./.github/scripts/publish-cli-dev.sh
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
