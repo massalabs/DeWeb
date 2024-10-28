@@ -1,24 +1,21 @@
-name: NPM Publish latest
+name: Npm nightly publish
 
 on:
-  release:
-    types: [created]
+  push:
+    branches: [main]
 
 jobs:
   test:
     uses: ./.github/workflows/tests.yml
-
-  publish-npm:
+  publish-npm-dev:
     needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - uses: actions/setup-node@v3
         with:
           node-version: 18
-          registry-url: https://registry.npmjs.org/
-
-      - run: ./.github/scripts/publish-cli.sh
+          registry-url: https://registry.npmjs.org
+      - run: ./scripts/publish-dev.sh
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
