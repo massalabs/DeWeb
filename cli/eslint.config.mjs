@@ -14,7 +14,13 @@ const compat = new FlatCompat({
 
 export default [
   {
-    ignores: ['**/bin', '**/node_modules', '**/scripts', 'jest.config.ts'],
+    ignores: [
+      '**/bin',
+      '**/node_modules',
+      '**/scripts',
+      'jest.config.ts',
+      'src/lib/website/sc/deweb-sc-bytecode.ts',
+    ],
   },
   ...compat.extends('@massalabs', 'prettier'),
   {
