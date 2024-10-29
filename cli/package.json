@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "build:sc": "cd ../smart-contract && npm ci && npm run build && cp build/deweb-interface.wasm ../cli/src/lib/website/sc/main.wasm",
+    "build:sc": "cd ../smart-contract && npm ci && npm run build && cp build/deweb-interface.wasm ../cli/src/lib/website/sc/main.wasm && cd ../cli && npm run generate:deweb:bytecode",
+    "generate:deweb:bytecode": "ts-node ./src/lib/website/sc/generate-deweb-bytecode.ts",
     "start": "node ./bin/index.js",
     "dev": "ts-node ./src/index.ts",
     "test": "jest",

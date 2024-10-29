@@ -1,13 +1,11 @@
 import { Provider, SmartContract } from '@massalabs/massa-web3'
-import { readFileSync } from 'fs'
 import { storageCostForEntry } from '../utils/storage'
 import { DEWEB_VERSION_TAG } from './storageKeys'
-
-const byteCode = readFileSync('src/lib/website/sc/main.wasm')
+import { DEWEB_SC_BYTECODE } from './sc/deweb-sc-bytecode'
 const ownerKey = 'OWNER'
 
 export async function deploySC(provider: Provider): Promise<SmartContract> {
-  return SmartContract.deploy(provider, byteCode, undefined, {
+  return SmartContract.deploy(provider, DEWEB_SC_BYTECODE, undefined, {
     coins: deployCost(provider),
   })
 }
