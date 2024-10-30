@@ -2,7 +2,7 @@ name: NPM Publish latest
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   publish-npm:
