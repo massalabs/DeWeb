@@ -2,7 +2,7 @@
 import plugin from "tailwindcss/plugin";
 import { colors } from "./colors";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { createThemes } = require("tw-colors");
 
 module.exports = {
