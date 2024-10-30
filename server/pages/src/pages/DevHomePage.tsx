@@ -10,6 +10,7 @@ import NotAvailable from "./notAvailable/notAvailable";
 function DevHomePage() {
   return (
     <div
+    className="sunset_purple bg-primary text-secondary"
     >
       <Home/>
       <DomainNotFound/>

@@ -10,10 +10,9 @@ interface RootAppProps {
 }
 
 
-
 function RootApp({ children }: RootAppProps) {
   return (
-    <StrictMode>  
+    <StrictMode>
       {children}
     </StrictMode>
   );
