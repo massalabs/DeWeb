@@ -1,12 +1,27 @@
 import { GenerateTheme } from "../../hooks/GenerateTheme";
+import Avara404 from "../../assets/404_avara.svg?react";
+import Old404 from "../../assets/404_old.svg?react";
+import Format404 from "../../assets/404_format.svg?react";
+import Linux404 from "../../assets/404_linux.svg?react";
+import Pixel404 from "../../assets/404_pixel.svg?react";
 
 export default function DomainNotFound() {
+  const width = 320;
+  const height = 120;
+
+  const images = [
+    <Avara404 width={width} height={height} />,
+    <Old404 width={width} height={height} />,
+    <Format404 width={width} height={height} />,
+    <Linux404 width={width} height={height} />,
+    <Pixel404 width={width} height={height} />,
+  ];
   const theme = GenerateTheme();
   return (
     <div
-      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-4`}
+      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}
     >
-      <h1 className="text-9xl font-bold mb-4">404</h1>
+      {images[Math.floor(Math.random() * images.length)]}
       <p className="paragraph-md">MNS Domain not found</p>
       <div>
         <button

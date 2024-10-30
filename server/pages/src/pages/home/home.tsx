@@ -16,12 +16,12 @@ export default function Home() {
 
   return (
     <div
-      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-4`}
+      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}
     >
       <h1 className="paragraph-lg text-6xl max-w-2xl">Search on DeWeb</h1>
       <form
         onSubmit={handleSearch}
-        className="flex items-center overflow-hidden w-1/3 bg-secondary mt-6"
+        className="flex items-center overflow-hidden w-1/3 bg-secondary"
       >
         <FiSearch className="text-primary ml-3 text-2xl" />
         <input

@@ -4,7 +4,7 @@ export default function NotAvailable() {
   const theme = GenerateTheme();
   return (
     <div
-      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-4`}
+      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}
     >
       <h1 className="text-9xl font-bold mb-4">Oops</h1>
       <p className="paragraph-italic-md max-w-2xl">
