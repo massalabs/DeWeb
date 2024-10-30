@@ -3,6 +3,7 @@ name: Npm nightly publish
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   publish-npm-dev:
