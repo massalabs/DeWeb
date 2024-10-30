@@ -1,14 +1,12 @@
-import { Button } from "@massalabs/react-ui-kit";
-
 export default function DomainNotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center bg-secondary">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center gap-4">
       <h1 className="text-9xl font-bold mb-4">404</h1>
-      <p className="text-2xl font-bold mb-4">MNS Domain not found</p>
+      <p className="paragraph-md">MNS Domain not found</p>
       <div>
-        <Button onClick={() => window.open("https://mns.massa.net", "_blank")}>
+        <button className="bg-primary border-2 border-secondary w-fit px-4 paragraph-sm" onClick={() => window.open("https://mns.massa.net", "_blank")}>
           Buy this MNS
-        </Button>
+        </button>
       </div>
     </div>
   );

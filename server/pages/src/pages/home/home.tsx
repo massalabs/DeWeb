@@ -12,21 +12,21 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center">
-      <h1 className="text-6xl font-bold mb-4">Search on DeWeb</h1>
+    <div className="flex flex-col items-center justify-center min-h-screen text-center gap-4">
+      <h1 className="paragraph-lg max-w-2x">Search on DeWeb</h1>
       <form
         onSubmit={handleSearch}
-        className="flex items-center rounded-lg overflow-hidden bg-white"
+        className="flex items-center  overflow-hidden bg-secondary"
       >
-        <FiSearch className="text-gray-500 ml-3 text-2xl" />
+        <FiSearch className="text-primary ml-3 text-2xl" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="px-3 py-2 outline-none text-2xl w-full"
+          className="px-3 py-2 text-primary  w-full bg-secondary outline-none"
           placeholder="Enter domain"
         />
-        <span className="mr-3 text-gray-500 text-2xl">.massa</span>
+        <span className="mr-3 text-primary">.massa</span>
       </form>
     </div>
   );
