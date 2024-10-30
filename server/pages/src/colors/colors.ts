@@ -22,3 +22,26 @@ export const colors = {
   DeepBlue: "#0000A8",
   CelestialMist: "#ECECEC"
 };
+
+export const themeNames = [
+  "neon_green_forest",
+  "bright_blue_navy",
+  "sunny_magenta",
+  "magenta_sunny",
+  "olive_sunshine",
+  "magenta_midnight",
+  "red_cyan",
+  "cyan_red",
+  "maroon_red",
+  "teal_cyan",
+  "sunset_purple",
+  "purple_sunset",
+  "brown_sunset",
+  "midnight_purple",
+  "charcoal_neon_pink",
+  "neon_pink_charcoal",
+  "plum_neon_pink",
+  "pastel_neon_pink",
+  "light_gray_blue",
+  "deep_blue_gray"
+];
