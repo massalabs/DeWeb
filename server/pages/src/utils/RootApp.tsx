@@ -1,24 +1,25 @@
-import React, { ReactNode, StrictMode } from "react";
+import { ReactNode, StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import "../index.css";
-import "@massalabs/react-ui-kit/src/global.css";
+
 
 interface RootAppProps {
   children: ReactNode;
   theme?: string;
 }
 
-const RootApp: React.FC<RootAppProps> = ({ theme = "light", children }) => {
+
+function RootApp({ children }: RootAppProps) {
   return (
     <StrictMode>
-      <div className={`theme-${theme} bg-secondary`}>{children}</div>
+      {children}
     </StrictMode>
   );
-};
+}
 
-export function renderApp({ theme = "light", children }: RootAppProps) {
+export function renderApp({ children }: RootAppProps) {
   createRoot(document.getElementById("root")!).render(
-    <RootApp theme={theme}>{children}</RootApp>
+    <RootApp>{children}</RootApp>
   );
 }

@@ -49,6 +49,7 @@ func (c *Cache) IsPresent(websiteAddress string, resourceName string) bool {
 	if err != nil {
 		return false
 	}
+
 	defer lockUnlock(fileLock)
 
 	_, err = os.Stat(archivePath)
@@ -61,6 +62,7 @@ func (c *Cache) IsPresent(websiteAddress string, resourceName string) bool {
 		logger.Errorf("failed to open zip archive %s: %v", archivePath, err)
 		return false
 	}
+
 	defer closeReader(r)
 
 	for _, f := range r.File {
@@ -82,12 +84,14 @@ func (c *Cache) GetLastModified(websiteAddress string, fileName string) (time.Ti
 		//nolint:wrapcheck
 		return time.Time{}, err
 	}
+
 	defer lockUnlock(fileLock)
 
 	r, err := zip.OpenReader(archivePath)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("failed to open zip archive %s: %v", archivePath, err)
 	}
+
 	defer closeReader(r)
 
 	for _, f := range r.File {
@@ -109,6 +113,7 @@ func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error)
 		//nolint:wrapcheck
 		return nil, err
 	}
+
 	defer lockUnlock(fileLock)
 
 	r, err := zip.OpenReader(archivePath)
@@ -124,6 +129,7 @@ func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error)
 			if err != nil {
 				return nil, fmt.Errorf("failed to open file %s in zip: %v", f.Name, err)
 			}
+
 			defer closeReader(rc)
 
 			buf := new(bytes.Buffer)
@@ -151,6 +157,7 @@ func (c *Cache) Save(websiteAddress string, resourceName string, content []byte)
 		//nolint:wrapcheck
 		return err
 	}
+
 	defer lockUnlock(fileLock)
 
 	var buf bytes.Buffer
@@ -207,6 +214,7 @@ func (c *Cache) Delete(websiteAddress string, resourceName string) error {
 		//nolint:wrapcheck
 		return err
 	}
+
 	defer lockUnlock(fileLock)
 
 	var buf bytes.Buffer
@@ -247,6 +255,7 @@ func (c *Cache) copyExistingEntries(archivePath string, w *zip.Writer, excludeRe
 	if err != nil {
 		return fmt.Errorf("failed to open existing zip archive %s: %v", archivePath, err)
 	}
+
 	defer closeReader(r)
 
 	for _, f := range r.File {
@@ -269,6 +278,7 @@ func copyZipEntry(f *zip.File, w *zip.Writer) error {
 	if err != nil {
 		return fmt.Errorf("failed to open file %s in zip: %v", f.Name, err)
 	}
+
 	defer closeReader(rc)
 
 	wrc, err := w.CreateHeader(&f.FileHeader)

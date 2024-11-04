@@ -1,32 +1,37 @@
 import { FiSearch } from "react-icons/fi";
 import { useState } from "react";
+import { GenerateTheme } from "../../hooks/GenerateTheme";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const {host} = new URL(window.location.href);
+    const { host } = new URL(window.location.href);
     const redirectUrl = `//${searchQuery}.${host}`;
     window.location.href = redirectUrl;
   };
 
+  const theme = GenerateTheme();
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center">
-      <h1 className="text-6xl font-bold mb-4">Search on DeWeb</h1>
+    <div
+      className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}
+    >
+      <h1 className="paragraph-lg text-6xl max-w-2xl">Search on DeWeb</h1>
       <form
         onSubmit={handleSearch}
-        className="flex items-center rounded-lg overflow-hidden bg-white"
+        className="flex items-center overflow-hidden w-1/3 bg-secondary"
       >
-        <FiSearch className="text-gray-500 ml-3 text-2xl" />
+        <FiSearch className="text-primary ml-3 text-2xl" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="px-3 py-2 outline-none text-2xl w-full"
+          className="px-3 py-2 text-primary w-full bg-secondary outline-none placeholder-primary"
           placeholder="Enter domain"
         />
-        <span className="mr-3 text-gray-500 text-2xl">.massa</span>
+        <span className="mr-3 text-primary">.massa</span>
       </form>
     </div>
   );
