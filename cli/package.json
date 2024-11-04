@@ -30,6 +30,7 @@
     "@listr2/prompt-adapter-enquirer": "^2.0.11",
     "@massalabs/massa-web3": "^5.0.0-next",
     "commander": "^12.1.0",
+    "enquirer": "^2.4.1",
     "js-sha256": "^0.11.0",
     "listr2": "^8.2.4",
     "yaml": "^2.5.1"
@@ -41,6 +42,7 @@
     "@types/jest": "^29.5.13",
     "@types/node": "^22.5.3",
     "@typescript-eslint/eslint-plugin": "^8.6.0",
+    "@typescript-eslint/parser": "^8.12.2",
     "eslint": "^9.10.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-jsdoc": "^50.2.2",
