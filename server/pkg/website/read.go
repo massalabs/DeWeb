@@ -184,7 +184,7 @@ func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string)
 	}
 
 	if lastUpdateTimestampResponse.FinalValue == nil {
-		return nil, nil
+		return nil, fmt.Errorf("last update timestamp not found")
 	}
 
 	timestampStr := string(lastUpdateTimestampResponse.FinalValue)
