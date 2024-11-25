@@ -63,7 +63,7 @@ jobs:
 
       - name: Build Server
         shell: bash
-        run: task build:server
+        run: task build
         env:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
