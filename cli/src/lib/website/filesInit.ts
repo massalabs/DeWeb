@@ -132,7 +132,7 @@ export async function sendFilesInits(
     })
   }
 
-  const callManager = new CallManager(calls, 1)
+  const callManager = new CallManager(calls, 4)
   const failedCalls = await callManager.performCalls((status: CallUpdate) => {
     if (status.status === CallStatus.Error) {
       console.error('Call failed:', status.error)
