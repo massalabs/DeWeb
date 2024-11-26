@@ -14,10 +14,16 @@ tasks:
       - cmd: cmd /C 'for %f in (pages\*.zip) do move %f int\api\resources\'
         platforms: [windows]
 
+  run:
+    cmds:
+      - cmd: ./build/deweb-server
+
   build:
     cmds:
-      - task: build:server
-      - task: build:cli
+      - task: build:internal
+        vars:
+          APP_NAME: server
+          BIN_DIR: build
 
   build:internal:
     build:
@@ -41,28 +47,6 @@ tasks:
       GOARCH: "{{.ARCH | default ARCH}}"
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
       VERSION: "{{.VERSION | default nil}}"
-
-  build:server:
-    cmds:
-      - task: build:internal
-        vars:
-          APP_NAME: server
-          BIN_DIR: build
-
-  build:cli:
-    cmds:
-      - task: build:internal
-        vars:
-          APP_NAME: cli
-          BIN_DIR: build
-
-  run:cli:
-    cmds:
-      - cmd: ./build/deweb-cli
-
-  run:server:
-    cmds:
-      - cmd: ./build/deweb-server
 
   clean:
     cmds:
