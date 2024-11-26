@@ -57,7 +57,7 @@ export class CallManager {
    * Perform all the calls concurrently, up to the maximum number of operations.
    * The status of each call is updated as it progresses.
    * @param onUpdate - Callback function to update the status of each call
-   * @returns - Array of CallUpdate instances
+   * @returns - Array of calls that failed
    */
   async performCalls(
     onUpdate: (callUpdate: CallUpdate) => void
@@ -79,7 +79,7 @@ export class CallManager {
 
     await Promise.all(activeCalls)
 
-    return this.calls
+    return this.calls.filter((call) => call.status === CallStatus.Error)
   }
 
   private async performCall(
