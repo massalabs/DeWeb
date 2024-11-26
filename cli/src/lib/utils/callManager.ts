@@ -24,7 +24,7 @@ export interface CallUpdate {
   call: SmartContractCall
   status: CallStatus
   operation?: Operation
-  error?: any
+  error?: any // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 /**
@@ -42,10 +42,7 @@ export class CallManager {
    * @param calls - Array of SmartContractCall instances
    * @param maxConcurrentOps - Maximum number of operations to execute concurrently
    */
-  constructor(
-    calls: SmartContractCall[],
-    maxConcurrentOps: number = 1
-  ) {
+  constructor(calls: SmartContractCall[], maxConcurrentOps: number = 1) {
     this.calls = calls.map((call) => ({
       call,
       status: CallStatus.WaitingUpload,
@@ -121,7 +118,10 @@ export class CallManager {
       callUpdate.status = CallStatus.Error
       callUpdate.error = error
       onUpdate(callUpdate)
-      console.error(`Call to ${call.sc.address} ${call.functionName} failed:`, error)
+      console.error(
+        `Call to ${call.sc.address} ${call.functionName} failed:`,
+        error
+      )
     }
   }
 
