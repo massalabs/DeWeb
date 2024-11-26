@@ -19,9 +19,15 @@ import {
 } from './storageKeys'
 import { FileDelete } from './models/FileDelete'
 import { maxBigInt } from '../../tasks/utils'
+import {
+  SmartContractCall,
+  CallManager,
+  CallUpdate,
+  CallStatus,
+} from '../utils/callManager'
 
 const functionName = 'filesInit'
-const batchSize = 20
+export const batchSize = 32
 
 /**
  * Divide the files, filesToDelete, metadatas, and metadatasToDelete into multiple batches
@@ -86,8 +92,9 @@ function createBatches(
  * Send the filesInits to the smart contract
  * @param sc - SmartContract instance
  * @param files - Array of FileInit instances
- * @param filesToDelete - Array of FileInit instances to delete
+ * @param filesToDelete - Array of FileDelete instances
  * @param metadatas - Array of Metadata instances
+ * @param metadatasToDelete - Array of Metadata instances to delete
  * @returns - Array of Operation instances
  */
 export async function sendFilesInits(
@@ -105,6 +112,7 @@ export async function sendFilesInits(
     metadatasToDelete
   )
 
+  const calls: SmartContractCall[] = []
   const operations: Operation[] = []
 
   for (const batch of batches) {
@@ -112,13 +120,31 @@ export async function sendFilesInits(
     const gas = await batch.estimateGas(sc)
     const args = batch.serialize()
 
-    const op = await sc.call(functionName, args, {
-      coins: coins <= 0n ? 0n : coins,
-      maxGas: gas,
-      fee: gas > minimalFees ? gas : minimalFees,
+    calls.push({
+      sc,
+      functionName: functionName,
+      args,
+      options: {
+        coins: coins <= 0n ? 0n : coins,
+        maxGas: gas,
+        fee: gas > minimalFees ? gas : minimalFees,
+      },
     })
+  }
 
-    operations.push(op)
+  const callManager = new CallManager(calls, 1)
+  const failedCalls = await callManager.performCalls((status: CallUpdate) => {
+    if (status.status === CallStatus.Error) {
+      console.error('Call failed:', status.error)
+    } else if (status.status === CallStatus.Sent && status.operation) {
+      if (!operations.includes(status.operation)) {
+        operations.push(status.operation)
+      }
+    }
+  })
+
+  if (failedCalls.length > 0) {
+    console.error(`${failedCalls.length} calls failed`)
   }
 
   return operations
