@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'fs'
 import { sha256 } from 'js-sha256'
 import { ListrTask } from 'listr2'
-import { join, relative } from 'path'
+import { posix as path } from 'path'
 
 import { Provider, SmartContract, U32 } from '@massalabs/massa-web3'
 
@@ -75,16 +75,16 @@ export function prepareBatchesTask(): ListrTask {
  */
 async function prepareChunks(
   provider: Provider,
-  path: string,
+  dirPath: string,
   chunkSize: number,
   sc?: SmartContract,
-  basePath: string = path
+  basePath: string = dirPath
 ): Promise<{
   chunks: FileChunkPost[]
   fileInits: FileInit[]
   localFiles: string[]
 }> {
-  const files = readdirSync(path)
+  const files = readdirSync(dirPath)
 
   const chunks: FileChunkPost[] = []
   const fileInits: FileInit[] = []
@@ -92,7 +92,7 @@ async function prepareChunks(
   const localFiles: string[] = []
 
   for (const file of files) {
-    const fullPath = join(path, file)
+    const fullPath = path.join(dirPath, file)
     const stats = statSync(fullPath)
 
     if (stats.isDirectory()) {
@@ -109,7 +109,7 @@ async function prepareChunks(
       localFiles.push(...result.localFiles)
     } else if (stats.isFile()) {
       const data = readFileSync(fullPath)
-      const relativePath = relative(basePath, fullPath)
+      const relativePath = path.relative(basePath, fullPath)
 
       localFiles.push(relativePath)
 
