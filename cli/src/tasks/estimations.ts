@@ -1,9 +1,10 @@
 import { formatMas } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
+import { Batch } from '../lib/batcher'
 import { BatchStatus, UploadBatch } from '../lib/uploadManager'
 import { computeChunkCost } from '../lib/website/chunk'
-import { estimateBatchGas } from '../lib/website/uploadChunk'
+import { estimateUploadBatchesGas } from '../lib/website/uploadChunk'
 
 import { UploadCtx } from './tasks'
 import { formatBytes } from './utils'
@@ -68,22 +69,18 @@ export function estimateGasTask(): ListrTask {
     title: 'Estimating gas cost for each batch',
     skip: (ctx: UploadCtx) => ctx.batches.length === 0,
     task: async (ctx, task) => {
-      const uploadBatches: UploadBatch[] = await Promise.all(
-        ctx.batches
-          .sort(
-            (a: UploadBatch, b: UploadBatch) =>
-              b.chunks.length - a.chunks.length
-          )
-          .map(async (batch: UploadBatch, index: number) => ({
-            ...batch,
-            id: index,
-            status: BatchStatus.WaitingUpload,
-            gas: await estimateBatchGas(ctx.sc, batch),
-          }))
-      )
-      ctx.uploadBatches = uploadBatches
+      const batches: UploadBatch[] = ctx.batches
+        .sort((a: Batch, b: Batch) => b.chunks.length - a.chunks.length)
+        .map((batch: Batch, index: number) => ({
+          ...batch,
+          status: BatchStatus.WaitingUpload,
+          id: index,
+          gas: 0n,
+        }))
 
-      const totalGas = uploadBatches.reduce(
+      ctx.uploadBatches = await estimateUploadBatchesGas(ctx.sc, batches)
+
+      const totalGas = ctx.uploadBatches.reduce(
         (sum: bigint, batch: UploadBatch) => sum + batch.gas,
         0n
       )
