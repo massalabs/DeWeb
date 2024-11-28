@@ -6,7 +6,7 @@ import {
   SmartContract,
 } from '@massalabs/massa-web3'
 
-export interface SmartContractCall {
+export interface FunctionCall {
   sc: SmartContract
   functionName: string
   args?: Args | Uint8Array
@@ -21,7 +21,7 @@ export enum CallStatus {
 }
 
 export interface CallUpdate {
-  call: SmartContractCall
+  functionCall: FunctionCall
   status: CallStatus
   operation?: Operation
   error?: any // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -33,18 +33,18 @@ export interface CallUpdate {
  * The status of each call is updated as it progresses.
  */
 export class CallManager {
-  private calls: CallUpdate[]
+  private functionCalls: CallUpdate[]
   private maxConcurrentOps: number
   private operations: Operation[] = []
 
   /**
    * Create a new CallManager instance.
-   * @param calls - Array of SmartContractCall instances
+   * @param functionCalls - Array of SmartContractCall instances
    * @param maxConcurrentOps - Maximum number of operations to execute concurrently
    */
-  constructor(calls: SmartContractCall[], maxConcurrentOps: number = 1) {
-    this.calls = calls.map((call) => ({
-      call,
+  constructor(functionCalls: FunctionCall[], maxConcurrentOps: number = 1) {
+    this.functionCalls = functionCalls.map((call) => ({
+      functionCall: call,
       status: CallStatus.WaitingUpload,
     }))
     this.maxConcurrentOps = maxConcurrentOps
@@ -61,7 +61,7 @@ export class CallManager {
   ): Promise<CallUpdate[]> {
     const activeCalls: Promise<void>[] = []
 
-    for (const callUpdate of this.calls) {
+    for (const callUpdate of this.functionCalls) {
       if (activeCalls.length >= this.maxConcurrentOps) {
         await Promise.race(activeCalls)
       }
@@ -76,24 +76,24 @@ export class CallManager {
 
     await Promise.all(activeCalls)
 
-    return this.calls.filter((call) => call.status === CallStatus.Error)
+    return this.functionCalls.filter((call) => call.status === CallStatus.Error)
   }
 
   private async performCall(
     callUpdate: CallUpdate,
     onUpdate: (callUpdate: CallUpdate) => void
   ): Promise<void> {
-    const { call } = callUpdate
+    const { functionCall } = callUpdate
 
     callUpdate.status = CallStatus.Sent
     onUpdate(callUpdate)
 
     try {
       // Execute the call and store the operation
-      const operation = await call.sc.call(
-        call.functionName,
-        call.args,
-        call.options
+      const operation = await functionCall.sc.call(
+        functionCall.functionName,
+        functionCall.args,
+        functionCall.options
       )
       callUpdate.operation = operation
       this.operations.push(operation)
@@ -119,14 +119,14 @@ export class CallManager {
       callUpdate.error = error
       onUpdate(callUpdate)
       console.error(
-        `Call to ${call.sc.address} ${call.functionName} failed:`,
+        `Call to ${functionCall.sc.address} ${functionCall.functionName} failed:`,
         error
       )
     }
   }
 
   getCallUpdates(): CallUpdate[] {
-    return this.calls
+    return this.functionCalls
   }
 
   getOperations(): Operation[] {

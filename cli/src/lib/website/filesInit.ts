@@ -20,7 +20,7 @@ import {
 import { FileDelete } from './models/FileDelete'
 import { maxBigInt } from '../../tasks/utils'
 import {
-  SmartContractCall,
+  FunctionCall,
   CallManager,
   CallUpdate,
   CallStatus,
@@ -112,7 +112,7 @@ export async function sendFilesInits(
     metadatasToDelete
   )
 
-  const calls: SmartContractCall[] = []
+  const calls: FunctionCall[] = []
   const operations: Operation[] = []
 
   for (const batch of batches) {
