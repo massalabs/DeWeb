@@ -68,7 +68,11 @@ export function estimateGasTask(): ListrTask {
   return {
     title: 'Estimating gas cost for each batch',
     skip: (ctx: UploadCtx) => ctx.batches.length === 0,
-    task: async (ctx, task) => {
+    task: async (ctx: UploadCtx, task) => {
+      if (!ctx.sc) {
+        throw new Error('Smart Contract should never be undefined here')
+      }
+
       const batches: UploadBatch[] = ctx.batches
         .sort((a: Batch, b: Batch) => b.chunks.length - a.chunks.length)
         .map((batch: Batch, index: number) => ({
