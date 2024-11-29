@@ -2,7 +2,11 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { formatMas, OperationStatus, U64 } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { filesInitCost, sendFilesInits } from '../lib/website/filesInit'
+import {
+  batchSize,
+  filesInitCost,
+  sendFilesInits,
+} from '../lib/website/filesInit'
 import { Metadata } from '../lib/website/models/Metadata'
 
 import { UploadCtx } from './tasks'
@@ -29,6 +33,13 @@ export function prepareUploadTask(): ListrTask {
           {
             title: 'Confirm SC preparation',
             task: async (ctx, subTask) => {
+              const totalChanges =
+                ctx.fileInits.length +
+                ctx.filesToDelete.length +
+                ctx.metadatas.length +
+                ctx.metadatasToDelete.length
+              const estimatedOperations = Math.ceil(totalChanges / batchSize)
+              const minimalFees = ctx.minimalFees * BigInt(estimatedOperations)
               const cost =
                 (await filesInitCost(
                   ctx.sc,
@@ -36,8 +47,8 @@ export function prepareUploadTask(): ListrTask {
                   ctx.filesToDelete,
                   ctx.metadatas,
                   ctx.metadatasToDelete
-                )) + ctx.minimalFees
-              subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`
+                )) + minimalFees
+              subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(minimalFees)} MAS of minimal fees)`
 
               if (!ctx.skipConfirm) {
                 const answer = await subTask

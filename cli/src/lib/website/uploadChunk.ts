@@ -1,5 +1,7 @@
 import {
   Args,
+  JsonRPCClient,
+  Mas,
   MAX_GAS_CALL,
   minBigInt,
   Operation,
@@ -8,6 +10,10 @@ import {
 import { Batch } from '../batcher'
 import { UploadBatch } from '../uploadManager'
 import { computeChunkCost } from './chunk'
+import {
+  ReadOnlyCall,
+  ExecuteReadOnlyResponse,
+} from '@massalabs/massa-web3/dist/esm/generated/client-types'
 
 const functionName = 'uploadFileChunks'
 
@@ -56,7 +62,7 @@ export async function estimateBatchGas(
  * @param batch - the batch to make args and coins from
  * @returns the args and coins
  */
-function makeArgsCoinsFromBatch(batch: Batch): {
+export function makeArgsCoinsFromBatch(batch: Batch): {
   args: Args
   coins: bigint
 } {
@@ -73,4 +79,52 @@ function makeArgsCoinsFromBatch(batch: Batch): {
   )
 
   return { args, coins }
+}
+
+/**
+ * Estimate the gas cost for each batch
+ * @param sc - SmartContract instance
+ * @param batches - the batches to estimate gas for
+ * @returns the list of UploadBatch with gas estimation
+ */
+export async function estimateUploadBatchesGas(
+  sc: SmartContract,
+  batches: UploadBatch[]
+): Promise<UploadBatch[]> {
+  const BATCH_SIZE = 5
+
+  const nodeURL = (await sc.provider.networkInfos()).url
+  if (!nodeURL) {
+    throw new Error('Node URL not found')
+  }
+
+  const client = new JsonRPCClient(nodeURL)
+
+  const readOnlyCalls: ReadOnlyCall[] = batches.map((batch) => {
+    const { args, coins } = makeArgsCoinsFromBatch(batch)
+    return {
+      coins: Mas.toString(coins),
+      max_gas: Number(MAX_GAS_CALL),
+      target_address: sc.address,
+      target_function: 'uploadFileChunks',
+      parameter: Array.from(args.serialize()),
+      caller_address: sc.provider.address,
+      fee: null,
+    }
+  })
+
+  const results: ExecuteReadOnlyResponse[] = []
+
+  for (let i = 0; i < readOnlyCalls.length; i += BATCH_SIZE) {
+    const batch = readOnlyCalls.slice(i, i + BATCH_SIZE)
+    const resp = await client.executeMultipleReadOnlyCall(batch)
+    results.push(...resp)
+  }
+
+  return batches.map((batch, index) => {
+    return {
+      ...batch,
+      gas: minBigInt(BigInt(results[index].gas_cost) * 2n, MAX_GAS_CALL),
+    }
+  })
 }

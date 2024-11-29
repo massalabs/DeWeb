@@ -1,5 +1,5 @@
 import { Command } from '@commander-js/extra-typings'
-import { SmartContract } from '@massalabs/massa-web3'
+import { SmartContract, Web3Provider } from '@massalabs/massa-web3'
 import { Listr } from 'listr2'
 
 import { deploySCTask } from '../tasks/deploy'
@@ -32,21 +32,12 @@ export const uploadCommand = new Command('upload')
       parseInt(options.chunkSize as string) ||
       (globalOptions.chunk_size as number)
 
-    const ctx: UploadCtx = {
-      provider: provider,
-      batches: [],
-      chunks: [],
-      fileInits: [],
-      filesToDelete: [],
-      metadatas: [],
-      metadatasToDelete: [],
-      chunkSize: chunkSize,
-      websiteDirPath: websiteDirPath,
-      skipConfirm: options.yes,
-      currentTotalEstimation: 0n,
-      maxConcurrentOps: 4,
-      minimalFees: await provider.client.getMinimalFee(),
-    }
+    const ctx: UploadCtx = await createUploadCtx(
+      provider,
+      chunkSize,
+      websiteDirPath,
+      options.yes
+    )
 
     if (options.address) {
       const address = options.address
@@ -80,3 +71,27 @@ export const uploadCommand = new Command('upload')
       process.exit(1)
     }
   })
+
+async function createUploadCtx(
+  provider: Web3Provider,
+  chunkSize: number,
+  websiteDirPath: string,
+  skipConfirm: boolean
+): Promise<UploadCtx> {
+  return {
+    provider: provider,
+    batches: [],
+    uploadBatches: [],
+    chunks: [],
+    fileInits: [],
+    filesToDelete: [],
+    metadatas: [],
+    metadatasToDelete: [],
+    chunkSize: chunkSize,
+    websiteDirPath: websiteDirPath,
+    skipConfirm: skipConfirm,
+    currentTotalEstimation: 0n,
+    maxConcurrentOps: 4,
+    minimalFees: await provider.client.getMinimalFee(),
+  }
+}

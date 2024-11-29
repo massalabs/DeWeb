@@ -54,9 +54,11 @@ export function prepareBatchesTask(): ListrTask {
       }
 
       task.output = `Total of ${fileInits.length} files, ${ctx.fileInits.length} require update`
-      task.output = `${ctx.filesToDelete.length} files will be deleted:`
-      for (const file of ctx.filesToDelete) {
-        task.output = `- ${file.location}`
+      task.output = `${ctx.filesToDelete.length} files will be deleted from the smart contract`
+      if (ctx.filesToDelete.length < 16) {
+        for (const file of ctx.filesToDelete) {
+          task.output = `- ${file.location}`
+        }
       }
       task.output = `Total of ${chunks.length} chunks divided into ${ctx.batches.length} batches`
     },
