@@ -7,6 +7,7 @@ const ownerKey = 'OWNER'
 export async function deploySC(provider: Provider): Promise<SmartContract> {
   return SmartContract.deploy(provider, DEWEB_SC_BYTECODE, undefined, {
     coins: deployCost(provider),
+    waitFinalExecution: true,
   })
 }
 
