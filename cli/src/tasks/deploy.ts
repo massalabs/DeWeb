@@ -61,6 +61,7 @@ export function deploySCTask(): ListrTask {
           },
         ],
         {
+          concurrent: false,
           rendererOptions: {
             collapse: false,
             collapseSubtasks: false,
