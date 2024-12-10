@@ -1,19 +1,16 @@
 import {
   Args,
   JsonRPCClient,
-  Mas,
   MAX_GAS_CALL,
   minBigInt,
   Operation,
+  ReadOnlyCallResult,
+  ReadOnlyParams,
   SmartContract,
 } from '@massalabs/massa-web3'
 import { Batch } from '../batcher'
 import { UploadBatch } from '../uploadManager'
 import { computeChunkCost } from './chunk'
-import {
-  ReadOnlyCall,
-  ExecuteReadOnlyResponse,
-} from '@massalabs/massa-web3/dist/esm/generated/client-types'
 
 const functionName = 'uploadFileChunks'
 
@@ -100,20 +97,20 @@ export async function estimateUploadBatchesGas(
 
   const client = new JsonRPCClient(nodeURL)
 
-  const readOnlyCalls: ReadOnlyCall[] = batches.map((batch) => {
+  const readOnlyCalls: ReadOnlyParams[] = batches.map((batch) => {
     const { args, coins } = makeArgsCoinsFromBatch(batch)
     return {
-      coins: Mas.toString(coins),
-      max_gas: Number(MAX_GAS_CALL),
-      target_address: sc.address,
-      target_function: 'uploadFileChunks',
-      parameter: Array.from(args.serialize()),
-      caller_address: sc.provider.address,
-      fee: null,
+      coins: coins,
+      maxGas: MAX_GAS_CALL,
+      target: sc.address,
+      func: 'uploadFileChunks',
+      parameter: args.serialize(),
+      caller: sc.provider.address,
+      fee: undefined,
     }
   })
 
-  const results: ExecuteReadOnlyResponse[] = []
+  const results: ReadOnlyCallResult[] = []
 
   for (let i = 0; i < readOnlyCalls.length; i += BATCH_SIZE) {
     const batch = readOnlyCalls.slice(i, i + BATCH_SIZE)
@@ -124,7 +121,7 @@ export async function estimateUploadBatchesGas(
   return batches.map((batch, index) => {
     return {
       ...batch,
-      gas: minBigInt(BigInt(results[index].gas_cost) * 2n, MAX_GAS_CALL),
+      gas: minBigInt(BigInt(results[index].info.gasCost) * 2n, MAX_GAS_CALL),
     }
   })
 }
