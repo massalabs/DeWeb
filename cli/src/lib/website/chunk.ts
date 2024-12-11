@@ -3,6 +3,8 @@ import { sha256 } from 'js-sha256'
 import { storageCostForEntry } from '../utils/storage'
 import { fileChunkKey } from './storageKeys'
 import { FileChunkPost } from './models/FileChunkPost'
+import { getFileFromAddress } from './read'
+import { Provider, SmartContract } from '@massalabs/massa-web3'
 
 /**
  * Divide a data array into chunks of a given size.
@@ -73,4 +75,44 @@ export function toChunkPosts(
   return chunks.map((chunk, index) => {
     return new FileChunkPost(filepath, BigInt(index), chunk)
   })
+}
+
+/**
+ * Check if the file requires update
+ * @param provider - the web3 provider
+ * @param location - the file path
+ * @param localFileContent - the local file content
+ * @param sc - the smart contract
+ * @returns true if the file requires update, false otherwise
+ */
+export async function requiresUpdate(
+  provider: Provider,
+  location: string,
+  localFileContent: Uint8Array,
+  sc?: SmartContract
+): Promise<boolean> {
+  if (localFileContent.length === 0) {
+    return false
+  }
+
+  if (!sc) {
+    return true
+  }
+
+  var onChainFileContent: Uint8Array
+  try {
+    onChainFileContent = await getFileFromAddress(provider, sc, location)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
+    return true
+  }
+
+  if (onChainFileContent.length !== localFileContent.length) {
+    return true
+  }
+
+  const localFileHash = sha256(localFileContent)
+  const onChainFileHash = sha256(onChainFileContent)
+
+  return localFileHash !== onChainFileHash
 }
