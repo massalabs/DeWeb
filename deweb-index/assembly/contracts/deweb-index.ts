@@ -2,11 +2,15 @@
 import {
   Address,
   Context,
-  print,
   setBytecode,
   Storage,
 } from '@massalabs/massa-as-sdk';
-import { Args, bytesToString, stringToBytes } from '@massalabs/as-types';
+import {
+  Args,
+  bytesToString,
+  i32ToBytes,
+  stringToBytes,
+} from '@massalabs/as-types';
 import {
   _onlyOwner,
   _setOwner,
@@ -18,6 +22,8 @@ export {
 } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
 export const DEWEB_VERSION_TAG = stringToBytes('\xFFDEWEB_VERSION');
+
+export const INDEX_BY_OWNER_TAG = stringToBytes('\x00INDEX_BY_OWNER');
 
 /**
  * Initializes the smart contract.
@@ -67,13 +73,17 @@ export function updateWebsite(_binaryArgs: StaticArray<u8>): void {
     .nextSerializable<Address>()
     .expect('Address is missing or invalid');
 
+  _removeWebsite(address);
+
+  if (!Storage.hasOf(address, DEWEB_VERSION_TAG)) return;
+
   const version = Storage.getOf(address, DEWEB_VERSION_TAG);
   assert(version.length > 0, 'The address is not a valid DEWEB address');
 
-  const owner = Storage.getOf(address, OWNER_KEY);
-  assert(owner.length > 0, 'Could not find the owner of the address');
+  const owner = Storage.hasOf(address, OWNER_KEY)
+    ? Storage.getOf(address, OWNER_KEY)
+    : '';
 
-  _removeWebsite(address);
   _addWebsite(address.toString(), owner);
 }
 
@@ -102,7 +112,9 @@ function _removeWebsite(address: Address): void {
   for (let i = 0; i < keys.length; i++) {
     const owner = bytesToString(keys[i]).slice(address.toString().length);
 
-    _removeWebsiteFromOwnerEnumeration(owner, address.toString());
+    if (owner.length > 0)
+      _removeWebsiteFromOwnerEnumeration(owner, address.toString());
+
     Storage.del(keys[i]);
   }
 }
@@ -117,7 +129,7 @@ function _addWebsite(address: string, owner: string): void {
 
   Storage.set(key, []);
 
-  _addWebsiteToOwnerEnumeration(owner, address);
+  if (owner.length > 0) _addWebsiteToOwnerEnumeration(owner, address);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -133,7 +145,7 @@ function _addWebsiteToOwnerEnumeration(
   owner: string,
   websiteAddress: string,
 ): void {
-  const key = stringToBytes(owner).concat(stringToBytes(websiteAddress));
+  const key = _indexByOwnerBaseKey(owner).concat(stringToBytes(websiteAddress));
 
   Storage.set(key, []);
 }
@@ -147,7 +159,18 @@ function _removeWebsiteFromOwnerEnumeration(
   owner: string,
   websiteAddress: string,
 ): void {
-  const key = stringToBytes(owner).concat(stringToBytes(websiteAddress));
+  const key = _indexByOwnerBaseKey(owner).concat(stringToBytes(websiteAddress));
 
   Storage.del(key);
+}
+
+/**
+ * Returns the base key for the owner's list of websites.
+ * @param owner - The owner's address.
+ * @returns The base key.
+ */
+function _indexByOwnerBaseKey(owner: string): StaticArray<u8> {
+  return INDEX_BY_OWNER_TAG.concat(i32ToBytes(owner.length)).concat(
+    stringToBytes(owner),
+  );
 }
