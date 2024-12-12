@@ -1,4 +1,4 @@
-import { Address } from "@massalabs/massa-as-sdk";
+import { Address } from '@massalabs/massa-as-sdk';
 
 export const scOwner = new Address(
   'AU12Rdc4THDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq',
