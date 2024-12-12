@@ -1,4 +1,4 @@
-# My Massa Smart-contract Project
+# DeWeb Index Smart Contract
 
 ## Build
 
