@@ -28,7 +28,7 @@
   "dependencies": {
     "@commander-js/extra-typings": "^12.1.0",
     "@listr2/prompt-adapter-enquirer": "^2.0.11",
-    "@massalabs/massa-web3": "5.0.1-dev.20241205155329",
+    "@massalabs/massa-web3": "^5.0.1-dev",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "js-sha256": "^0.11.0",
