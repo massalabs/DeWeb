@@ -2,11 +2,8 @@ import { i32ToBytes, stringToBytes } from '@massalabs/as-types';
 import { Address, Storage } from '@massalabs/massa-as-sdk';
 import { OWNER_KEY } from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
 
-export const INDEX_BY_OWNER_TAG = stringToBytes('\x00INDEX_BY_OWNER');
-
-export const WEBSITE_ADDR_TO_OWNER_TAG = stringToBytes(
-  '\x00WEBSITE_ADDR_TO_OWNER',
-);
+export const INDEX_BY_OWNER_TAG = stringToBytes('\x00');
+export const WEBSITE_ADDR_TO_OWNER_TAG = stringToBytes('\x01');
 
 const OWNER_MAX_LENGTH = 100;
 
