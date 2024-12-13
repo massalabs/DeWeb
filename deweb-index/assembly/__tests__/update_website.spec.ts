@@ -1,4 +1,4 @@
-import { Args, i32ToBytes, stringToBytes } from '@massalabs/as-types';
+import { Args, stringToBytes } from '@massalabs/as-types';
 import {
   deleteOf,
   resetStorage,
@@ -11,9 +11,12 @@ import { OWNER_KEY } from '@massalabs/sc-standards/assembly/contracts/utils/owne
 import {
   constructor,
   DEWEB_VERSION_TAG,
-  INDEX_BY_OWNER_TAG,
   updateWebsite,
 } from '../contracts/deweb-index';
+import {
+  _addressToOwnerBaseKey,
+  _indexByOwnerBaseKey,
+} from '../contracts/utils';
 import { scOwner, version, websiteAddress, websiteOwner } from './const';
 
 describe('updateWebsite tests', () => {
@@ -29,9 +32,7 @@ describe('updateWebsite tests', () => {
     const args = new Args().add(websiteAddress).serialize();
     updateWebsite(args);
 
-    const ownerPrefixKey = INDEX_BY_OWNER_TAG.concat(
-      i32ToBytes(websiteOwner.toString().length),
-    ).concat(stringToBytes(websiteOwner.toString()));
+    const ownerPrefixKey = _indexByOwnerBaseKey(websiteOwner.toString());
 
     const ownerKeys = Storage.getKeys(ownerPrefixKey);
     expect(ownerKeys).toHaveLength(1, 'Expected one key for owner');
@@ -40,15 +41,13 @@ describe('updateWebsite tests', () => {
       'Owner keys',
     );
 
-    const websiteKeys = Storage.getKeys(
-      stringToBytes(websiteAddress.toString()),
-    );
+    const websitePrefixKey = _addressToOwnerBaseKey(websiteAddress.toString());
+
+    const websiteKeys = Storage.getKeys(websitePrefixKey);
 
     expect(websiteKeys).toHaveLength(1, 'Expected one key for website');
     expect(websiteKeys[0]).toStrictEqual(
-      stringToBytes(websiteAddress.toString()).concat(
-        stringToBytes(websiteOwner.toString()),
-      ),
+      websitePrefixKey.concat(stringToBytes(websiteOwner.toString())),
       'Website keys',
     );
   });
@@ -59,43 +58,35 @@ describe('updateWebsite tests', () => {
     const args = new Args().add(websiteAddress).serialize();
     updateWebsite(args);
 
-    const websiteKeys = Storage.getKeys(
-      stringToBytes(websiteAddress.toString()),
-    );
+    const websitePrefixKey = _addressToOwnerBaseKey(websiteAddress.toString());
+
+    const websiteKeys = Storage.getKeys(websitePrefixKey);
     expect(websiteKeys).toHaveLength(
       1,
       `Expected one key for website ${websiteAddress.toString()}`,
     );
-    expect(websiteKeys[0]).toStrictEqual(
-      stringToBytes(websiteAddress.toString()),
-      'Website keys',
-    );
+    expect(websiteKeys[0]).toStrictEqual(websitePrefixKey, 'Website keys');
   });
 
-  test('update website', () => {
+  test('should update website owner', () => {
     setOf(websiteAddress, OWNER_KEY, scOwner.toString());
     const args = new Args().add(websiteAddress).serialize();
     updateWebsite(args);
 
-    const oldOwnerPrefixKey = INDEX_BY_OWNER_TAG.concat(
-      i32ToBytes(scOwner.toString().length),
-    ).concat(stringToBytes(scOwner.toString()));
-
+    const oldOwnerPrefixKey = _indexByOwnerBaseKey(websiteOwner.toString());
     const oldOwnerKeys = Storage.getKeys(
       stringToBytes(oldOwnerPrefixKey.toString()),
     );
     expect(oldOwnerKeys).toHaveLength(0, 'Old owner keys should be empty');
 
-    const newOwnerPrefixKey = INDEX_BY_OWNER_TAG.concat(
-      i32ToBytes(scOwner.toString().length),
-    ).concat(stringToBytes(scOwner.toString()));
+    const newOwnerPrefixKey = _indexByOwnerBaseKey(scOwner.toString());
 
     const newOwnerKeys = Storage.getKeys(newOwnerPrefixKey);
     expect(newOwnerKeys).toHaveLength(1, 'New owner keys should have one key');
 
-    const websiteKeys = Storage.getKeys(
-      stringToBytes(websiteAddress.toString()),
-    );
+    const websitePrefixKey = _addressToOwnerBaseKey(websiteAddress.toString());
+
+    const websiteKeys = Storage.getKeys(websitePrefixKey);
     expect(websiteKeys).toHaveLength(1, 'Website keys should have one key');
   });
 
@@ -103,7 +94,9 @@ describe('updateWebsite tests', () => {
     const args = new Args().add(scOwner).serialize();
     updateWebsite(args);
 
-    const websiteKeys = Storage.getKeys(stringToBytes(scOwner.toString()));
+    const prefix = _addressToOwnerBaseKey(scOwner.toString());
+
+    const websiteKeys = Storage.getKeys(prefix);
     expect(websiteKeys).toHaveLength(0);
   });
 
@@ -111,22 +104,18 @@ describe('updateWebsite tests', () => {
     const args = new Args().add(websiteAddress).serialize();
     updateWebsite(args);
 
-    const websiteKeys = Storage.getKeys(
-      stringToBytes(websiteAddress.toString()),
-    );
+    const websitePrefixKey = _addressToOwnerBaseKey(websiteAddress.toString());
+
+    const websiteKeys = Storage.getKeys(websitePrefixKey);
     expect(websiteKeys).toHaveLength(1, 'Website keys should have one key');
 
     deleteOf(websiteAddress, DEWEB_VERSION_TAG);
     updateWebsite(args);
 
-    const updatedWebsiteKeys = Storage.getKeys(
-      stringToBytes(websiteAddress.toString()),
-    );
+    const updatedWebsiteKeys = Storage.getKeys(websitePrefixKey);
     expect(updatedWebsiteKeys).toHaveLength(0, 'Website keys should be empty');
 
-    const ownerPrefixKey = INDEX_BY_OWNER_TAG.concat(
-      i32ToBytes(websiteOwner.toString().length),
-    ).concat(stringToBytes(websiteOwner.toString()));
+    const ownerPrefixKey = _indexByOwnerBaseKey(websiteOwner.toString());
     const ownerKeys = Storage.getKeys(ownerPrefixKey);
     expect(ownerKeys).toHaveLength(0, 'Owner keys should be empty');
   });

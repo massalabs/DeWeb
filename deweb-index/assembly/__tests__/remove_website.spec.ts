@@ -13,6 +13,8 @@ import {
   removeWebsite,
   updateWebsite,
 } from '../contracts/deweb-index';
+import { _indexByOwnerBaseKey } from '../contracts/utils';
+
 import { scOwner, version, websiteAddress, websiteOwner } from './const';
 
 describe('removeWebsite tests', () => {
@@ -32,7 +34,9 @@ describe('removeWebsite tests', () => {
     removeWebsite(args);
 
     const key = Storage.getKeys(
-      stringToBytes(websiteOwner.toString().concat(websiteAddress.toString())),
+      _indexByOwnerBaseKey(websiteOwner.toString()).concat(
+        stringToBytes(websiteAddress.toString()),
+      ),
     );
     expect(key).toHaveLength(0);
   });
