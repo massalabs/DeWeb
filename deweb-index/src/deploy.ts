@@ -13,7 +13,7 @@ const provider = Web3Provider.buildnet(account);
 
 console.log('Deploying contract...');
 
-const byteCode = getScByteCode('build', 'main.wasm');
+const byteCode = getScByteCode('build', 'deweb-index.wasm');
 
 const name = 'Massa';
 const constructorArgs = new Args().addString(name);
