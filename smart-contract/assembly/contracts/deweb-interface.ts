@@ -1,4 +1,5 @@
 import {
+  Address,
   balance,
   Context,
   generateEvent,
@@ -43,6 +44,24 @@ export function constructor(_: StaticArray<u8>): void {
   Storage.set(DEWEB_VERSION_TAG, stringToBytes(DEWEB_VERSION));
 
   _setOwner(Context.caller().toString());
+}
+
+/**
+ * Change the owner of the smart contract to the address passed as an argument
+ * @param _binaryArgs - serialized arguments containing the new owner address
+ * @returns void
+ */
+export function transferOwnership(_binaryArgs: StaticArray<u8>): void {
+  _onlyOwner();
+
+  const args = new Args(_binaryArgs);
+  const newOwnerResult = args.nextSerializable<Address>();
+
+  const newOwner = newOwnerResult.isOk()
+    ? newOwnerResult.unwrap().toString()
+    : '';
+
+  _setOwner(newOwner);
 }
 
 /* -------------------------------------------------------------------------- */
