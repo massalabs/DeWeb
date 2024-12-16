@@ -22,6 +22,7 @@ export const uploadCommand = new Command('upload')
   .option('-a, --address <address>', 'Address of the website to edit')
   .option('-s, --chunkSize <size>', 'Chunk size in bytes')
   .option('-y, --yes', 'Skip confirmation prompt', false)
+  .option('--noIndex', 'Skip DeWeb index update', false)
   .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
@@ -36,7 +37,8 @@ export const uploadCommand = new Command('upload')
       provider,
       chunkSize,
       websiteDirPath,
-      options.yes
+      options.yes,
+      options.noIndex
     )
 
     if (options.address) {
@@ -76,7 +78,8 @@ async function createUploadCtx(
   provider: Web3Provider,
   chunkSize: number,
   websiteDirPath: string,
-  skipConfirm: boolean
+  skipConfirm: boolean,
+  noIndex: boolean
 ): Promise<UploadCtx> {
   return {
     provider: provider,
@@ -90,6 +93,7 @@ async function createUploadCtx(
     chunkSize: chunkSize,
     websiteDirPath: websiteDirPath,
     skipConfirm: skipConfirm,
+    noIndex: noIndex,
     currentTotalEstimation: 0n,
     maxConcurrentOps: 4,
     minimalFees: await provider.client.getMinimalFee(),
