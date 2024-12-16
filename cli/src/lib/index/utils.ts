@@ -1,6 +1,6 @@
 import { bytesToStr, CHAIN_ID, SmartContract } from '@massalabs/massa-web3'
 
-import { BUILDNET_INDEX_ADDRESS, MAINNET_INDEX_ADDRESS } from './const'
+import { BUILDNET_INDEX_ADDRESS } from './const'
 
 /**
  * Get the owner of a website using its 'OWNER' storage key

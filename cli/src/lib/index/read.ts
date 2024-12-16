@@ -15,11 +15,8 @@ export async function getWebsiteOwner(
 ): Promise<string> {
   const scAddress = getSCAddress((await provider.networkInfos()).chainId)
   const prefix = addressToOwnerBaseKey(address)
-  console.log('prefix:', prefix)
-  console.log('all keys', await provider.getStorageKeys(scAddress, ''))
-  const keys = await provider.getStorageKeys(scAddress, prefix)
-  console.log('keys:', keys)
 
+  const keys = await provider.getStorageKeys(scAddress, prefix)
   if (keys.length === 0) {
     return ''
   }

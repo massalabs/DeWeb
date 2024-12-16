@@ -27,7 +27,6 @@ export async function updateWebsite(
   const sc = new SmartContract(provider, scAddress)
 
   const estimatedCost = await estimateCost(sc, address)
-  console.log('estimatedCost:', estimatedCost)
 
   return sc.call(updateWebsiteFunctionName, args, {
     coins: estimatedCost,
@@ -45,8 +44,6 @@ async function estimateCost(
   return getWebsiteOwner(sc.provider, address)
     .then(async (registeredOwner) => {
       const scOwner = await getOwnerFromWebsiteSC(sc, address)
-      console.log('scOwner:', scOwner)
-      console.log('registeredOwner:', registeredOwner)
 
       return storageCostForEntry(
         BigInt(Math.abs(scOwner.length - registeredOwner.length)),
@@ -69,8 +66,6 @@ async function estimateCost(
       )
 
       const totalCost = addressToOwnerKeyCost + indexByOwnerKeyCost
-
-      console.log('No owner found, creating new entry: ', totalCost)
 
       return totalCost
     })
