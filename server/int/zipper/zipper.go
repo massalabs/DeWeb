@@ -63,5 +63,5 @@ func VerifyFilePresence(zipFile []byte, fileName string) (bool, error) {
 		}
 	}
 
-	return false, fmt.Errorf("%s not found in zip file", fileName)
+	return false, fmt.Errorf(notFoundErrorTemplate, fileName)
 }

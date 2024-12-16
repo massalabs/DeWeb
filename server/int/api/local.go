@@ -14,7 +14,7 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 	}
 
 	isPresent, err := zipper.VerifyFilePresence(zipBytes, resourceName)
-	if err != nil {
+	if err != nil && !zipper.IsNotFoundError(err, resourceName) {
 		logger.Errorf("localHandler: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
