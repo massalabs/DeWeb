@@ -13,6 +13,19 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 		resourceName = "index.html"
 	}
 
+	isPresent, err := zipper.VerifyFilePresence(zipBytes, resourceName)
+	if err != nil {
+		logger.Errorf("localHandler: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	// If requested resource is not present, it might be the original requested resource.
+	// In this case, we try to serve the index.html file of the zip.
+	if !isPresent {
+		logger.Debugf("localHandler: Resource %s not found in zip, changing to index.html", resourceName)
+		resourceName = "index.html"
+	}
+
 	content, err := zipper.ReadFileFromZip(zipBytes, resourceName)
 	if err != nil {
 		logger.Warnf("File not found: %t", zipper.IsNotFoundError(err, resourceName))
