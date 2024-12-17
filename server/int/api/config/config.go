@@ -12,7 +12,7 @@ import (
 
 const (
 	DefaultDomain         = "localhost"
-	DefaultNetworkNodeURL = "https://buildnet.massa.net/api/v2"
+	DefaultNetworkNodeURL = "https://mainnet.massa.net/api/v2"
 	DefaultAPIPort        = 8080
 )
 
