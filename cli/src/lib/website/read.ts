@@ -6,7 +6,9 @@ import {
   FILE_LOCATION_TAG,
   fileChunkCountKey,
   fileChunkKey,
+  globalMetadataKey,
 } from './storageKeys'
+import { Metadata } from './models/Metadata'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -102,4 +104,33 @@ export async function getFileFromAddress(
   }
 
   return concatenatedArray
+}
+
+/**
+ * Get the metadata of a file from the given website on Massa blockchain
+ * @param provider - Provider instance
+ * @param address - Address of the website
+ * @param prefix - Prefix of the metadata
+ * @returns - List of Metadata objects
+ */
+export async function getGlobalMetadata(
+  provider: Provider,
+  address: string,
+  prefix: Uint8Array = new Uint8Array()
+): Promise<Metadata[]> {
+  const metadataKeys = await provider.getStorageKeys(
+    address,
+    globalMetadataKey(prefix)
+  )
+  const metadata = await provider.readStorage(address, metadataKeys)
+
+  return metadata.map((m, index) => {
+    const metadataKeyBytes = metadataKeys[index].slice(
+      globalMetadataKey(new Uint8Array()).length
+    )
+    const key = new TextDecoder().decode(metadataKeyBytes)
+    const value = new TextDecoder().decode(m)
+
+    return new Metadata(key, value)
+  })
 }
