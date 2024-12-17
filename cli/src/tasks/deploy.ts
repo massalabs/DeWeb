@@ -2,6 +2,7 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { formatMas } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
+import { updateWebsite } from '../lib/index'
 import { deployCost, deploySC } from '../lib/website/deploySC'
 
 import { UploadCtx } from './tasks'
@@ -53,6 +54,23 @@ export function deploySCTask(): ListrTask {
               ctx.currentTotalEstimation +=
                 deployCost(provider) + ctx.minimalFees
               subTask.output = `Deployed SC at ${ctx.sc.address}`
+            },
+            rendererOptions: {
+              outputBar: Infinity,
+              persistentOutput: true,
+            },
+          },
+          {
+            title: 'Update DeWeb Index',
+            task: async (ctx, subTask) => {
+              if (ctx.noIndex) {
+                subTask.skip('Skipping DeWeb Index update')
+                return
+              }
+
+              subTask.output =
+                'Updating the DeWeb Index with the new SC address'
+              await updateWebsite(provider, ctx.sc.address)
             },
             rendererOptions: {
               outputBar: Infinity,

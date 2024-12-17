@@ -11,6 +11,7 @@ export interface UploadCtx {
   provider: Provider
   sc?: SmartContract
 
+  noIndex: boolean
   skipConfirm: boolean
   websiteDirPath: string
   currentTotalEstimation: bigint
