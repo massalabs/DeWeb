@@ -59,8 +59,6 @@ export async function deleteWebsite(
         false
       )
     }
-
-    console.log('Website deleted successfully')
   } catch (error) {
     console.error('Error deleting website:', error)
     throw error
