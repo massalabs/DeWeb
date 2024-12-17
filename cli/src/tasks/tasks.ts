@@ -30,7 +30,10 @@ export interface UploadCtx {
 }
 
 export interface DeleteCtx {
-  provider: Provider
-  sc?: SmartContract
-  address: string
+  sc: SmartContract
+
+  fileDeletes: FileDelete[]
+  globalMetadatas: Metadata[]
+
+  skipConfirm: boolean
 }

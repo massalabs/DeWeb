@@ -1,16 +1,22 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
+import { Listr } from 'listr2'
 
-import { makeProviderFromNodeURLAndSecret } from './utils'
-import { Listr, ListrTask } from 'listr2'
+import {
+  confirmDeleteWebsiteTask,
+  deleteWebsiteTask,
+  prepareDeleteWebsiteTask,
+} from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
 
-// Minimal implementation of delete command
+import { makeProviderFromNodeURLAndSecret } from './utils'
+
 export const deleteCommand = new Command('delete')
   .alias('d')
   .description('Delete the given website from Massa blockchain')
   .argument('<address>', 'Address of the website to delete')
-  .action(async (address, _, command) => {
+  .option('-y, --yes', 'Skip confirmation prompt', false)
+  .action(async (address, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
@@ -18,12 +24,21 @@ export const deleteCommand = new Command('delete')
     const sc = new SmartContract(provider, address)
 
     const ctx: DeleteCtx = {
-      provider: provider,
       sc: sc,
-      address: address,
+
+      fileDeletes: [],
+      globalMetadatas: [],
+
+      skipConfirm: options.yes,
     }
 
-    const tasks = new Listr(deleteWebsiteTask(), {
+    const tasksArray = [
+      prepareDeleteWebsiteTask(),
+      confirmDeleteWebsiteTask(),
+      deleteWebsiteTask(),
+    ]
+
+    const tasks = new Listr(tasksArray, {
       concurrent: false,
     })
 
@@ -34,32 +49,3 @@ export const deleteCommand = new Command('delete')
       process.exit(1)
     }
   })
-
-export function deleteWebsiteTask(): ListrTask {
-  return {
-    title: 'Deleting website',
-    task: async (ctx) => {
-      // No deleteWebsite in the SC yet
-      await deleteWebsite(ctx)
-    },
-    rendererOptions: {
-      outputBar: Infinity,
-      persistentOutput: true,
-      collapseSubtasks: false,
-    },
-  }
-}
-
-async function deleteWebsite(ctx: DeleteCtx) {
-  if (!ctx.sc) {
-    throw new Error('Smart contract is not deployed yet')
-  }
-  ctx.sc
-    .call('deleteWebsite', new Uint8Array())
-    .then(() => {
-      console.log(`Successfully deleted the website at ${ctx.address}`)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-}

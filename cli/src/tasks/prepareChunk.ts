@@ -36,7 +36,7 @@ export function prepareBatchesTask(): ListrTask {
       )
 
       if (ctx.sc) {
-        const filesInSC = await listFiles(ctx.provider, ctx.sc)
+        const filesInSC = await listFiles(ctx.provider, ctx.sc.address)
         ctx.filesToDelete = filesInSC
           .filter((file) => !localFiles.includes(file))
           .map((file) => new FileDelete(file))
@@ -120,7 +120,7 @@ async function prepareChunks(
 
       localFiles.push(relativePath)
 
-      if (!(await requiresUpdate(provider, relativePath, data, sc))) {
+      if (!(await requiresUpdate(provider, relativePath, data, sc?.address))) {
         continue
       }
       const chunksData = divideIntoChunks(data, chunkSize)

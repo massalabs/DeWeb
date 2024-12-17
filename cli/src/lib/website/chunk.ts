@@ -4,7 +4,7 @@ import { storageCostForEntry } from '../utils/storage'
 import { fileChunkKey } from './storageKeys'
 import { FileChunkPost } from './models/FileChunkPost'
 import { getFileFromAddress } from './read'
-import { Provider, SmartContract } from '@massalabs/massa-web3'
+import { Provider } from '@massalabs/massa-web3'
 
 /**
  * Divide a data array into chunks of a given size.
@@ -89,19 +89,19 @@ export async function requiresUpdate(
   provider: Provider,
   location: string,
   localFileContent: Uint8Array,
-  sc?: SmartContract
+  scAddress?: string
 ): Promise<boolean> {
   if (localFileContent.length === 0) {
     return false
   }
 
-  if (!sc) {
+  if (!scAddress || !scAddress.length) {
     return true
   }
 
   var onChainFileContent: Uint8Array
   try {
-    onChainFileContent = await getFileFromAddress(provider, sc, location)
+    onChainFileContent = await getFileFromAddress(provider, scAddress, location)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
     return true
