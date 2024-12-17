@@ -4,7 +4,7 @@ import { storageCostForEntry } from '../utils/storage'
 import { fileChunkKey } from './storageKeys'
 import { FileChunkPost } from './models/FileChunkPost'
 import { getFileFromAddress } from './read'
-import { Provider, SmartContract } from '@massalabs/massa-web3'
+import { Provider } from '@massalabs/massa-web3'
 
 /**
  * Divide a data array into chunks of a given size.
