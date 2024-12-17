@@ -89,19 +89,19 @@ export async function requiresUpdate(
   provider: Provider,
   location: string,
   localFileContent: Uint8Array,
-  sc?: SmartContract
+  scAddress?: string
 ): Promise<boolean> {
   if (localFileContent.length === 0) {
     return false
   }
 
-  if (!sc) {
+  if (!scAddress || !scAddress.length) {
     return true
   }
 
   var onChainFileContent: Uint8Array
   try {
-    onChainFileContent = await getFileFromAddress(provider, sc, location)
+    onChainFileContent = await getFileFromAddress(provider, scAddress, location)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
     return true

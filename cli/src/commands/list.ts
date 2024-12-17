@@ -1,7 +1,9 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+
 import { listFiles } from '../lib/website/read'
+
+import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
 export const listFilesCommand = new Command('list')
   .alias('ls')
@@ -27,7 +29,7 @@ export const listFilesCommand = new Command('list')
 
     console.log('Targeting website at address', sc.address)
 
-    const files = await listFiles(provider, sc)
+    const files = await listFiles(provider, sc.address)
     console.log(`Total of ${files.length} files:`)
     files.sort().forEach((f) => console.log(f))
   })

@@ -1,7 +1,9 @@
 import { Command } from '@commander-js/extra-typings'
 import { SmartContract } from '@massalabs/massa-web3'
-import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+
 import { getFileFromAddress } from '../lib/website/read'
+
+import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
 export const showFileCommand = new Command('show')
   .description('Lists files from the given website on Massa blockchain')
@@ -27,7 +29,7 @@ export const showFileCommand = new Command('show')
 
     console.log('Targeting website at address', sc.address)
 
-    const fileContent = await getFileFromAddress(provider, sc, filePath)
+    const fileContent = await getFileFromAddress(provider, sc.address, filePath)
     const decoder = new TextDecoder()
     const fileContentString = decoder.decode(fileContent)
 
