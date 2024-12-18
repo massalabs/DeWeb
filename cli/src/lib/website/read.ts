@@ -25,9 +25,9 @@ export async function listFiles(
   )
   const fileLocations = await provider.readStorage(scAddress, allStorageKeys)
 
-  const textDecoder = new TextDecoder()
-
-  return fileLocations.map((location) => textDecoder.decode(location))
+  return fileLocations.map((location) =>
+    String.fromCharCode(...new Uint8Array(location))
+  )
 }
 
 /**
