@@ -30,8 +30,9 @@ export const showFileCommand = new Command('show')
     console.log('Targeting website at address', sc.address)
 
     const fileContent = await getFileFromAddress(provider, sc.address, filePath)
-    const decoder = new TextDecoder()
-    const fileContentString = decoder.decode(fileContent)
+    const fileContentString = Array.from(new Uint8Array(fileContent))
+      .map((byte) => String.fromCharCode(byte))
+      .join('')
 
     console.log(fileContentString)
   })
