@@ -18,7 +18,7 @@ export async function getWebsiteOwner(
 
   const keys = await provider.getStorageKeys(scAddress, prefix)
   if (keys.length === 0) {
-    return ''
+    throw new Error('Website not found in the index')
   }
 
   const ownerKey = keys[0]
