@@ -1,7 +1,7 @@
 import { stringToBytes, Args } from '@massalabs/as-types';
 import { sha256, Storage } from '@massalabs/massa-as-sdk';
 import { FileDelete } from '../../../contracts/serializable/FileDelete';
-import { deleteFiles } from '../../../contracts/deweb-interface';
+import { deleteFiles, purge } from '../../../contracts/deweb-interface';
 import {
   fileMetadataKey,
   fileLocationKey,
@@ -12,6 +12,14 @@ import {
   CHUNK_TAG,
 } from '../../../contracts/internals/storageKeys/tags';
 import { _getFileLocations } from '../../../contracts/internals/location';
+
+export function _purge(): void {
+  purge([]);
+}
+
+export function _assertPurged(): void {
+  assert(Storage.getKeys([]).length == 0, 'Storage should be empty');
+}
 
 export function _deleteFiles(files: string[]): void {
   const filesToDelete: FileDelete[] = [];

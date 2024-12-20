@@ -5,7 +5,9 @@ import { uploader } from './helpers/Uploader';
 import {
   _assertFilesAreNotPresent,
   _assertFilesArePresent,
+  _assertPurged,
   _deleteFiles,
+  _purge,
 } from './helpers/delete-file';
 import { Metadata } from '../../contracts/serializable/Metadata';
 
@@ -68,5 +70,26 @@ describe('Upload files', () => {
 
     _assertFilesAreNotPresent([file1Path, file2Path, file3Path]);
     _assertFilesArePresent([file4Path]);
+  });
+
+  test('Test purge', () => {
+    uploader()
+      .withFile(
+        file1Path,
+        [fileData1, fileData2],
+        [
+          new Metadata(metadataKey1, metadataValue1),
+          new Metadata(metadataKey2, metadataValue2),
+        ],
+      )
+      .withFile(file2Path, [fileData2])
+      .withFile(file3Path, [fileData3, fileData4])
+      .withFile(file4Path, [fileData4])
+      .init()
+      .uploadAll();
+
+    _purge();
+
+    _assertPurged();
   });
 });
