@@ -20,7 +20,7 @@ import {
   globalMetadataKey,
 } from './storageKeys'
 import { FileDelete } from './models/FileDelete'
-import { maxBigInt } from '../../tasks/utils'
+import { maxBigInt } from '../utils/utils'
 import {
   FunctionCall,
   CallManager,
