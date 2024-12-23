@@ -1,6 +1,5 @@
 import { Provider, U32 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
-import { TextDecoder } from 'util'
 
 import {
   FILE_LOCATION_TAG,
@@ -128,8 +127,8 @@ export async function getGlobalMetadata(
     const metadataKeyBytes = metadataKeys[index].slice(
       globalMetadataKey(new Uint8Array()).length
     )
-    const key = new TextDecoder().decode(metadataKeyBytes)
-    const value = new TextDecoder().decode(m)
+    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
+    const value = String.fromCharCode(...new Uint8Array(m))
 
     return new Metadata(key, value)
   })
