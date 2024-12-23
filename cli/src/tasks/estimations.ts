@@ -7,7 +7,7 @@ import { computeChunkCost } from '../lib/website/chunk'
 import { estimateUploadBatchesGas } from '../lib/website/uploadChunk'
 
 import { UploadCtx } from './tasks'
-import { formatBytes } from './utils'
+import { formatBytes } from '../lib/utils/utils'
 
 /**
  * Create a task to estimate the cost of each batch
