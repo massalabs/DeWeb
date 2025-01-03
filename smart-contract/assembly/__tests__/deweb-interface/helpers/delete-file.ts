@@ -1,5 +1,5 @@
 import { stringToBytes, Args } from '@massalabs/as-types';
-import { sha256, Storage } from '@massalabs/massa-as-sdk';
+import { sha256, Storage, balance } from '@massalabs/massa-as-sdk';
 import { FileDelete } from '../../../contracts/serializable/FileDelete';
 import { deleteFiles, purge } from '../../../contracts/deweb-interface';
 import {
@@ -81,3 +81,8 @@ export function _assertHasNoChunk(locationHash: StaticArray<u8>): void {
   );
   assert(chunkKeys.length === 0, 'Chunks should not be stored');
 }
+
+export function _assertHasNoCoins(): void {
+  assert(balance() === 0, 'Balance should be zero');
+}
+

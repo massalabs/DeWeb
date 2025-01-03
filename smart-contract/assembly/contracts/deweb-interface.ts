@@ -93,6 +93,9 @@ export function filesInit(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < files.length; i++) {
     _fileInit(files[i].location, files[i].totalChunk, files[i].metadata);
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -116,6 +119,9 @@ export function uploadFileChunks(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < chunks.length; i++) {
     _setFileChunk(chunks[i].location, chunks[i].index, chunks[i].data);
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 export function removeFileChunkRange(_binaryArgs: StaticArray<u8>): void {
@@ -129,6 +135,9 @@ export function removeFileChunkRange(_binaryArgs: StaticArray<u8>): void {
   const end = args.next<u32>().expect('Invalid end');
 
   _removeChunksRange(hashLocation, start, end);
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /**
@@ -150,6 +159,9 @@ export function deleteFiles(_binaryArgs: StaticArray<u8>): void {
 
     _deleteFile(files[i].hashLocation);
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -176,6 +188,9 @@ export function setMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
       stringToBytes(metadata[i].value),
     );
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /**
@@ -193,6 +208,9 @@ export function removeMetadataGlobal(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < key.length; i++) {
     _removeGlobalMetadata(stringToBytes(key[i]));
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -222,6 +240,9 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
       hashLocation,
     );
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /**
@@ -243,6 +264,9 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
   for (let i = 0; i < metadata.length; i++) {
     _removeFileMetadata(stringToBytes(metadata[i]), hashLocation);
   }
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -282,6 +306,9 @@ export function receiveCoins(): void {
 export function upgradeSC(args: StaticArray<u8>): void {
   _onlyOwner();
   setBytecode(args);
+  
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
 }
 
 
