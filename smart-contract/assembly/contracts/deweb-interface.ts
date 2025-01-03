@@ -283,3 +283,30 @@ export function upgradeSC(args: StaticArray<u8>): void {
   _onlyOwner();
   setBytecode(args);
 }
+
+
+/* -------------------------------------------------------------------------- */
+/*                                 PURGE   SC                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Deletes all the contract storage and bytecode.
+ * Sends back the freed coins to the caller.
+ * @param args - Ignored.
+ * @throws If the caller is not the owner.
+ */
+export function purge(args: StaticArray<u8>): void {
+  _onlyOwner();
+
+  // Delete all datastore entries
+  const keys = Storage.getKeys([]);
+  for (let i: u32 = 0; i < u32(keys.length); i++) {
+    Storage.del(keys[i]);
+  }
+
+  // Empty the bytecode
+  setBytecode([]);
+
+  // Send the freed coins back to the caller
+  transferCoins(Context.caller(), balance());
+}
