@@ -8,6 +8,7 @@ import {
   _assertPurged,
   _deleteFiles,
   _purge,
+  _assertHasNoCoins,
 } from './helpers/delete-file';
 import { Metadata } from '../../contracts/serializable/Metadata';
 
@@ -52,6 +53,7 @@ describe('Upload files', () => {
 
     _assertFilesAreNotPresent([file1Path, file2Path, file3Path]);
     _assertFilesArePresent([file4Path]);
+    _assertHasNoCoins();
   });
 
   throws('if try to remove a non-existing file', () => {
@@ -70,6 +72,7 @@ describe('Upload files', () => {
 
     _assertFilesAreNotPresent([file1Path, file2Path, file3Path]);
     _assertFilesArePresent([file4Path]);
+    _assertHasNoCoins();
   });
 
   test('Test purge', () => {
@@ -91,5 +94,6 @@ describe('Upload files', () => {
     _purge();
 
     _assertPurged();
+    _assertHasNoCoins();
   });
 });
