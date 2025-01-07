@@ -20,6 +20,7 @@ type ServerConfig struct {
 	Domain       string
 	APIPort      int
 	NetworkInfos msConfig.NetworkInfos
+	CacheDir     string
 	AllowList    []string
 	BlockList    []string
 }
@@ -28,6 +29,7 @@ type yamlServerConfig struct {
 	Domain         string   `yaml:"domain"`
 	NetworkNodeURL string   `yaml:"network_node_url"`
 	APIPort        int      `yaml:"api_port"`
+	CacheDir       string   `yaml:"cache_dir"`
 	AllowList      []string `yaml:"allow_list"`
 	BlockList      []string `yaml:"block_list"`
 }
@@ -39,6 +41,7 @@ func DefaultConfig() *ServerConfig {
 		Domain:       DefaultDomain,
 		APIPort:      DefaultAPIPort,
 		NetworkInfos: networkInfos,
+		CacheDir:     "",
 		AllowList:    []string{},
 		BlockList:    []string{},
 	}
@@ -85,6 +88,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		Domain:       yamlConf.Domain,
 		APIPort:      yamlConf.APIPort,
 		NetworkInfos: networkInfos,
+		CacheDir:     yamlConf.CacheDir,
 		AllowList:    yamlConf.AllowList,
 		BlockList:    yamlConf.BlockList,
 	}, nil
