@@ -10,8 +10,6 @@ import (
 	"github.com/massalabs/station/pkg/logger"
 )
 
-const cacheDir = "./websitesCache/"
-
 var (
 	cacheInstance *cache.Cache
 	cacheErr      error
@@ -34,10 +32,12 @@ func initCache() error {
 		// If serverConfig is not set, log a warning and use default values
 		var maxRAMEntries uint64 = config.DefaultMaxRAMEntries
 		var maxDiskEntries uint64 = config.DefaultMaxDiskEntries
+		var cacheDir = config.DefaultCacheDir
 
 		if serverConfig != nil {
 			maxRAMEntries = serverConfig.SiteRAMCacheMaxItems
 			maxDiskEntries = serverConfig.SiteDiskCacheMaxItems
+			cacheDir = serverConfig.CacheDir
 		} else {
 			logger.Debugf("Server config not set, using default cache values")
 		}

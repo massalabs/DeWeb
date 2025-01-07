@@ -16,9 +16,10 @@ const (
 	DefaultAPIPort        = 8080
 
 	// Default cache size limits
-	DefaultMaxRAMEntries                uint64 = 1000  // Maximum number of file entries in RAM cache
-	DefaultMaxDiskEntries               uint64 = 10000 // Maximum number of file entries in disk cache
-	DefaultFileListCacheDurationSeconds        = 60    // Default expiration of the file list cache
+	DefaultMaxRAMEntries                uint64 = 1000               // Maximum number of file entries in RAM cache
+	DefaultMaxDiskEntries               uint64 = 10000              // Maximum number of file entries in disk cache
+	DefaultFileListCacheDurationSeconds        = 60                 // Default expiration of the file list cache
+	DefaultCacheDir                            = "./websitesCache/" // Default cache directory
 )
 
 type ServerConfig struct {
@@ -31,6 +32,7 @@ type ServerConfig struct {
 	SiteDiskCacheMaxItems        uint64
 	FileListCacheDurationSeconds int
 	MiscPublicInfoJson           interface{}
+	CacheDir                     string
 }
 
 type yamlServerConfig struct {
@@ -39,6 +41,7 @@ type yamlServerConfig struct {
 	APIPort                      int         `yaml:"api_port"`
 	AllowList                    []string    `yaml:"allow_list"`
 	BlockList                    []string    `yaml:"block_list"`
+	CacheDir                     string      `yaml:"cache_dir"`
 	SiteRAMCacheMaxItems         uint64      `yaml:"site_ram_cache_max_items"`
 	SiteDiskCacheMaxItems        uint64      `yaml:"site_disk_cache_max_items"`
 	FileListCacheDurationSeconds int         `yaml:"file_list_cache_duration_seconds"`
@@ -58,6 +61,7 @@ func DefaultConfig() *ServerConfig {
 		SiteDiskCacheMaxItems:        DefaultMaxDiskEntries,
 		FileListCacheDurationSeconds: DefaultFileListCacheDurationSeconds,
 		MiscPublicInfoJson:           map[string]interface{}{},
+		CacheDir:                     DefaultCacheDir,
 	}
 }
 
@@ -121,6 +125,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		SiteDiskCacheMaxItems:        yamlConf.SiteDiskCacheMaxItems,
 		FileListCacheDurationSeconds: yamlConf.FileListCacheDurationSeconds,
 		MiscPublicInfoJson:           convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
+		CacheDir:                     yamlConf.CacheDir,
 	}, nil
 }
 
