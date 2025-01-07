@@ -31,6 +31,7 @@ export interface UploadCtx {
 
 export interface DeleteCtx {
   sc: SmartContract
+  purge: boolean
 
   fileDeletes: FileDelete[]
   globalMetadatas: Metadata[]
