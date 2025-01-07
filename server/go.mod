@@ -12,6 +12,7 @@ require (
 	github.com/gofrs/flock v0.12.1
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/massalabs/station v0.6.4
+	github.com/massalabs/station-massa-hello-world v0.0.11-0.20240503070604-6b14a27fcdff
 	github.com/massalabs/station-massa-wallet v0.4.3
 	golang.org/x/net v0.17.0
 	gopkg.in/yaml.v2 v2.4.0
