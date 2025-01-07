@@ -4,8 +4,10 @@ import { Listr } from 'listr2'
 
 import {
   confirmDeleteWebsiteTask,
+  confirmPurgeWebsiteTask,
   deleteWebsiteTask,
   prepareDeleteWebsiteTask,
+  purgeWebsiteTask,
 } from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
 
@@ -16,6 +18,11 @@ export const deleteCommand = new Command('delete')
   .description('Delete the given website from Massa blockchain')
   .argument('<address>', 'Address of the website to delete')
   .option('-y, --yes', 'Skip confirmation prompt', false)
+  .option(
+    '--purge',
+    'Also delete the Smart Contract from the blockchain',
+    false
+  )
   .action(async (address, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
@@ -30,6 +37,7 @@ export const deleteCommand = new Command('delete')
       globalMetadatas: [],
 
       skipConfirm: options.yes,
+      purge: options.purge,
     }
 
     const tasksArray = [
@@ -37,6 +45,10 @@ export const deleteCommand = new Command('delete')
       confirmDeleteWebsiteTask(),
       deleteWebsiteTask(),
     ]
+
+    if (options.purge) {
+      tasksArray.push(confirmPurgeWebsiteTask(), purgeWebsiteTask())
+    }
 
     const tasks = new Listr(tasksArray, {
       concurrent: false,
