@@ -1,0 +1,9 @@
+{
+    "author": "Massa Labs",
+    "name": "DeWeb Plugin",
+    "description": "DeWeb is your gateway to the decentralized web, enabling seamless access to websites stored on-chain from any device, anywhere in the world.",
+    "logo": "favicon.png",
+    "home": "",
+    "version": "0.0.1",
+    "apispec": ""
+}
