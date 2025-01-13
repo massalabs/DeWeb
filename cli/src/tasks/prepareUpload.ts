@@ -7,6 +7,7 @@ import {
   filesInitCost,
   sendFilesInits,
 } from '../lib/website/filesInit'
+import { LAST_UPDATE_KEY } from '../lib/website/metadata'
 import { Metadata } from '../lib/website/models/Metadata'
 
 import { UploadCtx } from './tasks'
@@ -26,7 +27,7 @@ export function prepareUploadTask(): ListrTask {
 
       const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
 
-      ctx.metadatas.push(new Metadata('LAST_UPDATE', utcNowDate.toString()))
+      ctx.metadatas.push(new Metadata(LAST_UPDATE_KEY, utcNowDate.toString()))
 
       return task.newListr(
         [
