@@ -1,6 +1,6 @@
 import { bytesToStr, CHAIN_ID, SmartContract } from '@massalabs/massa-web3'
 
-import { BUILDNET_INDEX_ADDRESS } from './const'
+import { BUILDNET_INDEX_ADDRESS, MAINNET_INDEX_ADDRESS } from './const'
 
 /**
  * Get the owner of a website using its 'OWNER' storage key
@@ -28,7 +28,7 @@ export async function getOwnerFromWebsiteSC(
 export function getSCAddress(chainId: bigint): string {
   switch (chainId) {
     case CHAIN_ID.Mainnet:
-      throw new Error('Mainnet is not supported yet')
+      return MAINNET_INDEX_ADDRESS
     case CHAIN_ID.Buildnet:
       return BUILDNET_INDEX_ADDRESS
     default:
