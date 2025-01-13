@@ -14,6 +14,8 @@ import {
   setDefaultValues,
 } from './commands/config'
 
+import { Metadata } from './lib/website/models/Metadata'
+
 const version = process.env.VERSION || 'dev'
 const defaultConfigPath = 'deweb_cli_config.json'
 
@@ -38,6 +40,8 @@ interface OptionValues {
   node_url: string
   wallet: string
   password: string
+  address: string
+  metadatas: Metadata[]
 }
 
 const commandOptions: OptionValues = program.opts() as OptionValues
