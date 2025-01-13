@@ -5,6 +5,7 @@ import { ListrTask } from 'listr2'
 import {
   batchSize,
   filesInitCost,
+  prepareCost,
   sendFilesInits,
 } from '../lib/website/filesInit'
 import { LAST_UPDATE_KEY } from '../lib/website/metadata'
@@ -20,8 +21,13 @@ export function prepareUploadTask(): ListrTask {
   return {
     title: 'Prepare upload',
     task: (ctx: UploadCtx, task) => {
-      if (ctx.fileInits.length === 0 && ctx.filesToDelete.length === 0) {
-        task.skip('All files are ready for upload')
+      if (
+        ctx.fileInits.length === 0 &&
+        ctx.filesToDelete.length === 0 &&
+        ctx.metadatas.length === 0 &&
+        ctx.metadatasToDelete.length === 0
+      ) {
+        task.skip('All files are ready for upload, and no metadata changes')
         return
       }
 
@@ -34,6 +40,19 @@ export function prepareUploadTask(): ListrTask {
           {
             title: 'Confirm SC preparation',
             task: async (ctx, subTask) => {
+              if (
+                ctx.fileInits.length !== 0 ||
+                ctx.filesToDelete.length !== 0
+              ) {
+                subTask.output = 'Files changes detected'
+              }
+              if (
+                ctx.metadatas.length !== 0 ||
+                ctx.metadatasToDelete.length !== 0
+              ) {
+                subTask.output = 'Metadata changes detected'
+              }
+
               const totalChanges =
                 ctx.fileInits.length +
                 ctx.filesToDelete.length +
@@ -41,15 +60,34 @@ export function prepareUploadTask(): ListrTask {
                 ctx.metadatasToDelete.length
               const estimatedOperations = Math.ceil(totalChanges / batchSize)
               const minimalFees = ctx.minimalFees * BigInt(estimatedOperations)
-              const cost =
-                (await filesInitCost(
-                  ctx.sc,
-                  ctx.fileInits,
-                  ctx.filesToDelete,
-                  ctx.metadatas,
-                  ctx.metadatasToDelete
-                )) + minimalFees
-              subTask.output = `SC preparation costs ${formatMas(cost)} MAS (including ${formatMas(minimalFees)} MAS of minimal fees)`
+              const {
+                filePathListCost,
+                storageCost,
+                filesToDeleteCost,
+                metadatasCost,
+                metadatasToDeleteCost,
+              } = await prepareCost(
+                ctx.sc,
+                ctx.fileInits,
+                ctx.filesToDelete,
+                ctx.metadatas,
+                ctx.metadatasToDelete
+              )
+
+              const totalCost =
+                filePathListCost +
+                storageCost -
+                filesToDeleteCost +
+                metadatasCost -
+                metadatasToDeleteCost
+
+              subTask.output = `Estimated cost of SC preparation:`
+              subTask.output = `  + Files init: ${formatMas(filePathListCost)} MAS`
+              subTask.output = `  + Storage: ${formatMas(storageCost)} MAS`
+              subTask.output = `  - Files to delete: ${formatMas(filesToDeleteCost)} MAS`
+              subTask.output = `  + Metadatas: ${formatMas(metadatasCost)} MAS`
+              subTask.output = `  - Metadatas to delete: ${formatMas(metadatasToDeleteCost)} MAS`
+              subTask.output = `SC preparation costs ${formatMas(totalCost + minimalFees)} MAS (including ${formatMas(minimalFees)} MAS of minimal fees)`
 
               if (!ctx.skipConfirm) {
                 const answer = await subTask
