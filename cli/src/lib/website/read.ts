@@ -102,32 +102,3 @@ export async function getFileFromAddress(
 
   return concatenatedArray
 }
-
-/**
- * Get the metadata of a file from the given website on Massa blockchain
- * @param provider - Provider instance
- * @param address - Address of the website
- * @param prefix - Prefix of the metadata
- * @returns - List of Metadata objects
- */
-export async function getGlobalMetadata(
-  provider: Provider,
-  address: string,
-  prefix: Uint8Array = new Uint8Array()
-): Promise<Metadata[]> {
-  const metadataKeys = await provider.getStorageKeys(
-    address,
-    globalMetadataKey(prefix)
-  )
-  const metadata = await provider.readStorage(address, metadataKeys)
-
-  return metadata.map((m, index) => {
-    const metadataKeyBytes = metadataKeys[index].slice(
-      globalMetadataKey(new Uint8Array()).length
-    )
-    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
-    const value = String.fromCharCode(...new Uint8Array(m))
-
-    return new Metadata(key, value)
-  })
-}
