@@ -5,7 +5,8 @@ import {
   SmartContract,
 } from '@massalabs/massa-web3'
 
-import { getGlobalMetadata, listFiles } from './read'
+import { listFiles } from './read'
+import { getGlobalMetadata } from './metadata'
 
 import { FileDelete } from './models/FileDelete'
 import { Metadata } from './models/Metadata'

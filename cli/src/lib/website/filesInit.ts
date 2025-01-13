@@ -10,23 +10,26 @@ import {
   strToBytes,
   U32,
 } from '@massalabs/massa-web3'
+
+import {
+  CallManager,
+  CallStatus,
+  CallUpdate,
+  FunctionCall,
+} from '../utils/callManager'
 import { storageCostForEntry } from '../utils/storage'
+import { maxBigInt } from '../utils/utils'
+import { FileDelete } from './models/FileDelete'
+
 import { FileInit } from './models/FileInit'
 import { Metadata } from './models/Metadata'
+
 import {
   FILE_TAG,
   fileChunkCountKey,
   fileLocationKey,
   globalMetadataKey,
 } from './storageKeys'
-import { FileDelete } from './models/FileDelete'
-import { maxBigInt } from '../utils/utils'
-import {
-  FunctionCall,
-  CallManager,
-  CallUpdate,
-  CallStatus,
-} from '../utils/callManager'
 
 const functionName = 'filesInit'
 export const batchSize = 32
@@ -154,13 +157,19 @@ export async function sendFilesInits(
 
 // TODO: Improve estimation
 // - If a file is already stored, we don't need to send coins for its hash storage
-export async function filesInitCost(
+export async function prepareCost(
   _: SmartContract,
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
-): Promise<bigint> {
+): Promise<{
+  filePathListCost: bigint
+  storageCost: bigint
+  filesToDeleteCost: bigint
+  metadatasCost: bigint
+  metadatasToDeleteCost: bigint
+}> {
   const filePathListCost = files.reduce((acc, chunk) => {
     return (
       acc +
@@ -210,6 +219,30 @@ export async function filesInitCost(
       )
     )
   }, 0n)
+
+  return {
+    filePathListCost,
+    storageCost,
+    filesToDeleteCost,
+    metadatasCost,
+    metadatasToDeleteCost,
+  }
+}
+
+export async function filesInitCost(
+  _sc: SmartContract,
+  files: FileInit[],
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
+): Promise<bigint> {
+  const {
+    filePathListCost,
+    storageCost,
+    filesToDeleteCost,
+    metadatasCost,
+    metadatasToDeleteCost,
+  } = await prepareCost(_sc, files, filesToDelete, metadatas, metadatasToDelete)
 
   return BigInt(
     filePathListCost +

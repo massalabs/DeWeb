@@ -13,6 +13,8 @@ import { prepareUploadTask } from '../tasks/prepareUpload'
 import { UploadCtx } from '../tasks/tasks'
 import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
+import { divideMetadata } from '../lib/website/metadata'
+import { Metadata } from '../lib/website/models/Metadata'
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
 export const uploadCommand = new Command('upload')
@@ -41,13 +43,23 @@ export const uploadCommand = new Command('upload')
       options.noIndex
     )
 
-    if (options.address) {
-      const address = options.address
+    if (options.address || globalOptions.address) {
+      const address = options.address || (globalOptions.address as string)
       console.log(`Editing website at address ${address}, no deploy needed`)
 
       validateAddress(address)
 
       ctx.sc = new SmartContract(provider, address)
+
+      const { updateRequired } = await divideMetadata(
+        ctx.provider,
+        ctx.sc.address,
+        globalOptions.metadatas as Metadata[]
+      )
+
+      ctx.metadatas.push(...updateRequired)
+    } else {
+      ctx.metadatas.push(...(globalOptions.metadatas as Metadata[]))
     }
 
     const tasksArray = [

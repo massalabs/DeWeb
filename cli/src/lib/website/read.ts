@@ -1,13 +1,11 @@
-import { Provider, U32 } from '@massalabs/massa-web3'
+import { PublicProvider, U32 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
 
 import {
   FILE_LOCATION_TAG,
   fileChunkCountKey,
   fileChunkKey,
-  globalMetadataKey,
 } from './storageKeys'
-import { Metadata } from './models/Metadata'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -15,7 +13,7 @@ import { Metadata } from './models/Metadata'
  * @returns List of file paths in the website
  */
 export async function listFiles(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string
 ): Promise<string[]> {
   const allStorageKeys = await provider.getStorageKeys(
@@ -37,7 +35,7 @@ export async function listFiles(
  * @returns Total number of chunks for the file
  */
 export async function getFileTotalChunks(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string,
   filePath: string
 ): Promise<bigint> {
@@ -69,7 +67,7 @@ export async function getFileTotalChunks(
  * @returns - Uint8Array of the file content
  */
 export async function getFileFromAddress(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string,
   filePath: string
 ): Promise<Uint8Array> {
@@ -103,33 +101,4 @@ export async function getFileFromAddress(
   }
 
   return concatenatedArray
-}
-
-/**
- * Get the metadata of a file from the given website on Massa blockchain
- * @param provider - Provider instance
- * @param address - Address of the website
- * @param prefix - Prefix of the metadata
- * @returns - List of Metadata objects
- */
-export async function getGlobalMetadata(
-  provider: Provider,
-  address: string,
-  prefix: Uint8Array = new Uint8Array()
-): Promise<Metadata[]> {
-  const metadataKeys = await provider.getStorageKeys(
-    address,
-    globalMetadataKey(prefix)
-  )
-  const metadata = await provider.readStorage(address, metadataKeys)
-
-  return metadata.map((m, index) => {
-    const metadataKeyBytes = metadataKeys[index].slice(
-      globalMetadataKey(new Uint8Array()).length
-    )
-    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
-    const value = String.fromCharCode(...new Uint8Array(m))
-
-    return new Metadata(key, value)
-  })
 }

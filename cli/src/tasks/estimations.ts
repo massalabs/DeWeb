@@ -3,11 +3,11 @@ import { ListrTask } from 'listr2'
 
 import { Batch } from '../lib/batcher'
 import { BatchStatus, UploadBatch } from '../lib/uploadManager'
+import { formatBytes } from '../lib/utils/utils'
 import { computeChunkCost } from '../lib/website/chunk'
 import { estimateUploadBatchesGas } from '../lib/website/uploadChunk'
 
 import { UploadCtx } from './tasks'
-import { formatBytes } from '../lib/utils/utils'
 
 /**
  * Create a task to estimate the cost of each batch
@@ -82,7 +82,11 @@ export function estimateGasTask(): ListrTask {
           gas: 0n,
         }))
 
-      ctx.uploadBatches = await estimateUploadBatchesGas(ctx.sc, batches)
+      ctx.uploadBatches = await estimateUploadBatchesGas(
+        ctx.provider,
+        ctx.sc.address,
+        batches
+      )
 
       const totalGas = ctx.uploadBatches.reduce(
         (sum: bigint, batch: UploadBatch) => sum + batch.gas,
