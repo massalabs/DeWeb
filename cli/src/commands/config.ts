@@ -67,5 +67,9 @@ export function setDefaultValues(commandOptions: OptionValues): OptionValues {
   return {
     node_url: commandOptions.node_url || DEFAULT_NODE_URL,
     chunk_size: commandOptions.chunk_size || DEFAULT_CHUNK_SIZE,
+    wallet: commandOptions.wallet || '',
+    password: commandOptions.password || '',
+    address: '',
+    metadatas: [],
   }
 }
