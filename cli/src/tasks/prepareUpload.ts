@@ -4,7 +4,6 @@ import { ListrTask } from 'listr2'
 
 import {
   batchSize,
-  filesInitCost,
   prepareCost,
   sendFilesInits,
 } from '../lib/website/filesInit'
