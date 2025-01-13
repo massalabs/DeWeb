@@ -4,6 +4,7 @@ import {
   MAX_GAS_CALL,
   minBigInt,
   Operation,
+  Provider,
   ReadOnlyCallResult,
   ReadOnlyParams,
   SmartContract,
@@ -80,17 +81,19 @@ export function makeArgsCoinsFromBatch(batch: Batch): {
 
 /**
  * Estimate the gas cost for each batch
- * @param sc - SmartContract instance
+ * @param provider - Provider instance
+ * @param address - Address of the smart contract
  * @param batches - the batches to estimate gas for
  * @returns the list of UploadBatch with gas estimation
  */
 export async function estimateUploadBatchesGas(
-  sc: SmartContract,
+  provider: Provider,
+  address: string,
   batches: UploadBatch[]
 ): Promise<UploadBatch[]> {
   const BATCH_SIZE = 5
 
-  const nodeURL = (await sc.provider.networkInfos()).url
+  const nodeURL = (await provider.networkInfos()).url
   if (!nodeURL) {
     throw new Error('Node URL not found')
   }
@@ -102,10 +105,10 @@ export async function estimateUploadBatchesGas(
     return {
       coins: coins,
       maxGas: MAX_GAS_CALL,
-      target: sc.address,
+      target: address,
       func: 'uploadFileChunks',
       parameter: args.serialize(),
-      caller: sc.provider.address,
+      caller: provider.address,
       fee: undefined,
     }
   })
