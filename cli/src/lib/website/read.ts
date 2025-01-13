@@ -1,13 +1,11 @@
-import { Provider, U32 } from '@massalabs/massa-web3'
+import { PublicProvider, U32 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
 
 import {
   FILE_LOCATION_TAG,
   fileChunkCountKey,
   fileChunkKey,
-  globalMetadataKey,
 } from './storageKeys'
-import { Metadata } from './models/Metadata'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -15,7 +13,7 @@ import { Metadata } from './models/Metadata'
  * @returns List of file paths in the website
  */
 export async function listFiles(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string
 ): Promise<string[]> {
   const allStorageKeys = await provider.getStorageKeys(
@@ -37,7 +35,7 @@ export async function listFiles(
  * @returns Total number of chunks for the file
  */
 export async function getFileTotalChunks(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string,
   filePath: string
 ): Promise<bigint> {
@@ -69,7 +67,7 @@ export async function getFileTotalChunks(
  * @returns - Uint8Array of the file content
  */
 export async function getFileFromAddress(
-  provider: Provider,
+  provider: PublicProvider,
   scAddress: string,
   filePath: string
 ): Promise<Uint8Array> {
