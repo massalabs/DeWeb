@@ -31,7 +31,7 @@ import { FileInit } from './serializable/FileInit';
 import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
 export { setOwner } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
-const DEWEB_VERSION = '1';
+const DEWEB_VERSION = '2';
 
 /**
  * Initializes the smart contract.
