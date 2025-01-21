@@ -66,7 +66,6 @@ export function prepareUploadTask(): ListrTask {
                 metadatasCost,
                 metadatasToDeleteCost,
               } = await prepareCost(
-                ctx.sc,
                 ctx.fileInits,
                 ctx.filesToDelete,
                 ctx.metadatas,
