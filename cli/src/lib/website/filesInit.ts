@@ -158,7 +158,6 @@ export async function sendFilesInits(
 // TODO: Improve estimation
 // - If a file is already stored, we don't need to send coins for its hash storage
 export async function prepareCost(
-  _: SmartContract,
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
@@ -242,7 +241,7 @@ export async function filesInitCost(
     filesToDeleteCost,
     metadatasCost,
     metadatasToDeleteCost,
-  } = await prepareCost(_sc, files, filesToDelete, metadatas, metadatasToDelete)
+  } = await prepareCost(files, filesToDelete, metadatas, metadatasToDelete)
 
   return BigInt(
     filePathListCost +
