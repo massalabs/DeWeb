@@ -121,7 +121,7 @@ export async function sendFilesInits(
   const operations: Operation[] = []
 
   for (const batch of batches) {
-    const coins = await batch.batchCost(sc)
+    const coins = await batch.batchCost()
     const gas = await batch.estimateGas(sc)
     const args = batch.serialize()
 
@@ -229,7 +229,6 @@ export async function prepareCost(
 }
 
 export async function filesInitCost(
-  _sc: SmartContract,
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
@@ -271,7 +270,6 @@ async function estimatePrepareGas(
   metadatasToDelete: Metadata[]
 ): Promise<bigint> {
   const coins = await filesInitCost(
-    sc,
     files,
     filesToDelete,
     metadatas,
@@ -327,9 +325,8 @@ class Batch {
       .serialize()
   }
 
-  batchCost(sc: SmartContract): Promise<bigint> {
+  batchCost(): Promise<bigint> {
     return filesInitCost(
-      sc,
       this.fileInits,
       this.fileDeletes,
       this.metadatas,
