@@ -25,7 +25,7 @@ export async function getOwnerFromWebsiteSC(
  * @param chainId - The chain id of the network to get the index smart contract address for
  * @returns The index smart contract address
  */
-export function getSCAddress(chainId: bigint): string {
+export function getIndexSCAddress(chainId: bigint): string {
   switch (chainId) {
     case CHAIN_ID.Mainnet:
       return MAINNET_INDEX_ADDRESS
