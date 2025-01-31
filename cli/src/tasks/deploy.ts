@@ -2,7 +2,7 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { formatMas } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { updateWebsite } from '../lib/index'
+import { updateIndexScWebsite } from '../lib/index'
 import { deployCost, deploySC } from '../lib/website/deploySC'
 
 import { UploadCtx } from './tasks'
@@ -70,7 +70,7 @@ export function deploySCTask(): ListrTask {
 
               subTask.output =
                 'Updating the DeWeb Index with the new SC address'
-              await updateWebsite(provider, ctx.sc.address)
+              await updateIndexScWebsite(provider, ctx.sc.address)
             },
             rendererOptions: {
               outputBar: Infinity,

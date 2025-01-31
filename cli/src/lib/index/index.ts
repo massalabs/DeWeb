@@ -10,20 +10,20 @@ import { storageCostForEntry } from '../utils/storage'
 import { updateWebsiteFunctionName } from './const'
 import { addressToOwnerBaseKey, indexByOwnerBaseKey } from './keys'
 import { getWebsiteOwner } from './read'
-import { getOwnerFromWebsiteSC, getSCAddress } from './utils'
+import { getOwnerFromWebsiteSC, getIndexSCAddress } from './utils'
 
 /**
- * Get the owner of a website using its 'OWNER' storage key
+ * Update the index smart contract with the given address of a website.
  * @param provider - The provider instance
  * @param address - The address of the website
  */
-export async function updateWebsite(
+export async function updateIndexScWebsite(
   provider: Provider,
   address: string
 ): Promise<Operation> {
   const args = new Args().addString(address)
 
-  const scAddress = getSCAddress((await provider.networkInfos()).chainId)
+  const scAddress = getIndexSCAddress((await provider.networkInfos()).chainId)
   const sc = new SmartContract(provider, scAddress)
 
   const estimatedCost = await estimateCost(sc, address)

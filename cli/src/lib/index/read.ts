@@ -1,7 +1,7 @@
 import { bytesToStr, PublicProvider } from '@massalabs/massa-web3'
 
 import { addressToOwnerBaseKey, indexByOwnerBaseKey } from './keys'
-import { getSCAddress } from './utils'
+import { getIndexSCAddress } from './utils'
 
 /**
  * Get the owner of a website according to the index smart contract.
@@ -13,7 +13,7 @@ export async function getWebsiteOwner(
   provider: PublicProvider,
   address: string
 ): Promise<string> {
-  const scAddress = getSCAddress((await provider.networkInfos()).chainId)
+  const scAddress = getIndexSCAddress((await provider.networkInfos()).chainId)
   const prefix = addressToOwnerBaseKey(address)
 
   const keys = await provider.getStorageKeys(scAddress, prefix)
@@ -36,7 +36,7 @@ export async function getAddressWebsites(
   provider: PublicProvider,
   owner: string
 ): Promise<string[]> {
-  const scAddress = getSCAddress((await provider.networkInfos()).chainId)
+  const scAddress = getIndexSCAddress((await provider.networkInfos()).chainId)
   const prefix = indexByOwnerBaseKey(owner)
 
   const keys = await provider.getStorageKeys(scAddress, prefix)
