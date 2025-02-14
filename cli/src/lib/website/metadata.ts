@@ -84,15 +84,10 @@ export async function setGlobalMetadata(
   address: string,
   metadatas: Metadata[]
 ): Promise<Operation> {
-  const storedGlobalMetadata = await getGlobalMetadata(provider, address)
-  const changedKeys = metadatas.filter(
-    (metadata) =>
-      !storedGlobalMetadata.some(
-        (storedMetadata) => storedMetadata.key === metadata.key
-      )
-  )
+  const { updateRequired } = await divideMetadata(provider, address, metadatas)
+
   const encoder = new TextEncoder()
-  const coins = changedKeys.reduce(
+  const coins = updateRequired.reduce(
     (sum, metadata) =>
       sum +
       storageCostForEntry(
