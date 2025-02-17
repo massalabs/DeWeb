@@ -392,9 +392,12 @@ export async function filterUselessFileInits(
     )
 
     for (let i = 0; i < batch.length; i++) {
+      if (!results[i]) {
+        throw new Error(`Could not retrieve totalChunk data entry for file ${batch[i].preStore.location}`);
+      }
       if (
-        results[i].length !== U32.SIZE_BYTE ||
-        U32.fromBytes(results[i]) !== batch[i].preStore.totalChunk
+        (results[i] as Uint8Array).length !== U32.SIZE_BYTE ||
+        U32.fromBytes(results[i] as Uint8Array) !== batch[i].preStore.totalChunk
       ) {
         fileInitsToKeep.push(batch[i].preStore)
       }
