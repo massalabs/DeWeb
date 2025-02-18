@@ -37,9 +37,9 @@ export async function getGlobalMetadata(
     const metadataKeyBytes = metadataKeys[index].slice(
       GLOBAL_METADATA_TAG.length
     )
-    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes));
+    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
     if (!m) {
-      throw new Error(`Global metadata with key ${key} has empty value`);
+      throw new Error(`Global metadata with key ${key} has empty value`)
     }
     const value = String.fromCharCode(...new Uint8Array(m))
 

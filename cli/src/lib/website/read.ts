@@ -23,12 +23,11 @@ export async function listFiles(
   const fileLocations = await provider.readStorage(scAddress, allStorageKeys)
 
   return fileLocations.map((location, i) => {
-      if (!location) {
-        throw new Error(`File location not found at index ${i}`);
-      }
-      return String.fromCharCode(...new Uint8Array(location));
+    if (!location) {
+      throw new Error(`File location not found at index ${i}`)
     }
-  );
+    return String.fromCharCode(...new Uint8Array(location))
+  })
 }
 
 /**
@@ -87,15 +86,15 @@ export async function getFileFromAddress(
     datastoreKeys.push(fileChunkKey(new Uint8Array(filePathHash), i))
   }
 
-  const rawChunks = (await provider.readStorage(scAddress, datastoreKeys))
-    .map( // allow to return Uint8Array[] instead of (Uint8Array | null)[]
-      (chunk, i) => {
-        if (!chunk) {
-          throw new Error(`file ${filePath} Chunk ${i} not found`);
-        }
-        return chunk;
+  const rawChunks = (await provider.readStorage(scAddress, datastoreKeys)).map(
+    // allow to return Uint8Array[] instead of (Uint8Array | null)[]
+    (chunk, i) => {
+      if (!chunk) {
+        throw new Error(`file ${filePath} Chunk ${i} not found`)
       }
-    );
+      return chunk
+    }
+  )
 
   const totalLength = rawChunks.reduce((acc, chunk) => acc + chunk.length, 0)
   const concatenatedArray = new Uint8Array(totalLength)
