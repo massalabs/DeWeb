@@ -375,8 +375,8 @@ export async function filterUselessFileInits(
 
   const fileInitsToKeep: FileInit[] = []
 
+  const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
   for (const batch of batches) {
-    const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
 
     // Remove missing keys from the batch and add them to the list of files to keep
     for (let i = batch.length - 1; i >= 0; i--) {
@@ -392,14 +392,11 @@ export async function filterUselessFileInits(
     )
 
     for (let i = 0; i < batch.length; i++) {
-      if (!results[i]) {
-        throw new Error(
-          `Could not retrieve totalChunk data entry for file ${batch[i].preStore.location}`
-        )
-      }
+      const chunkData = results[i];
       if (
-        (results[i] as Uint8Array).length !== U32.SIZE_BYTE ||
-        U32.fromBytes(results[i] as Uint8Array) !== batch[i].preStore.totalChunk
+        !chunkData ||
+        chunkData.length !== U32.SIZE_BYTE ||
+        U32.fromBytes(chunkData) !== batch[i].preStore.totalChunk
       ) {
         fileInitsToKeep.push(batch[i].preStore)
       }

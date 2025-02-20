@@ -20,7 +20,10 @@ export async function prepareDeleteWebsite(sc: SmartContract): Promise<{
   fileDeletes: FileDelete[]
   globalMetadatas: Metadata[]
 }> {
-  const filePaths = await listFiles(sc.provider, sc.address)
+  const {files: filePaths, notFoundKeys} = await listFiles(sc.provider, sc.address)
+  if (notFoundKeys.length > 0) {
+    throw new Error('Could not retrieve the file location value of some location storage keys: ' + notFoundKeys)
+  }
   const globalMetadatas = await getGlobalMetadata(sc.provider, sc.address)
 
   const fileDeletes = filePaths.map((filePath) => new FileDelete(filePath))

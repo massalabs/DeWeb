@@ -15,19 +15,25 @@ import {
 export async function listFiles(
   provider: PublicProvider,
   scAddress: string
-): Promise<string[]> {
+): Promise<{ files: string[], notFoundKeys: Uint8Array[] }> {
   const allStorageKeys = await provider.getStorageKeys(
     scAddress,
     FILE_LOCATION_TAG
   )
   const fileLocations = await provider.readStorage(scAddress, allStorageKeys)
 
-  return fileLocations.map((location, i) => {
+  const files: string[] = []
+  const notFoundKeys: Uint8Array[] = []
+
+  fileLocations.forEach((location, i) => {
     if (!location) {
-      throw new Error(`File location not found at index ${i}`)
+      notFoundKeys.push(allStorageKeys[i])
+    } else {
+      files.push(String.fromCharCode(...new Uint8Array(location)))
     }
-    return String.fromCharCode(...new Uint8Array(location))
   })
+
+  return { files, notFoundKeys }
 }
 
 /**
@@ -89,7 +95,7 @@ export async function getFileFromAddress(
   const rawChunks = (await provider.readStorage(scAddress, datastoreKeys)).map(
     // allow to return Uint8Array[] instead of (Uint8Array | null)[]
     (chunk, i) => {
-      if (!chunk) {
+      if (!chunk || chunk.length === 0) {
         throw new Error(`file ${filePath} Chunk ${i} not found`)
       }
       return chunk
