@@ -36,9 +36,15 @@ export function prepareBatchesTask(): ListrTask {
       )
 
       if (ctx.sc) {
-        const {files: filesInSC, notFoundKeys} = await listFiles(ctx.provider, ctx.sc.address)
+        const { files: filesInSC, notFoundKeys } = await listFiles(
+          ctx.provider,
+          ctx.sc.address
+        )
         if (notFoundKeys.length > 0) {
-          throw new Error('Could not retrieve the file location value of some location storage keys: ' + notFoundKeys)
+          throw new Error(
+            'Could not retrieve the file location value of some location storage keys: ' +
+              notFoundKeys
+          )
         }
         ctx.filesToDelete = filesInSC
           .filter((file) => !localFiles.includes(file))

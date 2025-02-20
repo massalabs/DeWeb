@@ -29,10 +29,13 @@ export const listFilesCommand = new Command('list')
 
     console.log('Targeting website at address', sc.address)
 
-    const {files, notFoundKeys} = await listFiles(provider, sc.address)
+    const { files, notFoundKeys } = await listFiles(provider, sc.address)
     console.log(`Total of ${files.length} files:`)
     files.sort().forEach((f) => console.log(f))
     if (notFoundKeys.length > 0) {
-      console.error('Could not retrieve the file location value of some location storage keys: ', notFoundKeys)
+      console.error(
+        'Could not retrieve the file location value of some location storage keys: ',
+        notFoundKeys
+      )
     }
   })

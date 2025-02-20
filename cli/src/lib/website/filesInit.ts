@@ -377,7 +377,6 @@ export async function filterUselessFileInits(
 
   const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
   for (const batch of batches) {
-
     // Remove missing keys from the batch and add them to the list of files to keep
     for (let i = batch.length - 1; i >= 0; i--) {
       if (!keys.includes(batch[i].totalChunkKey)) {
@@ -392,7 +391,7 @@ export async function filterUselessFileInits(
     )
 
     for (let i = 0; i < batch.length; i++) {
-      const chunkData = results[i];
+      const chunkData = results[i]
       if (
         !chunkData ||
         chunkData.length !== U32.SIZE_BYTE ||

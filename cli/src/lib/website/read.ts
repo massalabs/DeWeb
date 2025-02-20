@@ -15,7 +15,7 @@ import {
 export async function listFiles(
   provider: PublicProvider,
   scAddress: string
-): Promise<{ files: string[], notFoundKeys: Uint8Array[] }> {
+): Promise<{ files: string[]; notFoundKeys: Uint8Array[] }> {
   const allStorageKeys = await provider.getStorageKeys(
     scAddress,
     FILE_LOCATION_TAG
