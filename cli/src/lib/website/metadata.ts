@@ -6,7 +6,7 @@ import {
 } from '@massalabs/massa-web3'
 import { storageCostForEntry } from '../utils/storage'
 import { Metadata } from './models/Metadata'
-import { globalMetadataKey } from './storageKeys'
+import { globalMetadataKey, GLOBAL_METADATA_TAG } from './storageKeys'
 
 const SET_GLOBAL_METADATA_FUNCTION = 'setMetadataGlobal'
 
@@ -35,9 +35,12 @@ export async function getGlobalMetadata(
 
   return metadata.map((m, index) => {
     const metadataKeyBytes = metadataKeys[index].slice(
-      globalMetadataKey(new Uint8Array()).length
+      GLOBAL_METADATA_TAG.length
     )
     const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
+    if (!m) {
+      return new Metadata(key)
+    }
     const value = String.fromCharCode(...new Uint8Array(m))
 
     return new Metadata(key, value)

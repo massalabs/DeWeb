@@ -3,7 +3,7 @@ linters:
     - wsl
 
 issues:
-  exclude-dirs:
+  exclude-dirs: []
 
 linters-settings:
   wsl:

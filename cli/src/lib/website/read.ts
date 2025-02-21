@@ -15,16 +15,25 @@ import {
 export async function listFiles(
   provider: PublicProvider,
   scAddress: string
-): Promise<string[]> {
+): Promise<{ files: string[]; notFoundKeys: Uint8Array[] }> {
   const allStorageKeys = await provider.getStorageKeys(
     scAddress,
     FILE_LOCATION_TAG
   )
   const fileLocations = await provider.readStorage(scAddress, allStorageKeys)
 
-  return fileLocations.map((location) =>
-    String.fromCharCode(...new Uint8Array(location))
-  )
+  const files: string[] = []
+  const notFoundKeys: Uint8Array[] = []
+
+  fileLocations.forEach((location, i) => {
+    if (!location) {
+      notFoundKeys.push(allStorageKeys[i])
+    } else {
+      files.push(String.fromCharCode(...new Uint8Array(location)))
+    }
+  })
+
+  return { files, notFoundKeys }
 }
 
 /**
@@ -44,7 +53,7 @@ export async function getFileTotalChunks(
     fileChunkCountKey(new Uint8Array(filePathHash)),
   ])
 
-  if (fileTotalChunksResp.length !== 1) {
+  if (fileTotalChunksResp.length !== 1 || !fileTotalChunksResp[0]) {
     throw new Error('Invalid response from getDatastoreEntries')
   }
 
@@ -83,13 +92,15 @@ export async function getFileFromAddress(
     datastoreKeys.push(fileChunkKey(new Uint8Array(filePathHash), i))
   }
 
-  const rawChunks = await provider.readStorage(scAddress, datastoreKeys)
-
-  for (let i = 0; i < rawChunks.length; i++) {
-    if (rawChunks[i].length === 0) {
-      throw new Error(`file ${filePath} Chunk ${i} not found`)
+  const rawChunks = (await provider.readStorage(scAddress, datastoreKeys)).map(
+    // allow to return Uint8Array[] instead of (Uint8Array | null)[]
+    (chunk, i) => {
+      if (!chunk || chunk.length === 0) {
+        throw new Error(`file ${filePath} Chunk ${i} not found`)
+      }
+      return chunk
     }
-  }
+  )
 
   const totalLength = rawChunks.reduce((acc, chunk) => acc + chunk.length, 0)
   const concatenatedArray = new Uint8Array(totalLength)

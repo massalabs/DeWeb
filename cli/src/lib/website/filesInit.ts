@@ -375,9 +375,8 @@ export async function filterUselessFileInits(
 
   const fileInitsToKeep: FileInit[] = []
 
+  const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
   for (const batch of batches) {
-    const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
-
     // Remove missing keys from the batch and add them to the list of files to keep
     for (let i = batch.length - 1; i >= 0; i--) {
       if (!keys.includes(batch[i].totalChunkKey)) {
@@ -392,9 +391,11 @@ export async function filterUselessFileInits(
     )
 
     for (let i = 0; i < batch.length; i++) {
+      const chunkData = results[i]
       if (
-        results[i].length !== U32.SIZE_BYTE ||
-        U32.fromBytes(results[i]) !== batch[i].preStore.totalChunk
+        !chunkData ||
+        chunkData.length !== U32.SIZE_BYTE ||
+        U32.fromBytes(chunkData) !== batch[i].preStore.totalChunk
       ) {
         fileInitsToKeep.push(batch[i].preStore)
       }
