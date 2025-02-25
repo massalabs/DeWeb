@@ -1,9 +1,9 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { formatMas } from '@massalabs/massa-web3'
+import { formatMas, StorageCost } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { updateIndexScWebsite } from '../lib/index'
-import { deployCost, deploySC } from '../lib/website/deploySC'
+import { updateIndexScWebsite } from '../lib/index/index'
+import { deploySC, deployCost } from '../lib/website/deploySC'
 
 import { UploadCtx } from './tasks'
 
@@ -18,6 +18,8 @@ export function deploySCTask(): ListrTask {
     task: (ctx: UploadCtx, task) => {
       const provider = ctx.provider
 
+      const deploymentCosts = deployCost(provider, ctx.minimalFees);
+
       return task.newListr(
         [
           {
@@ -26,7 +28,7 @@ export function deploySCTask(): ListrTask {
               subTask.output =
                 'Smart contract is not deployed yet, it is required to continue.'
               subTask.output =
-                `Deploying the DeWeb smart contract costs ${formatMas(deployCost(provider) + ctx.minimalFees)} MAS` +
+                `Deploying the DeWeb smart contract costs ${formatMas(deploymentCosts)} MAS` +
                 ` (including ${formatMas(ctx.minimalFees)} MAS of minimal fees)`
 
               if (!ctx.skipConfirm) {
@@ -51,8 +53,6 @@ export function deploySCTask(): ListrTask {
             title: 'Deploy the smart contract',
             task: async (ctx, subTask) => {
               ctx.sc = await deploySC(provider)
-              ctx.currentTotalEstimation +=
-                deployCost(provider) + ctx.minimalFees
               subTask.output = `Deployed SC at ${ctx.sc.address}`
             },
             rendererOptions: {

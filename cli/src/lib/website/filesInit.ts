@@ -34,6 +34,23 @@ import {
 const functionName = 'filesInit'
 export const batchSize = 32
 
+const VALUE_SIZE_ENCODER_SIZE = 4 // u32 encoding the size in byte of the value
+
+export function getFileInitBatchLen(
+  files: FileInit[],
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
+): number{
+  const longestField = Math.max(
+    files.length,
+    filesToDelete.length,
+    metadatas.length,
+    metadatasToDelete.length
+  );
+  return Math.ceil(longestField / batchSize);
+}
+
 /**
  * Divide the files, filesToDelete, metadatas, and metadatasToDelete into multiple batches
  * @param files - Array of FileInit instances
@@ -50,45 +67,41 @@ function createBatches(
   metadatasToDelete: Metadata[]
 ): Batch[] {
   const batches: Batch[] = []
+  let fileInitIndex = 0
+  let fileDeleteIndex = 0
+  let metadataIndex = 0
+  let metadataDeleteIndex = 0
 
-  let currentBatch = new Batch([], [], [], [])
+  while (
+    fileInitIndex < files.length ||
+    fileDeleteIndex < filesToDelete.length ||
+    metadataIndex < metadatas.length ||
+    metadataDeleteIndex < metadatasToDelete.length
+  ) {
+    let currentBatch = new Batch([], [], [], [])
 
-  const addBatch = () => {
-    if (Object.values(currentBatch).some((v) => v.length > 0)) {
-      batches.push(currentBatch)
-      currentBatch = new Batch([], [], [], [])
+    while (currentBatch.fileInits.length < batchSize && fileInitIndex < files.length) {
+      currentBatch.fileInits.push(files[fileInitIndex])
+      fileInitIndex++
     }
-  }
 
-  for (const file of files) {
-    if (currentBatch.fileInits.length >= batchSize) {
-      addBatch()
+    while (currentBatch.fileDeletes.length < batchSize && fileDeleteIndex < filesToDelete.length) {
+      currentBatch.fileDeletes.push(filesToDelete[fileDeleteIndex])
+      fileDeleteIndex++
     }
-    currentBatch.fileInits.push(file)
-  }
 
-  for (const fileDelete of filesToDelete) {
-    if (currentBatch.fileDeletes.length >= batchSize) {
-      addBatch()
+    while (currentBatch.metadatas.length < batchSize && metadataIndex < metadatas.length) {
+      currentBatch.metadatas.push(metadatas[metadataIndex])
+      metadataIndex++
     }
-    currentBatch.fileDeletes.push(fileDelete)
-  }
 
-  for (const metadata of metadatas) {
-    if (currentBatch.metadatas.length >= batchSize) {
-      addBatch()
+    while (currentBatch.metadataDeletes.length < batchSize && metadataDeleteIndex < metadatasToDelete.length) {
+      currentBatch.metadataDeletes.push(metadatasToDelete[metadataDeleteIndex])
+      metadataDeleteIndex++
     }
-    currentBatch.metadatas.push(metadata)
-  }
 
-  for (const metadataDelete of metadatasToDelete) {
-    if (currentBatch.metadataDeletes.length >= batchSize) {
-      addBatch()
-    }
-    currentBatch.metadataDeletes.push(metadataDelete)
+    batches.push(currentBatch)
   }
-
-  addBatch()
 
   return batches
 }
@@ -155,8 +168,9 @@ export async function sendFilesInits(
   return operations
 }
 
-// TODO: Improve estimation
-// - If a file is already stored, we don't need to send coins for its hash storage
+/*prepareCost compute all storage cost related to fileInit operation.
+It doesn't check if the files and metadata are already stored in the smart contract.
+ */
 export async function prepareCost(
   files: FileInit[],
   filesToDelete: FileDelete[],
@@ -174,7 +188,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(fileLocationKey(chunk.hashLocation).length),
-        BigInt(chunk.location.length + 4)
+        BigInt(chunk.location.length + VALUE_SIZE_ENCODER_SIZE)
       )
     )
   }, 0n)
@@ -204,7 +218,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + 4)
+        BigInt(metadata.value.length + VALUE_SIZE_ENCODER_SIZE)
       )
     )
   }, 0n)
@@ -214,7 +228,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + 4)
+        BigInt(metadata.value.length + VALUE_SIZE_ENCODER_SIZE)
       )
     )
   }, 0n)
