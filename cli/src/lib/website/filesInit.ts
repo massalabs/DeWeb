@@ -34,8 +34,6 @@ import {
 const functionName = 'filesInit'
 export const batchSize = 32
 
-const VALUE_SIZE_ENCODER_SIZE = 4 // u32 encoding the size in byte of the value
-
 export function getFileInitBatchLen(
   files: FileInit[],
   filesToDelete: FileDelete[],
@@ -180,7 +178,9 @@ export async function sendFilesInits(
   return operations
 }
 
-/* prepareCost compute all storage cost related to fileInit operation.
+/* TODO: Improve estimation
+If a file is already stored, we don't need to send coins for its hash storage
+PrepareCost compute all storage cost related to fileInit operation.
 It doesn't check if the files and metadata are already stored in the smart contract.
  */
 export async function prepareCost(
@@ -200,7 +200,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(fileLocationKey(chunk.hashLocation).length),
-        BigInt(chunk.location.length + VALUE_SIZE_ENCODER_SIZE)
+        BigInt(chunk.location.length + U32.SIZE_BYTE)
       )
     )
   }, 0n)
@@ -230,7 +230,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + VALUE_SIZE_ENCODER_SIZE)
+        BigInt(metadata.value.length + U32.SIZE_BYTE)
       )
     )
   }, 0n)
@@ -240,7 +240,7 @@ export async function prepareCost(
       acc +
       storageCostForEntry(
         BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + VALUE_SIZE_ENCODER_SIZE)
+        BigInt(metadata.value.length + U32.SIZE_BYTE)
       )
     )
   }, 0n)
