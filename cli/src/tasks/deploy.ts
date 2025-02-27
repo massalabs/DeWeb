@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { formatMas, StorageCost } from '@massalabs/massa-web3'
+import { formatMas } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
 import { updateIndexScWebsite } from '../lib/index/index'
@@ -18,7 +18,7 @@ export function deploySCTask(): ListrTask {
     task: (ctx: UploadCtx, task) => {
       const provider = ctx.provider
 
-      const deploymentCosts = deployCost(provider, ctx.minimalFees);
+      const deploymentCosts = deployCost(provider, ctx.minimalFees)
 
       return task.newListr(
         [

@@ -41,14 +41,14 @@ export function getFileInitBatchLen(
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
-): number{
+): number {
   const longestField = Math.max(
     files.length,
     filesToDelete.length,
     metadatas.length,
     metadatasToDelete.length
-  );
-  return Math.ceil(longestField / batchSize);
+  )
+  return Math.ceil(longestField / batchSize)
 }
 
 /**
@@ -80,22 +80,34 @@ function createBatches(
   ) {
     let currentBatch = new Batch([], [], [], [])
 
-    while (currentBatch.fileInits.length < batchSize && fileInitIndex < files.length) {
+    while (
+      currentBatch.fileInits.length < batchSize &&
+      fileInitIndex < files.length
+    ) {
       currentBatch.fileInits.push(files[fileInitIndex])
       fileInitIndex++
     }
 
-    while (currentBatch.fileDeletes.length < batchSize && fileDeleteIndex < filesToDelete.length) {
+    while (
+      currentBatch.fileDeletes.length < batchSize &&
+      fileDeleteIndex < filesToDelete.length
+    ) {
       currentBatch.fileDeletes.push(filesToDelete[fileDeleteIndex])
       fileDeleteIndex++
     }
 
-    while (currentBatch.metadatas.length < batchSize && metadataIndex < metadatas.length) {
+    while (
+      currentBatch.metadatas.length < batchSize &&
+      metadataIndex < metadatas.length
+    ) {
       currentBatch.metadatas.push(metadatas[metadataIndex])
       metadataIndex++
     }
 
-    while (currentBatch.metadataDeletes.length < batchSize && metadataDeleteIndex < metadatasToDelete.length) {
+    while (
+      currentBatch.metadataDeletes.length < batchSize &&
+      metadataDeleteIndex < metadatasToDelete.length
+    ) {
       currentBatch.metadataDeletes.push(metadatasToDelete[metadataDeleteIndex])
       metadataDeleteIndex++
     }
@@ -168,7 +180,7 @@ export async function sendFilesInits(
   return operations
 }
 
-/*prepareCost compute all storage cost related to fileInit operation.
+/* prepareCost compute all storage cost related to fileInit operation.
 It doesn't check if the files and metadata are already stored in the smart contract.
  */
 export async function prepareCost(

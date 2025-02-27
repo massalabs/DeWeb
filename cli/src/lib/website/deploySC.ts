@@ -29,7 +29,9 @@ export function deployCoin(provider: Provider): bigint {
 
 /* deployStorageCost compute the total cost for deploying Deweb SC. */
 export function deployCost(provider: Provider, minimalFees: bigint): bigint {
-  return deployCoin(provider) + // cost for storing Deweb SC initialization data in the ledger
+  return (
+    deployCoin(provider) + // cost for storing Deweb SC initialization data in the ledger
     StorageCost.smartContract(DEWEB_VERSION_TAG.length) + // Deweb SC bytecode storage cost
-    minimalFees // deployment operation fees
+    minimalFees
+  ) // deployment operation fees
 }
