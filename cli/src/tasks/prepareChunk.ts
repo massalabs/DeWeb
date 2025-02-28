@@ -36,6 +36,8 @@ export function prepareBatchesTask(): ListrTask {
       )
 
       if (ctx.sc) {
+        // If the smart contract is already deployed
+        // Retreive all the files in the smart contract
         const { files: filesInSC, notFoundKeys } = await listFiles(
           ctx.provider,
           ctx.sc.address

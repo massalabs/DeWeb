@@ -8,6 +8,7 @@ import { computeChunkCost } from '../lib/website/chunk'
 import { estimateUploadBatchesGas } from '../lib/website/uploadChunk'
 
 import { UploadCtx } from './tasks'
+import { deployCost } from '../lib/website/deploySC'
 
 /**
  * Create a task to estimate the cost of each batch
@@ -40,18 +41,21 @@ export function showEstimatedCost(): ListrTask {
 
       const opFees = ctx.minimalFees * BigInt(ctx.batches.length)
 
+      ctx.currentTotalEstimation += opFees
+      ctx.currentTotalEstimation += totalEstimatedGas
+      if (!ctx.sc) {
+        ctx.currentTotalEstimation += deployCost(ctx.provider, ctx.minimalFees)
+      }
+
       task.output = `${ctx.batches.length} batches found for a total of ${formatBytes(totalBytes)}`
-      task.output = `Total estimated cost: ${formatMas(totalEstimatedGas + opFees)} MAS (with ${formatMas(opFees)} MAS of operation fees)`
+      task.output = `Total estimated cost: ${formatMas(ctx.currentTotalEstimation)} MAS (with ${formatMas(opFees)} MAS of operation fees)`
 
       const finalBalance = await ctx.provider.balance(true)
-      if (finalBalance < opFees) {
+      if (finalBalance < ctx.currentTotalEstimation) {
         throw new Error(
           'Final balance is not enough to cover the operation fees'
         )
       }
-
-      ctx.currentTotalEstimation += opFees
-      ctx.currentTotalEstimation += totalEstimatedGas
     },
     rendererOptions: {
       outputBar: Infinity,
@@ -93,7 +97,6 @@ export function estimateGasTask(): ListrTask {
         0n
       )
       task.output = `Total gas cost: ${formatMas(totalGas)} MAS`
-      ctx.currentTotalEstimation += totalGas
     },
     rendererOptions: {
       outputBar: Infinity,

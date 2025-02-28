@@ -26,7 +26,7 @@ export async function updateIndexScWebsite(
   const scAddress = getIndexSCAddress((await provider.networkInfos()).chainId)
   const sc = new SmartContract(provider, scAddress)
 
-  const estimatedCost = await estimateCost(sc, address)
+  const estimatedCost = await estimateIndexerCost(sc, address)
 
   return sc.call(updateWebsiteFunctionName, args, {
     coins: estimatedCost,
@@ -37,7 +37,7 @@ export async function updateIndexScWebsite(
  * Estimate the cost in coins to update a website.
  * @param sc - The smart contract instance
  */
-async function estimateCost(
+export async function estimateIndexerCost(
   sc: SmartContract,
   address: string
 ): Promise<Mas.Mas> {

@@ -6,7 +6,7 @@ import { getFileFromAddress } from '../lib/website/read'
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
 export const showFileCommand = new Command('show')
-  .description('Lists files from the given website on Massa blockchain')
+  .description('Show a file from the given website on Massa blockchain')
   .argument('<file_path>', 'Path of the file to show')
   .option('-a, --address <address>', 'Address of the website to edit')
   .action(async (filePath, options, command) => {
