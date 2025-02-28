@@ -61,6 +61,7 @@ export async function getWebsiteMetadata(
   title: string
   description: string
   keywords: string[]
+  lastUpdate: string
 }> {
   const metadata = await getGlobalMetadata(provider, address)
 
@@ -73,7 +74,14 @@ export async function getWebsiteMetadata(
     .sort()
     .map((m) => m.value)
 
-  return { title: title ?? '', description: description ?? '', keywords }
+  const lastUpdate = metadata.find((m) => m.key === LAST_UPDATE_KEY)?.value
+
+  return {
+    title: title ?? '',
+    description: description ?? '',
+    keywords,
+    lastUpdate: lastUpdate ?? '',
+  }
 }
 
 /**
