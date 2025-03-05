@@ -35,8 +35,12 @@ export function prepareBatchesTask(): ListrTask {
         ctx.sc
       )
 
-      if (ctx.sc) {
-        // If the smart contract is already deployed
+      // check that the provided website directory has correct format
+      if (!localFiles.includes('index.html')) {
+        throw new Error('No index.html file found at website directory root')
+      }
+
+      if (ctx.sc) { // If the smart contract is already deployed
         // Retreive all the files in the smart contract
         const { files: filesInSC, notFoundKeys } = await listFiles(
           ctx.provider,
@@ -88,6 +92,7 @@ export function prepareBatchesTask(): ListrTask {
  * @param path - the path to the website directory
  * @param chunkSize - the maximum size of each chunk
  * @param basePath - the base path to compute relative paths (optional)
+
  */
 async function prepareChunks(
   provider: Provider,
