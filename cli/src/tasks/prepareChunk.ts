@@ -37,7 +37,7 @@ export function prepareBatchesTask(): ListrTask {
 
       // check that the provided website directory has correct format
       if (!localFiles.includes('index.html')) {
-        throw new Error('No index.html file found at website directory root')
+        throw new Error('Missing \'index.html\' in the source directory.')
       }
 
       if (ctx.sc) { // If the smart contract is already deployed
