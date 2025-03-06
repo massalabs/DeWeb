@@ -37,10 +37,11 @@ export function prepareBatchesTask(): ListrTask {
 
       // check that the provided website directory has correct format
       if (!localFiles.includes('index.html')) {
-        throw new Error('Missing \'index.html\' in the source directory.')
+        throw new Error("Missing 'index.html' in the source directory.")
       }
 
-      if (ctx.sc) { // If the smart contract is already deployed
+      // If the smart contract is already deployed
+      if (ctx.sc) {
         // Retreive all the files in the smart contract
         const { files: filesInSC, notFoundKeys } = await listFiles(
           ctx.provider,
