@@ -25,6 +25,11 @@ export const uploadCommand = new Command('upload')
   .option('-s, --chunkSize <size>', 'Chunk size in bytes')
   .option('-y, --yes', 'Skip confirmation prompt', false)
   .option('--noIndex', 'Skip DeWeb index update', false)
+  .option(
+    '--skip-index-html-check',
+    'Skip the check for index.html. Use if you really want to publish a non working website',
+    false
+  )
   .action(async (websiteDirPath, options, command) => {
     const globalOptions = command.optsWithGlobals()
 
@@ -40,9 +45,11 @@ export const uploadCommand = new Command('upload')
       chunkSize,
       websiteDirPath,
       options.yes,
-      options.noIndex
+      options.noIndex,
+      options.skipIndexHtmlCheck
     )
 
+    // if we edit an already deployed website
     if (options.address || globalOptions.address) {
       const address = options.address || (globalOptions.address as string)
       console.log(`Editing website at address ${address}, no deploy needed`)
@@ -91,7 +98,8 @@ async function createUploadCtx(
   chunkSize: number,
   websiteDirPath: string,
   skipConfirm: boolean,
-  noIndex: boolean
+  noIndex: boolean,
+  skipIndexHtmlCheck: boolean
 ): Promise<UploadCtx> {
   return {
     provider: provider,
@@ -106,6 +114,7 @@ async function createUploadCtx(
     websiteDirPath: websiteDirPath,
     skipConfirm: skipConfirm,
     noIndex: noIndex,
+    skipIndexHtmlCheck: skipIndexHtmlCheck,
     currentTotalEstimation: 0n,
     maxConcurrentOps: 4,
     minimalFees: await provider.client.getMinimalFee(),

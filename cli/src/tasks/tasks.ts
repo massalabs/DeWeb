@@ -12,6 +12,7 @@ export interface UploadCtx {
   sc?: SmartContract
 
   noIndex: boolean
+  skipIndexHtmlCheck: boolean
   skipConfirm: boolean
   websiteDirPath: string
   currentTotalEstimation: bigint
