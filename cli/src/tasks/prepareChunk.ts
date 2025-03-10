@@ -36,7 +36,7 @@ export function prepareBatchesTask(): ListrTask {
       )
 
       // check that the provided website directory has correct format
-      if (!localFiles.includes('index.html')) {
+      if (!ctx.skipIndexHtmlCheck && !localFiles.includes('index.html')) {
         throw new Error("Missing 'index.html' in the source directory.")
       }
 
@@ -93,7 +93,6 @@ export function prepareBatchesTask(): ListrTask {
  * @param path - the path to the website directory
  * @param chunkSize - the maximum size of each chunk
  * @param basePath - the base path to compute relative paths (optional)
-
  */
 async function prepareChunks(
   provider: Provider,
