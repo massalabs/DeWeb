@@ -58,7 +58,7 @@ export function getFileInitBatchLen(
  * @param batchSize - Maximum number of elements in each batch
  * @returns - Array of Batch instances
  */
-function createBatches(
+export function createBatches(
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
@@ -155,7 +155,7 @@ export async function sendFilesInits(
       options: {
         coins: coins <= 0n ? 0n : coins,
         maxGas: gas,
-        fee: gas > minimalFees ? gas : minimalFees,
+        fee: minimalFees,
       },
     })
   }
