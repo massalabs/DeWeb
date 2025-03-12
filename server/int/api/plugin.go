@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"net/http"
 
 	"github.com/go-openapi/loads"
@@ -16,9 +18,10 @@ type PluginAPI struct {
 	conf      *config.ServerConfig
 	apiServer *restapi.Server
 	dewebAPI  *operations.DeWebAPI
+	homeZip   []byte
 }
 
-func NewPluginAPI(conf *config.ServerConfig) *PluginAPI {
+func NewPluginAPI(conf *config.ServerConfig, homeZip []byte) *PluginAPI {
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
 		log.Fatalln(err)
@@ -31,6 +34,7 @@ func NewPluginAPI(conf *config.ServerConfig) *PluginAPI {
 		conf:      conf,
 		apiServer: server,
 		dewebAPI:  dewebAPI,
+		homeZip:   homeZip,
 	}
 }
 
@@ -48,12 +52,15 @@ func (a *PluginAPI) Start() {
 
 	a.apiServer.ConfigureAPI()
 
-	a.apiServer.SetHandler(StationMiddleware(SubdomainMiddleware(a.dewebAPI.Serve(nil), a.conf)))
+	a.apiServer.SetHandler(StationMiddleware(SubdomainMiddleware(a.dewebAPI.Serve(nil), a.conf), a.homeZip, a.conf))
 
 	listener, err := a.apiServer.HTTPListener()
 	if err != nil {
 		logger.Fatalf("Failed to get HTTP listener: %v", err)
 	}
+
+	// We get the port from the listener in case the port was set to 0 and the OS assigned a port
+	a.conf.APIPort = listener.Addr().(*net.TCPAddr).Port
 
 	if err := plugin.RegisterPlugin(listener); err != nil {
 		logger.Fatalf("Failed to register plugin: %v", err)
@@ -70,14 +77,11 @@ func (a *PluginAPI) configurePluginAPI() {
 		log.Printf("ServeError: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-
-	a.dewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getResourceHandler)
-	a.dewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(defaultPageHandler)
 }
 
 // StationMiddleware handles station website serving.
 // It is used by the plugin to serve massastation plugin page if the request domain is `station.massa`.
-func StationMiddleware(handler http.Handler) http.Handler {
+func StationMiddleware(handler http.Handler, homePageZip []byte, conf *config.ServerConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("StationMiddleware: Handling request for %s", r.Host)
 
@@ -90,8 +94,20 @@ func StationMiddleware(handler http.Handler) http.Handler {
 
 		path := cleanPath(r.URL.Path)
 
+		// FIXME: Following if is a hack. We should make a clean API for the plugin
+		if path == "port" {
+			w.WriteHeader(http.StatusOK)
+
+			_, err := w.Write([]byte(fmt.Sprintf("%d", conf.APIPort)))
+			if err != nil {
+				logger.Errorf("Failed to write port: %v", err)
+			}
+
+			return
+		}
+
 		logger.Debugf("StationMiddleware: Serving station.massa plugin page")
 
-		localHandler(w, homeZip, path)
+		localHandler(w, homePageZip, path)
 	})
 }
