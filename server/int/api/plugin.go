@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/go-openapi/loads"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-server/api/read/restapi"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
 	"github.com/massalabs/deweb-server/int/api/config"
@@ -77,6 +79,10 @@ func (a *PluginAPI) configurePluginAPI() {
 		log.Printf("ServeError: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	a.dewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getPluginResourceHandler)
+	a.dewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(getPluginDefaultPageHandler)
+
 }
 
 // StationMiddleware handles station website serving.
@@ -109,5 +115,21 @@ func StationMiddleware(handler http.Handler, homePageZip []byte, conf *config.Se
 		logger.Debugf("StationMiddleware: Serving station.massa plugin page")
 
 		localHandler(w, homePageZip, path)
+	})
+}
+
+func getPluginResourceHandler(params operations.GetResourceParams) middleware.Responder {
+	return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
+		logger.Debugf("getPluginResourceHandler: redirecting to plugin")
+
+		http.Redirect(w, params.HTTPRequest, "https://station.massa/plugin/massa-labs/deweb-plugin", http.StatusSeeOther)
+	})
+}
+
+func getPluginDefaultPageHandler(params operations.DefaultPageParams) middleware.Responder {
+	return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
+		logger.Debugf("getPluginDefaultPageHandler: redirecting to plugin")
+
+		http.Redirect(w, params.HTTPRequest, "https://station.massa/plugin/massa-labs/deweb-plugin", http.StatusSeeOther)
 	})
 }
