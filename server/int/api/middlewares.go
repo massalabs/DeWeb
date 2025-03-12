@@ -82,7 +82,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 // serveContent serves the requested resource for the given website address.
 func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
-	content, mimeType, httpHeaders, err := getWebsiteResource(&conf.NetworkInfos, address, path)
+	content, mimeType, httpHeaders, err := getWebsiteResource(conf, address, path)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
 
@@ -134,6 +134,9 @@ func resolveAddress(subdomain string, network msConfig.NetworkInfos) (string, er
 	return domainTarget, nil
 }
 
+// resolveResourceName resolves the resource name to the resource name on the chain.
+// It also handles the case where the resource name is not found and tries to find the closest match
+// by adding the .html extension or by using the index.html resource.
 func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourceName string) (string, error) {
 	exists, err := webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 	if err != nil {
@@ -174,15 +177,16 @@ func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourc
 	return resourceName, nil
 }
 
-func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, map[string]string, error) {
+func getWebsiteResource(config *config.ServerConfig, websiteAddress, resourceName string) ([]byte, string, map[string]string, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
-	resourceName, err := resolveResourceName(network, websiteAddress, resourceName)
+	// TODO: Check in cache before resolving the resource name ?
+	resourceName, err := resolveResourceName(&config.NetworkInfos, websiteAddress, resourceName)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("failed to resolve resource name: %w", err)
 	}
 
-	content, httpHeaders, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+	content, httpHeaders, err := webmanager.GetWebsiteResource(&config.NetworkInfos, websiteAddress, resourceName)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("failed to get website %s resource %s: %w", websiteAddress, resourceName, err)
 	}
@@ -193,7 +197,7 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 	if strings.HasPrefix(contentType, "text/html") {
 		logger.Debugf("Injecting 'Hosted by Massa' box")
 
-		content = InjectOnChainBox(content, network.ChainID)
+		content = InjectOnChainBox(content, config.NetworkInfos.ChainID)
 	}
 
 	return content, contentType, httpHeaders, nil
