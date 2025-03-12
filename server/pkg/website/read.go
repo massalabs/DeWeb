@@ -200,6 +200,8 @@ func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string)
 }
 
 // Check if the requested filePath exists in the SC FilesPathList
+// FIXME: This function is SLOW and in some cases, called multiple times in a single request.
+// We should find a way to cache the result.
 func FilePathExists(network *config.NetworkInfos, websiteAddress string, filePath string) (bool, error) {
 	client := node.NewClient(network.NodeURL)
 	if client == nil {
