@@ -115,6 +115,16 @@ jobs:
           os: ${{ matrix.os }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install Plugin Go Dependencies
+        run: task install
+        shell: bash
+        working-directory: ./plugin
+
+      - name: Go Generate Plugin
+        run: task generate
+        shell: bash
+        working-directory: ./plugin
+
       - name: Check if VERSION exists
         shell: bash
         id: check_version
