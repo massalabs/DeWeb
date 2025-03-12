@@ -141,14 +141,14 @@ jobs:
           ARCH: ${{ matrix.arch }}
 
       - name: Rename Plugin artifact
-        run: mv build/deweb-plugin${{ matrix.ext }} build/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+        run: mv build/deweb-plugin${{ matrix.ext }} deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
       - name: Upload Plugin artifact
         uses: actions/upload-artifact@v4
         with:
           name: deweb_plugin_${{ matrix.target }}_${{ matrix.arch }}
           path: |
-            plugin/build/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+            plugin/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
             plugin/favicon.png
             plugin/manifest.json
 
