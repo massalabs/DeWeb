@@ -82,7 +82,6 @@ func (a *PluginAPI) configurePluginAPI() {
 
 	a.dewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getPluginResourceHandler)
 	a.dewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(getPluginDefaultPageHandler)
-
 }
 
 // StationMiddleware handles station website serving.
