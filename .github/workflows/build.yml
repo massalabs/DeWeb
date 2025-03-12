@@ -76,3 +76,65 @@ jobs:
         with:
           name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
           path: server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+
+  build-plugin:
+    name: build and upload plugin artifact
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: amd64
+            target: windows
+            ext: .exe
+          - os: ubuntu-20.04
+            arch: amd64
+            target: linux
+          - os: ubuntu-20.04
+            arch: arm64
+            target: linux
+          - os: macos-13
+            arch: amd64
+            target: darwin
+          - os: macos-14
+            arch: arm64
+            target: darwin
+
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        working-directory: ./plugin
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: installing dependencies
+        uses: ./.github/actions/install
+        with:
+          os: ${{ matrix.os }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if VERSION exists
+        shell: bash
+        id: check_version
+        run: |
+          if [ ! -z "${{ env.VERSION }}" ]; then
+            echo "PRODUCTION=true" >> $GITHUB_ENV
+          fi
+
+      - name: Build Plugin
+        shell: bash
+        run: task build
+        env:
+          OS: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Rename Plugin artifact
+        run: mv build/deweb-plugin${{ matrix.ext }} build/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+
+      - name: Upload Plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}
+          path: plugin/build/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
