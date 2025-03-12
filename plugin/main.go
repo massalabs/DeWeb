@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,9 @@ import (
 )
 
 const directoryName = "station-deweb-plugin"
+
+//go:embed home/dist/home.zip
+var homeZip []byte
 
 func main() {
 	pluginDir, err := PluginDir()
@@ -34,7 +38,7 @@ func main() {
 		CacheDir:     filepath.Join(pluginDir, "websiteCache"),
 	}
 
-	api := api.NewPluginAPI(&conf)
+	api := api.NewPluginAPI(&conf, homeZip)
 	api.Start()
 }
 
