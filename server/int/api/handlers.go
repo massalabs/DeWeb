@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/massalabs/deweb-server/api/read/models"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
 	"github.com/massalabs/station/pkg/logger"
 )
@@ -25,5 +26,22 @@ func defaultPageHandler(params operations.DefaultPageParams) middleware.Responde
 	return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 		logger.Debug("DefaultPageHandler: Redirecting to index.html")
 		http.Redirect(w, params.HTTPRequest, "/index.html", http.StatusFound)
+	})
+}
+
+/*Handle get deweb public infos*/
+type dewebInfo struct {
+	miscInfo string
+}
+
+func NewDewebInfo(miscInfo string) operations.GetDeWebInfoHandler {
+	return &dewebInfo{miscInfo: miscInfo}
+}
+
+func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
+	return operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
+		App:     "deweb",
+		Version: "",
+		Misc:    dI.miscInfo,
 	})
 }
