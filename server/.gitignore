@@ -3,6 +3,11 @@ build/
 
 # generated files
 int/api/resources/*.zip
+api/read/models/
+api/read/restapi/operations/
+api/read/restapi/embedded_spec.go
+api/read/restapi/server.go
+api/read/restapi/doc.go
 
 # log files
 deweb-*.log

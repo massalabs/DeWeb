@@ -28,10 +28,30 @@ paths:
       responses:
         "200":
           description: Shows the default page
+  
+  /__deweb_info:
+    get:
+      operationId: getDeWebInfo
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful response
+          schema:
+            $ref: "#/definitions/DeWebInfo"
 
 definitions:
   Error:
     type: object
     properties:
       message:
+        type: string
+  DeWebInfo:
+    type: object
+    properties:
+      app:
+        type: string
+      version:
+        type: string
+      misc:
         type: string
