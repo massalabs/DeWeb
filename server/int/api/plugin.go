@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -99,13 +100,28 @@ func StationMiddleware(handler http.Handler, homePageZip []byte, conf *config.Se
 
 		path := cleanPath(r.URL.Path)
 
-		// FIXME: Following if is a hack. We should make a clean API for the plugin
 		if path == "port" {
 			w.WriteHeader(http.StatusOK)
 
 			_, err := w.Write([]byte(fmt.Sprintf("%d", conf.APIPort)))
 			if err != nil {
 				logger.Errorf("Failed to write port: %v", err)
+			}
+
+			return
+		}
+
+		if path == "info" {
+			w.WriteHeader(http.StatusOK)
+
+			json, err := json.Marshal(conf.NetworkInfos)
+			if err != nil {
+				logger.Errorf("Failed to marshal network infos: %v", err)
+			}
+
+			_, err = w.Write(json)
+			if err != nil {
+				logger.Errorf("Failed to write info: %v", err)
 			}
 
 			return
