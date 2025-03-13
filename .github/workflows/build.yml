@@ -146,7 +146,7 @@ jobs:
       - name: Upload Plugin artifact
         uses: actions/upload-artifact@v4
         with:
-          name: deweb_plugin_${{ matrix.target }}_${{ matrix.arch }}
+          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}
           path: |
             plugin/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
             plugin/favicon.png
