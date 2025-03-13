@@ -34,7 +34,7 @@ func main() {
 	conf := config.ServerConfig{
 		APIPort:      0,
 		Domain:       "localhost",
-		NetworkInfos: pkgConfig.NewNetworkConfig("https://buildnet.massa.net/api/v2"),
+		NetworkInfos: pkgConfig.NewNetworkConfig("https://mainnet.massa.net/api/v2"),
 		CacheDir:     filepath.Join(pluginDir, "websiteCache"),
 	}
 
