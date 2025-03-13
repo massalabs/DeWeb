@@ -17,30 +17,33 @@ const (
 )
 
 type ServerConfig struct {
-	Domain       string
-	APIPort      int
-	NetworkInfos msConfig.NetworkInfos
-	AllowList    []string
-	BlockList    []string
+	Domain            string
+	APIPort           int
+	NetworkInfos      msConfig.NetworkInfos
+	AllowList         []string
+	BlockList         []string
+	MiscPubliInfoJson string
 }
 
 type yamlServerConfig struct {
-	Domain         string   `yaml:"domain"`
-	NetworkNodeURL string   `yaml:"network_node_url"`
-	APIPort        int      `yaml:"api_port"`
-	AllowList      []string `yaml:"allow_list"`
-	BlockList      []string `yaml:"block_list"`
+	Domain             string   `yaml:"domain"`
+	NetworkNodeURL     string   `yaml:"network_node_url"`
+	APIPort            int      `yaml:"api_port"`
+	AllowList          []string `yaml:"allow_list"`
+	BlockList          []string `yaml:"block_list"`
+	MiscPublicInfoJson string   `yaml:"misc_public_info"`
 }
 
 func DefaultConfig() *ServerConfig {
 	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       DefaultDomain,
-		APIPort:      DefaultAPIPort,
-		NetworkInfos: networkInfos,
-		AllowList:    []string{},
-		BlockList:    []string{},
+		Domain:            DefaultDomain,
+		APIPort:           DefaultAPIPort,
+		NetworkInfos:      networkInfos,
+		AllowList:         []string{},
+		BlockList:         []string{},
+		MiscPubliInfoJson: "",
 	}
 }
 
@@ -82,10 +85,11 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	networkInfos := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       yamlConf.Domain,
-		APIPort:      yamlConf.APIPort,
-		NetworkInfos: networkInfos,
-		AllowList:    yamlConf.AllowList,
-		BlockList:    yamlConf.BlockList,
+		Domain:            yamlConf.Domain,
+		APIPort:           yamlConf.APIPort,
+		NetworkInfos:      networkInfos,
+		AllowList:         yamlConf.AllowList,
+		BlockList:         yamlConf.BlockList,
+		MiscPubliInfoJson: yamlConf.MiscPublicInfoJson,
 	}, nil
 }
