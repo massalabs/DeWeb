@@ -7,6 +7,7 @@ replace github.com/massalabs/deweb-server => ../server
 require (
 	github.com/massalabs/deweb-server v0.0.0
 	github.com/massalabs/station v0.6.5
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -50,7 +51,6 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	howett.net/plist v1.0.0 // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )

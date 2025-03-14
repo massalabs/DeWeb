@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	pluginConfig "github.com/massalabs/deweb-plugin/config"
 	"github.com/massalabs/deweb-server/int/api"
 	"github.com/massalabs/deweb-server/int/api/config"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
@@ -31,14 +32,26 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	conf := config.ServerConfig{
-		APIPort:      0,
-		Domain:       "localhost",
-		NetworkInfos: pkgConfig.NewNetworkConfig("https://mainnet.massa.net/api/v2"),
-		CacheDir:     filepath.Join(pluginDir, "websiteCache"),
+	// Load configuration from YAML file with fallback to defaults
+	conf, err := pluginConfig.LoadConfig(pluginDir)
+	if err != nil {
+		logger.Warnf("%v", err)
 	}
 
-	api := api.NewPluginAPI(&conf, homeZip)
+	// Convert PluginConfig to ServerConfig
+	serverConfig := config.ServerConfig{
+		APIPort:      conf.APIPort,
+		Domain:       "localhost",
+		NetworkInfos: pkgConfig.NewNetworkConfig(conf.NetworkURL),
+		CacheDir:     conf.CacheDir,
+	}
+
+	logger.Infof("Starting DeWeb plugin with configuration:")
+	logger.Infof("  API Port: %d", serverConfig.APIPort)
+	logger.Infof("  Network URL: %s", serverConfig.NetworkInfos.NodeURL)
+	logger.Infof("  Cache Directory: %s", serverConfig.CacheDir)
+
+	api := api.NewPluginAPI(&serverConfig, homeZip)
 	api.Start()
 }
 
