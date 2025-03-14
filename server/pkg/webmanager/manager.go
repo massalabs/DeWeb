@@ -9,13 +9,11 @@ import (
 	"github.com/massalabs/station/pkg/logger"
 )
 
-const cacheDir = "./websitesCache/"
-
 // getWebsiteResource fetches a resource from a website and returns its content.
-func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, error) {
+func GetWebsiteResource(network *msConfig.NetworkInfos, cache *cache.Cache, websiteAddress, resourceName string) ([]byte, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
-	content, err := RequestFile(websiteAddress, network, resourceName)
+	content, err := RequestFile(websiteAddress, network, cache, resourceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file %s from website %s: %w", resourceName, websiteAddress, err)
 	}
@@ -26,12 +24,7 @@ func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 }
 
 // RequestFile fetches a website and caches it, or retrieves it from the cache if already present.
-func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string) ([]byte, error) {
-	cache, err := cache.NewCache(cacheDir)
-	if err != nil {
-		logger.Errorf("Failed to create cache: %v", err)
-	}
-
+func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, cache *cache.Cache, resourceName string) ([]byte, error) {
 	if cache != nil && cache.IsPresent(scAddress, resourceName) {
 		logger.Debugf("Resource %s from %s present in cache", resourceName, scAddress)
 
@@ -114,15 +107,4 @@ func ResourceExistsOnChain(network *msConfig.NetworkInfos, websiteAddress, fileP
 	}
 
 	return isPresent, nil
-}
-
-func ResourceExistsInCache(scAddress string, resourceName string) (bool, error) {
-	logger.Debugf("Checking if resource %s exists in cache for website %s", resourceName, scAddress)
-
-	cache, err := cache.NewCache(cacheDir)
-	if err != nil {
-		return false, fmt.Errorf("failed to create cache: %w", err)
-	}
-
-	return cache.IsPresent(scAddress, resourceName), nil
 }
