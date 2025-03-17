@@ -11,7 +11,7 @@ tasks:
 
   run:
     cmds:
-      - cmd: go run ./main.go
+      - cmd: ./build/deweb-plugin
 
   build:
     cmds:

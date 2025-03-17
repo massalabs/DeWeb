@@ -25,23 +25,22 @@ export default function App() {
       .then((info) => {
         setNetworkName(info.Network || "Unknown Network");
         setNetworkVersion(info.Version || "Unknown Version");
-        setLoading(false);
       })
       .catch(err => {
         console.error("Failed to fetch provider info:", err);
         setNetworkName("Unknown Network");
         setNetworkVersion("Unknown Version");
+      }).finally(() => {
         setLoading(false);
       });
   }, []);
 
   const redirectTo = (service: string) => {
     const { host } = new URL(window.location.href);
-    if (host === "station.massa") {
-      window.location.href = `http://${service}.localhost:${port}`;
-    } else {
-      window.location.href = `//${service}.${host}`;
-    }
+    const url = host === "station.massa" && port
+      ? `http://${service}.localhost:${port}`
+      : `//${service}.${host}`;
+    window.open(url, '_blank');
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -68,7 +67,12 @@ export default function App() {
         onSubmit={handleSearch}
         className="flex items-center overflow-hidden w-full md:w-2/3 lg:w-1/2 xl:w-1/3 bg-secondary rounded-lg shadow-lg mb-8"
       >
-        <FiSearch className="text-primary ml-3 text-2xl" />
+        <button
+          type="submit"
+          className="text-primary ml-3 hover:text-primary/80 transition-colors"
+        >
+          <FiSearch className="text-2xl" />
+        </button>
         <input
           type="text"
           value={searchQuery}
