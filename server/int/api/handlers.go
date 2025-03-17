@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-server/api/read/models"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
+	config "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -41,7 +42,7 @@ func NewDewebInfo(miscInfo string) operations.GetDeWebInfoHandler {
 func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
 	return operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
 		App:     "deweb",
-		Version: "",
+		Version: config.Version,
 		Misc:    dI.miscInfo,
 	})
 }
