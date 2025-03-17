@@ -53,6 +53,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		if r.URL.Path == dewebInfoPath {
 			logger.Debug("SubdomainMiddleware: Requested __deweb_info endpoint. Preceding with the next handler.")
 			handler.ServeHTTP(w, r)
+
 			return
 		}
 
