@@ -16,6 +16,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/massalabs/station v0.6.5
 	github.com/massalabs/station-massa-wallet v0.4.5
+	github.com/rs/cors v1.11.1
 	golang.org/x/net v0.34.0
 	gopkg.in/yaml.v2 v2.4.0
 )

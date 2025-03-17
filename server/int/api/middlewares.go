@@ -13,6 +13,7 @@ import (
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
 	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
+	"github.com/rs/cors"
 )
 
 //go:embed resources/domainNotFound.zip
@@ -24,9 +25,18 @@ var notAvailableZip []byte
 //go:embed resources/brokenWebsite.zip
 var brokenWebsiteZip []byte
 
+func allowCorsOriginFunc(r *http.Request, origin string) (bool, []string) {
+	return r.URL.Path == "/__deweb_info", nil
+}
+
 // SubdomainMiddleware handles subdomain website serving.
 func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	Cors := cors.New(cors.Options{
+		AllowedMethods:             []string{"GET"},
+		AllowOriginVaryRequestFunc: allowCorsOriginFunc,
+	})
+
+	return Cors.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.Debugf("SubdomainMiddleware: Handling request for %s", r.Host)
 
 		subdomain := extractSubdomain(r.Host, conf.Domain)
@@ -67,7 +77,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		}
 
 		serveContent(conf, address, path, w)
-	})
+	}))
 }
 
 // serveContent serves the requested resource for the given website address.
