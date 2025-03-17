@@ -7,7 +7,7 @@ import (
 	"github.com/massalabs/deweb-server/int/utils"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
 	msConfig "github.com/massalabs/station/int/config"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
