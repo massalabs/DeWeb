@@ -1,54 +1,67 @@
-# React + TypeScript + Vite
+# DeWeb Plugin Homepage
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the homepage for the DeWeb plugin, providing a central navigation hub and search interface for the decentralized web ecosystem on Massa.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Search for DeWeb domains
+- Quick access to key DeWeb services:
+  - Explore DeWeb: Browse available decentralized websites
+  - Massa Name System (MNS): Manage decentralized domain names
+  - DeWeb Uploader: Upload and manage websites
+- Network status indicator showing connection info
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- Node.js (v18+)
+- npm or yarn
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The development server will start at http://localhost:5173 (or another port if 5173 is in use).
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Project Structure
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+- `src/` - Source code
+  - `App.tsx` - Main application component
+- `public/` - Static assets
+
+## Building for Production
+
+```bash
+# Build the project
+npm run build
+
+# Build and package for plugin deployment
+npm run build:plugin
 ```
+
+The `build:plugin` command will:
+1. Build the project
+2. Create a zip file (`dist/home.zip`) for deployment
+
+## Dependencies
+
+This project uses:
+- React 19
+- TypeScript
+- Vite
+- TailwindCSS for styling
+- React Icons
+- DeWeb Pages (local dependency)
+
+## Integration
+
+This homepage is designed to work with the DeWeb plugin for Massa. It communicates with the plugin's API endpoints to retrieve network information and port configurations.
+
+The application dynamically generates URLs based on the current environment (development or production) to ensure proper navigation between different DeWeb services.
