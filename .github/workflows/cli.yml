@@ -1,0 +1,79 @@
+name: CLI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cli/**'
+      - '.github/workflows/cli.yml'
+  pull_request:
+    paths:
+      - 'cli/**'
+      - '.github/workflows/cli.yml'
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: ./cli/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run code formatting and linting
+        run: npm run fmt:check
+
+  test:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./cli
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: ./cli/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm test
+
+  functional-test:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./cli
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: ./cli/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Setup wallet
+        run: |
+          echo "$WALLET_TEST_WALLET" > ./wallet_fullpower.yaml
+        env:
+          WALLET_TEST_WALLET: ${{ secrets.WALLET_TEST_WALLET }}
+      - name: Build Smart Contract
+        run: |
+          npm run build:sc
+      - name: Run functional tests
+        run: |
+          npm run build
+          npm run start -- upload -y --wallet ./wallet_fullpower.yaml --password $WALLET_TEST_PASSWORD ../smart-contract/src/e2e/test-project/dist
+        env:
+          WALLET_TEST_PASSWORD: ${{ secrets.WALLET_TEST_PASSWORD }} 
