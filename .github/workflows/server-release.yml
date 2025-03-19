@@ -60,7 +60,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.extract-version.outputs.version }}
-          name: DeWeb Server v${{ needs.extract-version.outputs.version }}
+          name: server v${{ needs.extract-version.outputs.version }}
           draft: ${{ inputs.release-as-draft }}
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}
