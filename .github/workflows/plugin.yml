@@ -38,6 +38,9 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Task generate
+        run: task generate
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
