@@ -100,4 +100,4 @@ jobs:
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}
           files: |
-            artifacts/deweb-plugin_*
+            release_zips/*.zip
