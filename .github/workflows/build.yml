@@ -3,7 +3,7 @@ name: build and upload artifacts
 on:
   push:
     branches: [main]
-  pull_request:
+#  pull_request:
   workflow_dispatch:
   workflow_call:
     inputs:
