@@ -38,6 +38,22 @@ func init() {
         }
       }
     },
+    "/__deweb_info": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "getDeWebInfo",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/DeWebInfo"
+            }
+          }
+        }
+      }
+    },
     "/{resource}": {
       "get": {
         "operationId": "getResource",
@@ -64,6 +80,21 @@ func init() {
     }
   },
   "definitions": {
+    "DeWebInfo": {
+      "type": "object",
+      "properties": {
+        "app": {
+          "type": "string"
+        },
+        "misc": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
     "Error": {
       "type": "object",
       "properties": {
@@ -95,6 +126,22 @@ func init() {
         }
       }
     },
+    "/__deweb_info": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "getDeWebInfo",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/DeWebInfo"
+            }
+          }
+        }
+      }
+    },
     "/{resource}": {
       "get": {
         "operationId": "getResource",
@@ -121,6 +168,21 @@ func init() {
     }
   },
   "definitions": {
+    "DeWebInfo": {
+      "type": "object",
+      "properties": {
+        "app": {
+          "type": "string"
+        },
+        "misc": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
     "Error": {
       "type": "object",
       "properties": {

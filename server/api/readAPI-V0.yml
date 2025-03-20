@@ -54,4 +54,5 @@ definitions:
       version:
         type: string
       misc:
-        type: string
+        type: object
+        additionalProperties: true

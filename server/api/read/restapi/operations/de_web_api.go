@@ -45,6 +45,9 @@ func NewDeWebAPI(spec *loads.Document) *DeWebAPI {
 		DefaultPageHandler: DefaultPageHandlerFunc(func(params DefaultPageParams) middleware.Responder {
 			return middleware.NotImplemented("operation DefaultPage has not yet been implemented")
 		}),
+		GetDeWebInfoHandler: GetDeWebInfoHandlerFunc(func(params GetDeWebInfoParams) middleware.Responder {
+			return middleware.NotImplemented("operation GetDeWebInfo has not yet been implemented")
+		}),
 		GetResourceHandler: GetResourceHandlerFunc(func(params GetResourceParams) middleware.Responder {
 			return middleware.NotImplemented("operation GetResource has not yet been implemented")
 		}),
@@ -86,6 +89,8 @@ type DeWebAPI struct {
 
 	// DefaultPageHandler sets the operation handler for the default page operation
 	DefaultPageHandler DefaultPageHandler
+	// GetDeWebInfoHandler sets the operation handler for the get de web info operation
+	GetDeWebInfoHandler GetDeWebInfoHandler
 	// GetResourceHandler sets the operation handler for the get resource operation
 	GetResourceHandler GetResourceHandler
 
@@ -167,6 +172,9 @@ func (o *DeWebAPI) Validate() error {
 
 	if o.DefaultPageHandler == nil {
 		unregistered = append(unregistered, "DefaultPageHandler")
+	}
+	if o.GetDeWebInfoHandler == nil {
+		unregistered = append(unregistered, "GetDeWebInfoHandler")
 	}
 	if o.GetResourceHandler == nil {
 		unregistered = append(unregistered, "GetResourceHandler")
@@ -263,6 +271,10 @@ func (o *DeWebAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"][""] = NewDefaultPage(o.context, o.DefaultPageHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/__deweb_info"] = NewGetDeWebInfo(o.context, o.GetDeWebInfoHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
