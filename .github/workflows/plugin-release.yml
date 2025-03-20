@@ -42,18 +42,6 @@ jobs:
           fi
           echo "Manifest version matches input version: $version"
 
-  extract-version:
-    runs-on: ubuntu-latest
-    needs: check-manifest
-    outputs:
-      version: ${{ inputs.version }}
-    steps:
-      - name: Set version
-        id: get-version
-        run: |
-          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          echo "Plugin Version: ${{ inputs.version }}"
-
   build-plugin:
     uses: ./.github/workflows/plugin.yml
     needs: check-manifest
@@ -62,7 +50,7 @@ jobs:
     secrets: inherit
 
   create-release:
-    needs: [check-manifest, extract-version, build-plugin]
+    needs: [check-manifest, build-plugin]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -96,8 +84,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: plugin-v${{ needs.extract-version.outputs.version }}
-          name: plugin v${{ needs.extract-version.outputs.version }}
+          tag_name: plugin-v${{ inputs.version }}
+          name: plugin v${{ inputs.version }}
           draft: ${{ inputs.release-as-draft }}
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}

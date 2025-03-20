@@ -24,17 +24,6 @@ on:
         default: true
   
 jobs:
-  extract-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ inputs.version }}
-    steps:
-      - name: Set version
-        id: get-version
-        run: |
-          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          echo "Server Version: ${{ inputs.version }}"
-
   build-server:
     uses: ./.github/workflows/server.yml
     with:
@@ -42,7 +31,7 @@ jobs:
     secrets: inherit
 
   create-release:
-    needs: [extract-version, build-server]
+    needs: build-server
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -59,8 +48,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.extract-version.outputs.version }}
-          name: server v${{ needs.extract-version.outputs.version }}
+          tag_name: v${{ inputs.version }}
+          name: server v${{ inputs.version }}
           draft: ${{ inputs.release-as-draft }}
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}

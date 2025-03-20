@@ -44,7 +44,7 @@ jobs:
           working-directory: ./server
 
       - name: Install gofumpt
-        run: go install mvdan.cc/gofumpt@latest
+        run: go install mvdan.cc/gofumpt@v0.7.0
 
       - name: Run gofumpt
         run: |
