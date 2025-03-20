@@ -6,7 +6,9 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
+	"github.com/massalabs/deweb-server/api/read/models"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
+	config "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -25,5 +27,28 @@ func defaultPageHandler(params operations.DefaultPageParams) middleware.Responde
 	return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 		logger.Debug("DefaultPageHandler: Redirecting to index.html")
 		http.Redirect(w, params.HTTPRequest, "/index.html", http.StatusFound)
+	})
+}
+
+/*Handle get deweb public infos*/
+type dewebInfo struct {
+	miscInfo interface{}
+}
+
+func NewDewebInfo(miscInfo interface{}) operations.GetDeWebInfoHandler {
+	return &dewebInfo{miscInfo: miscInfo}
+}
+
+func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
+	return middleware.ResponderFunc(func(w http.ResponseWriter, runtime runtime.Producer) {
+		// Add CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
+			App:     "deweb",
+			Version: config.Version,
+			Misc:    dI.miscInfo,
+		}).WriteResponse(w, runtime)
 	})
 }
