@@ -17,33 +17,33 @@ const (
 )
 
 type ServerConfig struct {
-	Domain            string
-	APIPort           int
-	NetworkInfos      msConfig.NetworkInfos
-	AllowList         []string
-	BlockList         []string
-	MiscPubliInfoJson string
+	Domain             string
+	APIPort            int
+	NetworkInfos       msConfig.NetworkInfos
+	AllowList          []string
+	BlockList          []string
+	MiscPublicInfoJson interface{}
 }
 
 type yamlServerConfig struct {
-	Domain             string   `yaml:"domain"`
-	NetworkNodeURL     string   `yaml:"network_node_url"`
-	APIPort            int      `yaml:"api_port"`
-	AllowList          []string `yaml:"allow_list"`
-	BlockList          []string `yaml:"block_list"`
-	MiscPublicInfoJson string   `yaml:"misc_public_info"`
+	Domain             string      `yaml:"domain"`
+	NetworkNodeURL     string      `yaml:"network_node_url"`
+	APIPort            int         `yaml:"api_port"`
+	AllowList          []string    `yaml:"allow_list"`
+	BlockList          []string    `yaml:"block_list"`
+	MiscPublicInfoJson interface{} `yaml:"misc_public_info"`
 }
 
 func DefaultConfig() *ServerConfig {
 	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:            DefaultDomain,
-		APIPort:           DefaultAPIPort,
-		NetworkInfos:      networkInfos,
-		AllowList:         []string{},
-		BlockList:         []string{},
-		MiscPubliInfoJson: "",
+		Domain:             DefaultDomain,
+		APIPort:            DefaultAPIPort,
+		NetworkInfos:       networkInfos,
+		AllowList:          []string{},
+		BlockList:          []string{},
+		MiscPublicInfoJson: map[string]interface{}{},
 	}
 }
 
@@ -85,11 +85,42 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	networkInfos := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:            yamlConf.Domain,
-		APIPort:           yamlConf.APIPort,
-		NetworkInfos:      networkInfos,
-		AllowList:         yamlConf.AllowList,
-		BlockList:         yamlConf.BlockList,
-		MiscPubliInfoJson: yamlConf.MiscPublicInfoJson,
+		Domain:             yamlConf.Domain,
+		APIPort:            yamlConf.APIPort,
+		NetworkInfos:       networkInfos,
+		AllowList:          yamlConf.AllowList,
+		BlockList:          yamlConf.BlockList,
+		MiscPublicInfoJson: convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
 	}, nil
+}
+
+/*
+convertYamlMisc2Json convert the config's "misc" json field from a
+map[interface{}]interface{} (as unmarshaled by yaml.Unmarshal function)
+format to a map[string]interface{} one.
+The input is expected to represent valid json.
+*/
+func convertYamlMisc2Json(input interface{}) interface{} {
+	switch x := input.(type) {
+	case map[interface{}]interface{}:
+		result := make(map[string]interface{})
+		for k, v := range x {
+			result[fmt.Sprint(k)] = convertYamlMisc2Json(v)
+		}
+
+		return result
+
+	case []interface{}:
+		for i, val := range x {
+			x[i] = convertYamlMisc2Json(val)
+		}
+
+		return x
+
+	case string:
+		return input.(string)
+
+	default:
+		return input
+	}
 }

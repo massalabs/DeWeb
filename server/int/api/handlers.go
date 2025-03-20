@@ -32,17 +32,23 @@ func defaultPageHandler(params operations.DefaultPageParams) middleware.Responde
 
 /*Handle get deweb public infos*/
 type dewebInfo struct {
-	miscInfo string
+	miscInfo interface{}
 }
 
-func NewDewebInfo(miscInfo string) operations.GetDeWebInfoHandler {
+func NewDewebInfo(miscInfo interface{}) operations.GetDeWebInfoHandler {
 	return &dewebInfo{miscInfo: miscInfo}
 }
 
 func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
-	return operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
-		App:     "deweb",
-		Version: config.Version,
-		Misc:    dI.miscInfo,
+	return middleware.ResponderFunc(func(w http.ResponseWriter, runtime runtime.Producer) {
+		// Add CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
+			App:     "deweb",
+			Version: config.Version,
+			Misc:    dI.miscInfo,
+		}).WriteResponse(w, runtime)
 	})
 }
