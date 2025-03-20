@@ -1,0 +1,133 @@
+name: Server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  pull_request:
+    paths:
+      - 'server/**'
+      - '.github/workflows/server.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        description: "Version for the build, without v prefix"
+        required: false
+
+env:
+  VERSION: ${{ inputs.version }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Installing dependencies
+        uses: ./.github/actions/install
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          args: --timeout=3m
+          working-directory: ./server
+
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@v0.7.0
+
+      - name: Run gofumpt
+        run: |
+          ERRORS=$(gofumpt -l . | wc -l)
+          if [[ "$ERRORS" != "0" ]]; then
+            echo "following files are not gofumpted:"
+            gofumpt -l .
+            exit 1
+          fi
+
+  test:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Installing dependencies
+        uses: ./.github/actions/install
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run unit tests
+        run: go test ./...
+
+  build:
+    name: Build server
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: amd64
+            target: windows
+            ext: .exe
+          - os: ubuntu-22.04
+            arch: amd64
+            target: linux
+          - os: ubuntu-22.04
+            arch: arm64
+            target: linux
+          - os: macos-13
+            arch: amd64
+            target: darwin
+          - os: macos-14
+            arch: arm64
+            target: darwin
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Installing dependencies
+        uses: ./.github/actions/install
+        with:
+          os: ${{ matrix.os }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if VERSION exists
+        shell: bash
+        id: check_version
+        run: |
+          if [ ! -z "${{ env.VERSION }}" ]; then
+            echo "PRODUCTION=true" >> $GITHUB_ENV
+          fi
+
+      - name: Build Server
+        shell: bash
+        run: task build
+        env:
+          OS: ${{ matrix.target }}
+          ARCH: ${{ matrix.arch }}
+
+      - name: Rename Server artifact
+        run: mv build/deweb-server${{ matrix.ext }} build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+
+      - name: Upload Server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
+          path: server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} 

@@ -1,0 +1,93 @@
+name: Plugin Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Plugin version for this release (without v prefix)'
+        required: true
+        type: string
+      release-as-draft:
+        description: "Whether it's a draft or not"
+        required: true
+        type: boolean
+        default: true
+      release-as-prerelease:
+        description: "Whether it's a prerelease or not"
+        required: true
+        type: boolean
+        default: false
+      generate-release-notes:
+        description: "Generate release notes"
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  check-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check the manifest version
+        working-directory: ./plugin
+        run: |
+          sudo apt-get install -y jq
+          version=$(jq -r '.version' manifest.json)
+          input_version=${{ inputs.version }}
+          if [[ "$version" != "$input_version" ]]; then
+            echo "ERROR: The manifest version ($version) does not match the input version ($input_version)"
+            exit 1
+          fi
+          echo "Manifest version matches input version: $version"
+
+  build-plugin:
+    uses: ./.github/workflows/plugin.yml
+    needs: check-manifest
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit
+
+  create-release:
+    needs: [check-manifest, build-plugin]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: 'deweb-plugin_*'
+
+      - name: List artifacts
+        run: ls -R artifacts
+      
+      - name: Create zip packages for each platform
+        run: |
+          mkdir -p release_zips
+          
+          # Find all artifact folders
+          for platform_dir in artifacts/deweb-plugin_*; do
+            # Extract the platform name from the directory
+            platform_name=$(basename "$platform_dir")
+            
+            # Create a zip package for this platform
+            (cd "$platform_dir" && zip -r "../../release_zips/${platform_name}.zip" *)
+            
+            echo "Created zip package for $platform_name"
+          done
+          
+          ls -la release_zips/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: plugin-v${{ inputs.version }}
+          name: plugin v${{ inputs.version }}
+          draft: ${{ inputs.release-as-draft }}
+          prerelease: ${{ inputs.release-as-prerelease }}
+          generate_release_notes: ${{ inputs.generate-release-notes }}
+          files: |
+            release_zips/*.zip
