@@ -1,115 +1,96 @@
-name: build and upload artifacts
+name: Plugin
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/plugin.yml'
   pull_request:
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/plugin.yml'
   workflow_dispatch:
   workflow_call:
     inputs:
-      tag_name:
+      version:
         type: string
-        description: "The tag name of the release without v prefix"
+        description: "Version for the build, without v prefix"
+        required: false
 
 env:
-  VERSION: ${{ inputs.tag_name }}
+  VERSION: ${{ inputs.version }}
 
 jobs:
-  build:
-    name: build and upload artifacts
-    strategy:
-      matrix:
-        include:
-          - os: windows-2022
-            arch: amd64
-            target: windows
-            ext: .exe
-          - os: ubuntu-22.04
-            arch: amd64
-            target: linux
-          - os: ubuntu-22.04
-            arch: arm64
-            target: linux
-          - os: macos-13
-            arch: amd64
-            target: darwin
-          - os: macos-14
-            arch: arm64
-            target: darwin
-
-    runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        working-directory: ./server
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: installing dependencies
-        uses: ./.github/actions/install
-        with:
-          os: ${{ matrix.os }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if VERSION exists
-        shell: bash
-        id: check_version
-        run: |
-          if [ ! -z "${{ env.VERSION }}" ]; then
-            echo "PRODUCTION=true" >> $GITHUB_ENV
-          fi
-
-      - name: Build Server
-        shell: bash
-        run: task build
-        env:
-          OS: ${{ matrix.target }}
-          ARCH: ${{ matrix.arch }}
-
-      - name: Rename Server artifact
-        run: mv build/deweb-server${{ matrix.ext }} build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
-
-      - name: Upload Server artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
-          path: server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
-
-  build-plugin:
-    name: build and upload plugin artifact
-    strategy:
-      matrix:
-        include:
-          - os: windows-2022
-            arch: amd64
-            target: windows
-            ext: .exe
-          - os: ubuntu-22.04
-            arch: amd64
-            target: linux
-          - os: ubuntu-22.04
-            arch: arm64
-            target: linux
-          - os: macos-13
-            arch: amd64
-            target: darwin
-          - os: macos-14
-            arch: arm64
-            target: darwin
-
-    runs-on: ${{ matrix.os }}
-
+  lint:
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./plugin
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: installing dependencies
+      - name: Installing dependencies
+        uses: ./.github/actions/install
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Task generate
+        run: task generate
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.59
+          args: --timeout=3m
+          working-directory: ./plugin
+
+      - name: Install gofumpt
+        run: go install mvdan.cc/gofumpt@v0.7.0
+
+      - name: Run gofumpt
+        run: |
+          ERRORS=$(gofumpt -l . | wc -l)
+          if [[ "$ERRORS" != "0" ]]; then
+            echo "following files are not gofumpted:"
+            gofumpt -l .
+            exit 1
+          fi
+
+  build:
+    name: Build plugin
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            arch: amd64
+            target: windows
+            ext: .exe
+          - os: ubuntu-22.04
+            arch: amd64
+            target: linux
+          - os: ubuntu-22.04
+            arch: arm64
+            target: linux
+          - os: macos-13
+            arch: amd64
+            target: darwin
+          - os: macos-14
+            arch: arm64
+            target: darwin
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ./plugin
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Installing dependencies
         uses: ./.github/actions/install
         with:
           os: ${{ matrix.os }}
@@ -118,12 +99,10 @@ jobs:
       - name: Install Plugin Go Dependencies
         run: task install
         shell: bash
-        working-directory: ./plugin
 
       - name: Go Generate Plugin
         run: task generate
         shell: bash
-        working-directory: ./plugin
 
       - name: Check if VERSION exists
         shell: bash
@@ -143,12 +122,16 @@ jobs:
       - name: Rename Plugin artifact
         run: mv build/deweb-plugin${{ matrix.ext }} deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
+      - name: Copy shared files to platform directory
+        shell: bash
+        run: |
+          mkdir -p platform_${{ matrix.target }}_${{ matrix.arch }}
+          cp deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} platform_${{ matrix.target }}_${{ matrix.arch }}/
+          cp favicon.png platform_${{ matrix.target }}_${{ matrix.arch }}/
+          cp manifest.json platform_${{ matrix.target }}_${{ matrix.arch }}/
+
       - name: Upload Plugin artifact
         uses: actions/upload-artifact@v4
         with:
           name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}
-          path: |
-            plugin/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
-            plugin/favicon.png
-            plugin/manifest.json
-
+          path: plugin/platform_${{ matrix.target }}_${{ matrix.arch }}/
