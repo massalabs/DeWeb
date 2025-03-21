@@ -37,6 +37,7 @@ func localHandler(w http.ResponseWriter, zipBytes []byte, resourceName string) {
 	contentType := ContentType(resourceName, content)
 
 	w.Header().Set("Content-Type", contentType)
+
 	w.WriteHeader(http.StatusOK)
 
 	if _, err := w.Write(content); err != nil {
