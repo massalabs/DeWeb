@@ -20,6 +20,7 @@ const (
 	datastoreBatchSize     = 64
 	notFoundErrorTemplate  = "no chunks found for file %s"
 	lastUpdateTimestampKey = "LAST_UPDATE"
+	httpHeaderPrefix       = "http-header:"
 )
 
 // filePathListCacheEntry represents a cached file path list with its expiration time
@@ -128,6 +129,69 @@ func Fetch(network *msConfig.NetworkInfos, websiteAddress string, filePath strin
 	}
 
 	return dataStore, nil
+}
+
+// Fetch retrieves the complete data of a website as bytes.
+func GetHttpHeaders(network *msConfig.NetworkInfos, websiteAddress string, filePath string) (map[string]string, error) {
+	client := node.NewClient(network.NodeURL)
+
+	globalMetadataKeyFilter := storagekeys.GlobalMetadataKey(httpHeaderPrefix)
+
+	fileHash := sha256.Sum256([]byte(filePath))
+
+	fileMetadataKeyFilter := storagekeys.FileMetadataKey(fileHash, httpHeaderPrefix)
+
+	addressInfo, err := node.Addresses(client, []string{websiteAddress})
+	if err != nil {
+		return nil, fmt.Errorf("calling get_addresses '%+v': %w", []string{websiteAddress}, err)
+	}
+
+	datastoreKeys := addressInfo[0].FinalDatastoreKeys
+
+	headersRecord := make(map[string]string)
+
+	var httpHeaderKeys [][]byte
+
+	for _, key := range datastoreKeys {
+		var parsedKey string
+		if bytes.HasPrefix(key, globalMetadataKeyFilter) {
+			parsedKey = string(key[len(globalMetadataKeyFilter):])
+
+			// to avoid duplicate http headers append global one only if not present
+			if _, exists := headersRecord[parsedKey]; !exists {
+				headersRecord[parsedKey] = ""
+
+				httpHeaderKeys = append(httpHeaderKeys, key)
+			}
+		}
+
+		// file headers should override global ones
+		if bytes.HasPrefix(key, fileMetadataKeyFilter) {
+			httpHeaderKeys = append(httpHeaderKeys, key)
+			parsedKey = string(key[len(fileMetadataKeyFilter):])
+			headersRecord[parsedKey] = ""
+		}
+	}
+
+	httpHeaderValues, err := node.ContractDatastoreEntries(client, websiteAddress, httpHeaderKeys)
+	if err != nil {
+		return nil, fmt.Errorf("fetching http header metadata values: %w", err)
+	}
+
+	for idx, val := range httpHeaderValues {
+		var parsedKey string
+		if bytes.HasPrefix(httpHeaderKeys[idx], fileMetadataKeyFilter) {
+			parsedKey = string(httpHeaderKeys[idx][len(fileMetadataKeyFilter):])
+		}
+
+		if bytes.HasPrefix(httpHeaderKeys[idx], globalMetadataKeyFilter) {
+			parsedKey = string(httpHeaderKeys[idx][len(globalMetadataKeyFilter):])
+		}
+
+		headersRecord[parsedKey] = string(val.FinalValue)
+	}
+
+	return headersRecord, nil
 }
 
 // GetNumberOfChunks fetches and returns the number of chunks for the website.
@@ -273,7 +337,7 @@ func GetOwner(network *msConfig.NetworkInfos, websiteAddress string) (string, er
 func GetLastUpdateTimestamp(network *msConfig.NetworkInfos, websiteAddress string) (*time.Time, error) {
 	client := node.NewClient(network.NodeURL)
 
-	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, storagekeys.GlobalMetadataKey(convert.ToBytes(lastUpdateTimestampKey)))
+	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, storagekeys.GlobalMetadataKey(lastUpdateTimestampKey))
 	if err != nil {
 		return nil, fmt.Errorf("fetching website last update timestamp: %w", err)
 	}
