@@ -22,12 +22,15 @@ const (
 
 // Fetch retrieves the complete data of a website as bytes.
 func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
+	startTime := time.Now()
 	client := node.NewClient(network.NodeURL)
 
+	checkStart := time.Now()
 	isPresent, err := FilePathExists(network, websiteAddress, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("checking if file is present on chain: %w", err)
 	}
+	logger.Debugf("File existence check took %v", time.Since(checkStart))
 
 	if isPresent {
 		logger.Debugf("File '%s' is present on chain", filePath)
@@ -35,10 +38,12 @@ func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string)
 		return nil, fmt.Errorf("file '%s' not found on chain", filePath)
 	}
 
+	chunksStart := time.Now()
 	chunkNumber, err := GetNumberOfChunks(client, websiteAddress, filePath)
 	if err != nil {
 		return nil, fmt.Errorf("fetching number of chunks: %w", err)
 	}
+	logger.Debugf("Getting number of chunks took %v", time.Since(chunksStart))
 
 	logger.Debugf("Number of chunks for file '%s': %d", filePath, chunkNumber)
 
@@ -46,10 +51,13 @@ func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string)
 		return nil, fmt.Errorf("no chunks found for file '%s'", filePath)
 	}
 
+	fetchStart := time.Now()
 	dataStore, err := fetchAllChunks(client, websiteAddress, filePath, chunkNumber)
 	if err != nil {
 		return nil, fmt.Errorf("fetching all chunks: %w", err)
 	}
+	logger.Debugf("Fetching all chunks took %v", time.Since(fetchStart))
+	logger.Debugf("Total fetch operation took %v", time.Since(startTime))
 
 	return dataStore, nil
 }
@@ -124,6 +132,7 @@ func getFileLocationKeys(client *node.Client, websiteAddress string) ([][]byte, 
 
 // fetchAllChunks retrieves all chunks of data for the website.
 func fetchAllChunks(client *node.Client, websiteAddress string, filePath string, chunkNumber int32) ([]byte, error) {
+	startTime := time.Now()
 	filePathHash := sha256.Sum256([]byte(filePath))
 
 	keys := make([][]byte, chunkNumber)
@@ -132,8 +141,11 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 	}
 
 	var dataStore []byte
+	totalBatches := (int(chunkNumber) + datastoreBatchSize - 1) / datastoreBatchSize
 
-	for start := 0; start < int(chunkNumber); start += datastoreBatchSize {
+	for batch := 0; batch < totalBatches; batch++ {
+		batchStart := time.Now()
+		start := batch * datastoreBatchSize
 		end := start + datastoreBatchSize
 		if end > int(chunkNumber) {
 			end = int(chunkNumber)
@@ -157,8 +169,10 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 
 			dataStore = append(dataStore, entry.FinalValue...)
 		}
+		logger.Debugf("Batch %d/%d took %v", batch+1, totalBatches, time.Since(batchStart))
 	}
 
+	logger.Debugf("Total chunk fetching took %v", time.Since(startTime))
 	return dataStore, nil
 }
 

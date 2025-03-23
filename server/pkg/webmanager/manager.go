@@ -2,6 +2,7 @@ package webmanager
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/massalabs/deweb-server/pkg/cache"
 	"github.com/massalabs/deweb-server/pkg/website"
@@ -11,98 +12,89 @@ import (
 
 const cacheDir = "./websitesCache/"
 
+// Default cache size limits
+const (
+	defaultMaxRAMEntries  = 1000  // Maximum number of entries in RAM cache
+	defaultMaxDiskEntries = 10000 // Maximum number of entries in disk cache
+)
+
 // getWebsiteResource fetches a resource from a website and returns its content.
 func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, error) {
+	startTime := time.Now()
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
 	content, err := RequestFile(websiteAddress, network, resourceName)
 	if err != nil {
+		logger.Debugf("GetWebsiteResource failed after %v", time.Since(startTime))
 		return nil, fmt.Errorf("failed to get file %s from website %s: %w", resourceName, websiteAddress, err)
 	}
 
-	logger.Debugf("Resource %s from %s successfully retrieved", resourceName, websiteAddress)
-
+	logger.Debugf("Resource %s from %s successfully retrieved in %v", resourceName, websiteAddress, time.Since(startTime))
 	return content, nil
 }
 
 // RequestFile fetches a website and caches it, or retrieves it from the cache if already present.
 func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string) ([]byte, error) {
-	cache, err := cache.NewCache(cacheDir)
+	startTime := time.Now()
+	cache, err := cache.NewCache(cacheDir, defaultMaxRAMEntries, defaultMaxDiskEntries)
 	if err != nil {
 		logger.Errorf("Failed to create cache: %v", err)
 	}
 
-	if cache != nil && cache.IsPresent(scAddress, resourceName) {
-		logger.Debugf("Resource %s from %s present in cache", resourceName, scAddress)
-
-		isOutdated, err := isFileOutdated(cache, networkInfo, scAddress, resourceName)
+	// Get the last update timestamp from the website
+	timestampStart := time.Now()
+	lastUpdated, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
+	if err != nil {
+		logger.Warnf("Failed to get last update timestamp: %v", err)
+	} else if cache != nil {
+		lastModified, err := cache.GetLastModified(scAddress, resourceName)
 		if err != nil {
-			logger.Warnf("Failed to check if file is outdated: %v", err)
-		} else {
-			if !isOutdated {
-				content, err := cache.Read(scAddress, resourceName)
-				if err != nil {
-					logger.Warnf("Failed to read cached resource %s from %s: %v", resourceName, scAddress, err)
-				} else {
-					return content, nil
-				}
+			logger.Debugf("Resource %s from %s not in cache", resourceName, scAddress)
+		} else if !lastModified.Before(*lastUpdated) {
+			cacheStart := time.Now()
+			content, err := cache.Read(scAddress, resourceName)
+			if err != nil {
+				logger.Warnf("Failed to read cached resource %s from %s: %v", resourceName, scAddress, err)
 			} else {
-				if err = cache.Delete(scAddress, resourceName); err != nil {
-					logger.Warnf("Failed to delete outdated resource %s from %s: %v", resourceName, scAddress, err)
-				}
+				logger.Debugf("Cache read took %v", time.Since(cacheStart))
+				logger.Debugf("RequestFile completed in %v (cache hit)", time.Since(startTime))
+				return content, nil
 			}
+		} else {
+			if err = cache.Delete(scAddress, resourceName); err != nil {
+				logger.Warnf("Failed to delete outdated resource %s from %s: %v", resourceName, scAddress, err)
+			}
+			logger.Warnf("website %s is outdated, fetching...", resourceName)
 		}
-
-		logger.Warnf("website %s is outdated, fetching...", resourceName)
 	}
+	logger.Debugf("Timestamp check took %v", time.Since(timestampStart))
 
 	logger.Debugf("Website %s not found in cache or not up to date, fetching...", scAddress)
 
-	websiteBytes, err := fetchAndCache(networkInfo, scAddress, cache, resourceName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch and cache website: %w", err)
-	}
-
-	return websiteBytes, nil
-}
-
-// Fetches the website and saves it to the cache.
-func fetchAndCache(networkInfo *msConfig.NetworkInfos, scAddress string, cache *cache.Cache, resourceName string) ([]byte, error) {
+	// Fetch the website content
+	fetchStart := time.Now()
 	websiteBytes, err := website.Fetch(networkInfo, scAddress, resourceName)
 	if err != nil {
+		logger.Debugf("RequestFile failed after %v", time.Since(startTime))
 		return nil, fmt.Errorf("failed to fetch %s from %s: %w", resourceName, scAddress, err)
 	}
+	logger.Debugf("Website fetch took %v", time.Since(fetchStart))
 
 	logger.Debugf("%s: %s successfully fetched with size: %d bytes", scAddress, resourceName, len(websiteBytes))
 
+	// Save to cache if available
 	if cache != nil {
-		err := cache.Save(scAddress, resourceName, websiteBytes)
+		cacheStart := time.Now()
+		err = cache.Save(scAddress, resourceName, websiteBytes, *lastUpdated)
 		if err != nil {
-			return nil, fmt.Errorf("failed to save %s to %s cache: %w", resourceName, scAddress, err)
+			logger.Warnf("Failed to save %s to %s cache: %v", resourceName, scAddress, err)
+		} else {
+			logger.Infof("%s: %s successfully written to cache in %v", scAddress, resourceName, time.Since(cacheStart))
 		}
-
-		logger.Infof("%s: %s successfully written to cache", scAddress, resourceName)
 	}
 
+	logger.Debugf("RequestFile completed in %v", time.Since(startTime))
 	return websiteBytes, nil
-}
-
-// Compares the last updated timestamp to the file's last modified timestamp.
-// Returns true if the file is outdated or if an error occurred. Otherwise, returns false.
-//
-//nolint:unused
-func isFileOutdated(cache *cache.Cache, networkInfo *msConfig.NetworkInfos, scAddress string, fileName string) (bool, error) {
-	lastUpdated, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
-	if err != nil {
-		return true, fmt.Errorf("failed to get last update timestamp: %w", err)
-	}
-
-	lastModified, err := cache.GetLastModified(scAddress, fileName)
-	if err != nil {
-		return true, fmt.Errorf("failed to get file info: %w", err)
-	}
-
-	return lastModified.Before(*lastUpdated), nil
 }
 
 func ResourceExistsOnChain(network *msConfig.NetworkInfos, websiteAddress, filePath string) (bool, error) {
@@ -114,15 +106,4 @@ func ResourceExistsOnChain(network *msConfig.NetworkInfos, websiteAddress, fileP
 	}
 
 	return isPresent, nil
-}
-
-func ResourceExistsInCache(scAddress string, resourceName string) (bool, error) {
-	logger.Debugf("Checking if resource %s exists in cache for website %s", resourceName, scAddress)
-
-	cache, err := cache.NewCache(cacheDir)
-	if err != nil {
-		return false, fmt.Errorf("failed to create cache: %w", err)
-	}
-
-	return cache.IsPresent(scAddress, resourceName), nil
 }
