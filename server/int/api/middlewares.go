@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/mns"
@@ -28,14 +27,13 @@ var brokenWebsiteZip []byte
 // SubdomainMiddleware handles subdomain website serving.
 func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		startTime := time.Now()
-		logger.Debugf("SubdomainMiddleware: Starting request for %s", r.Host)
+		logger.Debugf("SubdomainMiddleware: Handling request for %s", r.Host)
 
 		subdomain := extractSubdomain(r.Host, conf.Domain)
 		if subdomain == "" {
 			logger.Debug("SubdomainMiddleware: No subdomain found. Proceeding with the next handler.")
 			handler.ServeHTTP(w, r)
-			logger.Debugf("SubdomainMiddleware: Request completed in %v", time.Since(startTime))
+
 			return
 		}
 
@@ -43,61 +41,53 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 		logger.Debugf("SubdomainMiddleware: Subdomain %s found, resolving address", subdomain)
 
-		resolveStart := time.Now()
 		address, err := resolveAddress(subdomain, conf.NetworkInfos)
 		if err != nil {
 			logger.Warnf("Subdomain %s could not be resolved to an address: %v", subdomain, err)
+
 			localHandler(w, domainNotFoundZip, path)
-			logger.Debugf("SubdomainMiddleware: Request completed in %v (address resolution failed)", time.Since(startTime))
+
 			return
 		}
-		logger.Debugf("Address resolution took %v", time.Since(resolveStart))
 
 		if !mwUtils.IsValidAddress(address) {
 			logger.Warnf("%s is not a valid address", address)
+
 			localHandler(w, brokenWebsiteZip, path)
-			logger.Debugf("SubdomainMiddleware: Request completed in %v (invalid address)", time.Since(startTime))
+
 			return
 		}
 
 		if !isWebsiteAllowed(address, subdomain, conf.AllowList, conf.BlockList) {
 			logger.Warnf("Subdomain %s or address %s is not allowed", subdomain, address)
+
 			localHandler(w, notAvailableZip, path)
-			logger.Debugf("SubdomainMiddleware: Request completed in %v (not allowed)", time.Since(startTime))
+
 			return
 		}
 
-		serveStart := time.Now()
 		serveContent(conf, address, path, w)
-		logger.Debugf("Content serving took %v", time.Since(serveStart))
-		logger.Debugf("SubdomainMiddleware: Total request completed in %v", time.Since(startTime))
 	})
 }
 
 // serveContent serves the requested resource for the given website address.
 func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
-	startTime := time.Now()
 	content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
+
 		localHandler(w, brokenWebsiteZip, path)
-		logger.Debugf("serveContent: Request failed after %v", time.Since(startTime))
+
 		return
 	}
-	logger.Debugf("Resource retrieval took %v", time.Since(startTime))
 
 	w.Header().Set("Content-Type", mimeType)
 
-	writeStart := time.Now()
 	_, err = w.Write(content)
 	if err != nil {
 		logger.Errorf("Failed to write content: %v", err)
 		http.Error(w, "an error occurred while writing response", http.StatusInternalServerError)
-		logger.Debugf("serveContent: Write failed after %v", time.Since(startTime))
-		return
 	}
-	logger.Debugf("Content writing took %v", time.Since(writeStart))
-	logger.Debugf("serveContent: Total request completed in %v", time.Since(startTime))
 }
 
 // extractSubdomain extracts the subdomain from the host.

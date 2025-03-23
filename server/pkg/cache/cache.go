@@ -1,17 +1,15 @@
 package cache
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"hash/fnv"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru"
-	"go.etcd.io/bbolt"
+	"github.com/dgraph-io/badger/v3"
 )
 
 const (
@@ -21,7 +19,6 @@ const (
 	entrySubTagData   = 0x02 // Subtag for entry data
 	entrySubTagTime   = 0x03 // Subtag for entry timestamp
 	idCounterIndexTag = 0x02
-	entryCountTag     = 0x03
 
 	// Bucket IDs
 	entryBucketID     = 0x10
@@ -35,7 +32,7 @@ var (
 // Cache represents the dual caching system with RAM and disk storage
 type Cache struct {
 	ramCache *lru.Cache
-	db       *bbolt.DB
+	db       *badger.DB
 	mu       sync.RWMutex
 	// idCounter is a unique counter for each entry in the disk cache
 	idCounter uint64
@@ -57,60 +54,72 @@ func NewCache(cacheDir string, maxRAMEntries, maxDiskEntries uint64) (*Cache, er
 			return
 		}
 
+		// Initialize BadgerDB
+		opts := badger.DefaultOptions(cacheDir)
+		opts.Logger = nil // Disable BadgerDB's logger
+		db, err := badger.Open(opts)
+		if err != nil {
+			initErr = fmt.Errorf("failed to open BadgerDB: %v", err)
+			return
+		}
+
+		// Initialize cache instance
+		instance = &Cache{
+			db:            db,
+			maxRAMEntries: maxRAMEntries,
+			maxDiskEntries: maxDiskEntries,
+		}
+
 		// Initialize RAM cache with uint64 type for FNV hash
 		ramCache, err := lru.NewWithEvict(int(maxRAMEntries), func(key interface{}, value interface{}) {
-			// Eviction callback
+
+			// Handle eviction by saving to disk
+			entry, ok := value.(*cacheEntry)
+			if !ok {
+				return
+			}
+
+			// Save evicted entry to disk as the newest entry
+			_ = db.Update(func(txn *badger.Txn) error {
+				// Check if we need to evict the oldest entry from disk
+				for instance.entryCount >= instance.maxDiskEntries {
+					if err := instance.evictOldestEntry(txn); err != nil {
+						return err
+					}
+				}
+
+				// Use the stored website and resource names to create the disk key
+				return instance.saveEntryToDisk(txn, entry)
+			})
 		})
 		if err != nil {
 			initErr = fmt.Errorf("failed to create LRU cache: %v", err)
 			return
 		}
 
-		// Initialize BBolt database
-		dbPath := filepath.Join(cacheDir, "cache.db")
-		db, err := bbolt.Open(dbPath, 0600, nil)
-		if err != nil {
-			initErr = fmt.Errorf("failed to open BBolt database: %v", err)
-			return
-		}
+		// Set the RAM cache after successful initialization
+		instance.ramCache = ramCache
 
-		// Initialize cache instance
-		instance = &Cache{
-			ramCache:      ramCache,
-			db:            db,
-			maxRAMEntries: maxRAMEntries,
-			maxDiskEntries: maxDiskEntries,
-		}
+		// Initialize or load the ID counter and count entries
+		err = db.Update(func(txn *badger.Txn) error {
+			// Find the highest existing ID counter value and count entries
+			it := txn.NewIterator(badger.DefaultIteratorOptions)
+			defer it.Close()
 
-		// Initialize or load the entry count and ID counter
-		err = db.Update(func(tx *bbolt.Tx) error {
-			// Create bucket if it doesn't exist
-			entryBucket, err := tx.CreateBucketIfNotExists([]byte{entryBucketID})
-			if err != nil {
-				return fmt.Errorf("failed to create entry bucket: %v", err)
-			}
+			// Initialize counters
+			instance.idCounter = 0
+			instance.entryCount = 0
 
-			// Load or initialize entry count
-			entryCountValue := entryBucket.Get([]byte{entryCountTag})
-			if entryCountValue == nil {
-				// Initialize entry count to 0
-				entryCountValue = make([]byte, 8)
-				binary.BigEndian.PutUint64(entryCountValue, 0)
-				if err := entryBucket.Put([]byte{entryCountTag}, entryCountValue); err != nil {
-					return fmt.Errorf("failed to initialize entry count: %v", err)
+			// Count entries by iterating through all ID counter index entries
+			for it.Seek([]byte{idCounterIndexTag}); it.ValidForPrefix([]byte{idCounterIndexTag}); it.Next() {
+				key := it.Item().Key()
+				if len(key) > 1 {
+					id := binary.BigEndian.Uint64(key[1:])
+					if id + 1 > instance.idCounter {
+						instance.idCounter = id + 1
+					}
+					instance.entryCount++
 				}
-			}
-			instance.entryCount = binary.BigEndian.Uint64(entryCountValue)
-
-			// Find the highest existing ID counter value or set to 0 if no entries exist
-			cursor := entryBucket.Cursor()
-			seekKey := []byte{idCounterIndexTag + 1}
-			cursor.Seek(seekKey)
-			k, _ := cursor.Prev()
-			if k != nil && len(k) > 0 && k[0] == idCounterIndexTag {
-				instance.idCounter = binary.BigEndian.Uint64(k[1:]) + 1
-			} else {
-				instance.idCounter = 0
 			}
 
 			return nil
@@ -177,20 +186,28 @@ func (c *Cache) GetLastModified(websiteAddress string, fileName string) (time.Ti
 
 	// If not in RAM cache, try disk cache without promoting
 	var modified time.Time
-	err := c.db.View(func(tx *bbolt.Tx) error {
-		entryBucket := tx.Bucket([]byte{entryBucketID})
-		if entryBucket == nil {
-			return fmt.Errorf("entry bucket not found")
+	err := c.db.View(func(txn *badger.Txn) error {
+		// Create the entry key prefix
+		entryKeyPrefix := make([]byte, 1+len(diskKey))
+		entryKeyPrefix[0] = entryTag
+		copy(entryKeyPrefix[1:], diskKey)
+
+		// Create new byte slice for timestamp key
+		timestampKey := make([]byte, len(entryKeyPrefix)+1)
+		copy(timestampKey, entryKeyPrefix)
+		timestampKey[len(entryKeyPrefix)] = entrySubTagTime
+
+		item, err := txn.Get(timestampKey)
+		if err == badger.ErrKeyNotFound {
+			return fmt.Errorf("timestamp not found for file %s in website %s", fileName, websiteAddress)
+		}
+		if err != nil {
+			return err
 		}
 
-		// Create the entry key prefix
-		entryKeyPrefix := append([]byte{entryTag}, diskKey...)
-
-		// Get the timestamp
-		timestampKey := append(entryKeyPrefix, entrySubTagTime)
-		timestampValue := entryBucket.Get(timestampKey)
-		if timestampValue == nil {
-			return fmt.Errorf("timestamp not found for file %s in website %s", fileName, websiteAddress)
+		timestampValue, err := item.ValueCopy(nil)
+		if err != nil {
+			return err
 		}
 
 		modified = time.Unix(0, int64(binary.BigEndian.Uint64(timestampValue)))
@@ -219,165 +236,189 @@ func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error)
 		}
 	}
 
-	// If not in RAM cache, read disk cache without promoting
+	// If not in RAM cache, check disk cache
 	var content []byte
 	var timestamp []byte
-	err := c.db.View(func(tx *bbolt.Tx) error {
-		entryBucket := tx.Bucket([]byte{entryBucketID})
-		if entryBucket == nil {
-			return fmt.Errorf("entry bucket not found")
-		}
-
+	err := c.db.Update(func(txn *badger.Txn) error {
 		// Create the entry key prefix
-		entryKeyPrefix := append([]byte{entryTag}, diskKey...)
+		entryKeyPrefix := make([]byte, 1+len(diskKey))
+		entryKeyPrefix[0] = entryTag
+		copy(entryKeyPrefix[1:], diskKey)
+
+		// Create new byte slices for each key to avoid array modification issues
+		dataKey := make([]byte, len(entryKeyPrefix)+1)
+		copy(dataKey, entryKeyPrefix)
+		dataKey[len(entryKeyPrefix)] = entrySubTagData
+
+		timestampKey := make([]byte, len(entryKeyPrefix)+1)
+		copy(timestampKey, entryKeyPrefix)
+		timestampKey[len(entryKeyPrefix)] = entrySubTagTime
 
 		// Get the data
-		dataKey := append(entryKeyPrefix, entrySubTagData)
-		content = entryBucket.Get(dataKey)
-		if content == nil {
+		item, err := txn.Get(dataKey)
+		if err == badger.ErrKeyNotFound {
 			return fmt.Errorf("file %s not found in cache for website %s", resourceName, websiteAddress)
+		}
+		if err != nil {
+			return err
+		}
+
+		content, err = item.ValueCopy(nil)
+		if err != nil {
+			return err
 		}
 
 		// Get the timestamp
-		timestampKey := append(entryKeyPrefix, entrySubTagTime)
-		timestamp = entryBucket.Get(timestampKey)
-		if timestamp == nil {
+		item, err = txn.Get(timestampKey)
+		if err == badger.ErrKeyNotFound {
 			return fmt.Errorf("timestamp not found for file %s in website %s", resourceName, websiteAddress)
 		}
+		if err != nil {
+			return err
+		}
 
-		return nil
+		timestamp, err = item.ValueCopy(nil)
+		if err != nil {
+			return err
+		}
+
+		// Remove from disk
+		return c.deleteEntryFromDisk(txn, diskKey)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	// Remove from disk
-	err = c.db.Update(func(tx *bbolt.Tx) error {
-		return c.deleteEntryFromDisk(tx, diskKey)
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to remove from disk cache: %v", err)
-	}
-
-	// Create a cache entry and add it to RAM cache
+	// Create a cache entry
 	entry := &cacheEntry{
-		content:  content,
-		modified: time.Unix(0, int64(binary.BigEndian.Uint64(timestamp))),
+		content:        content,
+		modified:       time.Unix(0, int64(binary.BigEndian.Uint64(timestamp))),
+		websiteAddress: websiteAddress,
+		resourceName:   resourceName,
 	}
 
-	// Add to RAM cache, handling eviction if needed
-	if evicted := c.ramCache.Add(key, entry); evicted {
-		evictedEntry := entry
-
-		// Save evicted entry to disk as the newest entry
-		err = c.db.Update(func(tx *bbolt.Tx) error {
-			// Check if we need to evict the oldest entry from disk
-			if c.entryCount >= c.maxDiskEntries {
-				if err := c.evictOldestEntry(tx); err != nil {
-					return err
-				}
-			}
-
-			return c.saveEntryToDisk(tx, diskKey, evictedEntry)
-		})
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to save evicted entry to disk: %v", err)
-		}
-	}
+	// Add to RAM cache - eviction will be handled automatically by the callback
+	c.ramCache.Add(key, entry)
 
 	return content, nil
 }
 
 // deleteEntryFromDisk removes an entry from the disk cache
-func (c *Cache) deleteEntryFromDisk(tx *bbolt.Tx, key []byte) error {
-	entryBucket := tx.Bucket([]byte{entryBucketID})
-	if entryBucket == nil {
-		return fmt.Errorf("entry bucket not found")
-	}
-
+func (c *Cache) deleteEntryFromDisk(txn *badger.Txn, key []byte) error {
 	// Create the entry key prefix
-	entryKeyPrefix := append([]byte{entryTag}, key...)
+	entryKeyPrefix := make([]byte, 1+len(key))
+	entryKeyPrefix[0] = entryTag
+	copy(entryKeyPrefix[1:], key)
 
 	// Get the ID counter for this entry
-	idCounterKey := append(entryKeyPrefix, entrySubTagID)
-	idCounterValue := entryBucket.Get(idCounterKey)
-	if idCounterValue == nil {
+	idCounterKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(idCounterKey, entryKeyPrefix)
+	idCounterKey[len(entryKeyPrefix)] = entrySubTagID
+
+	item, err := txn.Get(idCounterKey)
+	if err == badger.ErrKeyNotFound {
 		return nil // Entry not found in disk cache
 	}
+	if err != nil {
+		return err
+	}
 
-	// Delete all entries for this key
-	cursor := entryBucket.Cursor()
-	for k, _ := cursor.Seek(entryKeyPrefix); k != nil && bytes.HasPrefix(k, entryKeyPrefix); k, _ = cursor.Next() {
-		if err := entryBucket.Delete(k); err != nil {
-			return fmt.Errorf("failed to delete entry: %v", err)
-		}
+	idCounterValue, err := item.ValueCopy(nil)
+	if err != nil {
+		return err
+	}
+
+	// Create data and timestamp keys
+	dataKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(dataKey, entryKeyPrefix)
+	dataKey[len(entryKeyPrefix)] = entrySubTagData
+
+	timestampKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(timestampKey, entryKeyPrefix)
+	timestampKey[len(entryKeyPrefix)] = entrySubTagTime
+
+	// Delete the ID counter entry
+	if err := txn.Delete(idCounterKey); err != nil {
+		return fmt.Errorf("failed to delete ID counter entry: %v", err)
+	}
+
+	// Delete the data entry
+	if err := txn.Delete(dataKey); err != nil {
+		return fmt.Errorf("failed to delete data entry: %v", err)
+	}
+
+	// Delete the timestamp entry
+	if err := txn.Delete(timestampKey); err != nil {
+		return fmt.Errorf("failed to delete timestamp entry: %v", err)
 	}
 
 	// Delete the ID counter index entry
-	idCounterIndexKey := append([]byte{idCounterIndexTag}, idCounterValue...)
-	if err := entryBucket.Delete(idCounterIndexKey); err != nil {
+	idCounterIndexKey := make([]byte, 1+len(idCounterValue))
+	idCounterIndexKey[0] = idCounterIndexTag
+	copy(idCounterIndexKey[1:], idCounterValue)
+	if err := txn.Delete(idCounterIndexKey); err != nil {
 		return fmt.Errorf("failed to delete ID counter index: %v", err)
 	}
 
-	// Update entry count
-	c.entryCount--
-	entryCountValue := make([]byte, 8)
-	binary.BigEndian.PutUint64(entryCountValue, c.entryCount)
-	if err := entryBucket.Put([]byte{entryCountTag}, entryCountValue); err != nil {
-		return fmt.Errorf("failed to update entry count: %v", err)
+	// Update entry count in memory only
+	if c.entryCount > 0 {
+		c.entryCount--
 	}
 
 	return nil
 }
 
 // saveEntryToDisk saves an entry to the disk cache
-func (c *Cache) saveEntryToDisk(tx *bbolt.Tx, key []byte, entry *cacheEntry) error {
-	entryBucket := tx.Bucket([]byte{entryBucketID})
-	if entryBucket == nil {
-		return fmt.Errorf("entry bucket not found")
-	}
+func (c *Cache) saveEntryToDisk(txn *badger.Txn, entry *cacheEntry) error {
+	// Compute the key from the entry contents
+	key := getCacheKey(entry.websiteAddress, entry.resourceName)
 
 	// Create the entry key prefix
 	entryKeyPrefix := append([]byte{entryTag}, key...)
 
+	// Create new byte slices for each key to avoid array modification issues
+	idCounterKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(idCounterKey, entryKeyPrefix)
+	idCounterKey[len(entryKeyPrefix)] = entrySubTagID
+
+	dataKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(dataKey, entryKeyPrefix)
+	dataKey[len(entryKeyPrefix)] = entrySubTagData
+
+	timestampKey := make([]byte, len(entryKeyPrefix)+1)
+	copy(timestampKey, entryKeyPrefix)
+	timestampKey[len(entryKeyPrefix)] = entrySubTagTime
+
 	// Save the ID counter
-	idCounterKey := append(entryKeyPrefix, entrySubTagID)
 	idCounterValue := make([]byte, 8)
 	binary.BigEndian.PutUint64(idCounterValue, c.idCounter)
-	if err := entryBucket.Put(idCounterKey, idCounterValue); err != nil {
+	if err := txn.Set(idCounterKey, idCounterValue); err != nil {
 		return fmt.Errorf("failed to save ID counter: %v", err)
 	}
 
 	// Save the data
-	dataKey := append(entryKeyPrefix, entrySubTagData)
-	if err := entryBucket.Put(dataKey, entry.content); err != nil {
+	if err := txn.Set(dataKey, entry.content); err != nil {
 		return fmt.Errorf("failed to save data: %v", err)
 	}
 
 	// Save the timestamp
-	timestampKey := append(entryKeyPrefix, entrySubTagTime)
 	timestampValue := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampValue, uint64(entry.modified.UnixNano()))
-	if err := entryBucket.Put(timestampKey, timestampValue); err != nil {
+	if err := txn.Set(timestampKey, timestampValue); err != nil {
 		return fmt.Errorf("failed to save timestamp: %v", err)
 	}
 
 	// Save the ID counter index
-	idCounterIndexKey := append([]byte{idCounterIndexTag}, idCounterValue...)
-	if err := entryBucket.Put(idCounterIndexKey, key); err != nil {
+	idCounterIndexKey := make([]byte, 1+8)
+	idCounterIndexKey[0] = idCounterIndexTag
+	binary.BigEndian.PutUint64(idCounterIndexKey[1:], c.idCounter)
+	if err := txn.Set(idCounterIndexKey, key); err != nil {
 		return fmt.Errorf("failed to save ID counter index: %v", err)
 	}
 
-	// Update entry count
+	// Update entry count in memory only
 	c.entryCount++
-	entryCountValue := make([]byte, 8)
-	binary.BigEndian.PutUint64(entryCountValue, c.entryCount)
-	if err := entryBucket.Put([]byte{entryCountTag}, entryCountValue); err != nil {
-		return fmt.Errorf("failed to update entry count: %v", err)
-	}
 
 	// Increment ID counter
 	c.idCounter++
@@ -386,22 +427,25 @@ func (c *Cache) saveEntryToDisk(tx *bbolt.Tx, key []byte, entry *cacheEntry) err
 }
 
 // evictOldestEntry removes the oldest entry from the disk cache
-func (c *Cache) evictOldestEntry(tx *bbolt.Tx) error {
-	entryBucket := tx.Bucket([]byte{entryBucketID})
-	if entryBucket == nil {
-		return fmt.Errorf("entry bucket not found")
-	}
+func (c *Cache) evictOldestEntry(txn *badger.Txn) error {
+	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	defer it.Close()
 
 	// Find the oldest entry by looking at the lowest ID counter index
-	cursor := entryBucket.Cursor()
 	seekKey := []byte{idCounterIndexTag}
-	k, v := cursor.Seek(seekKey)
-	if k == nil || len(k) == 0 || k[0] != idCounterIndexTag {
+	it.Seek(seekKey)
+	if !it.ValidForPrefix(seekKey) {
 		return nil // No entries to evict
 	}
 
+	// Get the key to delete
+	key, err := it.Item().ValueCopy(nil)
+	if err != nil {
+		return err
+	}
+
 	// Delete the entry using the existing function
-	return c.deleteEntryFromDisk(tx, v)
+	return c.deleteEntryFromDisk(txn, key)
 }
 
 // Save a resource in the cache for a given website
@@ -412,16 +456,19 @@ func (c *Cache) Save(websiteAddress string, resourceName string, content []byte,
 	key := getHashKey(websiteAddress, resourceName)
 	diskKey := getCacheKey(websiteAddress, resourceName)
 	entry := &cacheEntry{
-		content:  content,
-		modified: modified,
+		content:        content,
+		modified:       modified,
+		websiteAddress: websiteAddress,
+		resourceName:   resourceName,
 	}
 
 	// Remove any existing entry from RAM cache
 	c.ramCache.Remove(key)
 
 	// Remove any existing entry from disk cache
-	err := c.db.Update(func(tx *bbolt.Tx) error {
-		return c.deleteEntryFromDisk(tx, diskKey)
+	err := c.db.Update(func(txn *badger.Txn) error {
+		// print the diskKey
+		return c.deleteEntryFromDisk(txn, diskKey)
 	})
 
 	if err != nil {
@@ -429,29 +476,7 @@ func (c *Cache) Save(websiteAddress string, resourceName string, content []byte,
 	}
 
 	// Add the new entry to RAM cache
-	evicted := c.ramCache.Add(key, entry)
-
-	// If an entry was evicted from RAM cache, save it to disk
-	if evicted {
-		// Get the evicted entry from the cache
-		evictedEntry := entry
-
-		// Save to disk cache
-		err = c.db.Update(func(tx *bbolt.Tx) error {
-			// Check if we need to evict the oldest entry from disk
-			if c.entryCount >= c.maxDiskEntries {
-				if err := c.evictOldestEntry(tx); err != nil {
-					return err
-				}
-			}
-
-			return c.saveEntryToDisk(tx, diskKey, evictedEntry)
-		})
-
-		if err != nil {
-			return fmt.Errorf("failed to save to disk cache: %v", err)
-		}
-	}
+	c.ramCache.Add(key, entry)
 
 	return nil
 }
@@ -468,8 +493,8 @@ func (c *Cache) Delete(websiteAddress string, resourceName string) error {
 	c.ramCache.Remove(key)
 
 	// Remove from disk cache
-	err := c.db.Update(func(tx *bbolt.Tx) error {
-		return c.deleteEntryFromDisk(tx, diskKey)
+	err := c.db.Update(func(txn *badger.Txn) error {
+		return c.deleteEntryFromDisk(txn, diskKey)
 	})
 
 	if err != nil {
@@ -498,18 +523,16 @@ func (c *Cache) Close() error {
 		}
 
 		// Save to disk cache
-		err := c.db.Update(func(tx *bbolt.Tx) error {
-			// Check if we need to evict the oldest entry from disk
-			if c.entryCount >= c.maxDiskEntries {
-				if err := c.evictOldestEntry(tx); err != nil {
+		err := c.db.Update(func(txn *badger.Txn) error {
+			// Keep evicting entries until we have enough space
+			for c.entryCount >= c.maxDiskEntries {
+				if err := c.evictOldestEntry(txn); err != nil {
 					return err
 				}
 			}
 
-			// Create a unique key for this entry
-			diskKey := make([]byte, 8)
-			binary.BigEndian.PutUint64(diskKey, key.(uint64))
-			return c.saveEntryToDisk(tx, diskKey, entry)
+			// Use the stored website and resource names to create the disk key
+			return c.saveEntryToDisk(txn, entry)
 		})
 
 		if err != nil {
@@ -527,6 +550,8 @@ func (c *Cache) Close() error {
 
 // cacheEntry represents a cached resource with its content and modification time
 type cacheEntry struct {
-	content  []byte
-	modified time.Time
+	content         []byte
+	modified        time.Time
+	websiteAddress  string
+	resourceName    string
 }
