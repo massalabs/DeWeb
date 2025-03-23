@@ -12,7 +12,7 @@ func TestCacheItems(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Initialize cache
-	cache, err := NewCache(tmpDir, 2, 200)
+	cache, err := NewCache(tmpDir, 10, 1000)
 	if err != nil {
 		t.Fatalf("Failed to create cache: %v", err)
 	}
@@ -20,7 +20,7 @@ func TestCacheItems(t *testing.T) {
 
 	// Test data
 	website := "test-website.com"
-	numItems := 50
+	numItems := 100
 	items := make(map[string][]byte)
 
 	// Save items to the cache
