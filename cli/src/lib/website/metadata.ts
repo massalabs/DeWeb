@@ -46,6 +46,36 @@ export async function getGlobalMetadata(
     return new Metadata(key, value)
   })
 }
+export type ParsedMetadata = {
+  title?: string
+  description?: string
+  keywords?: string[]
+  lastUpdate?: string
+  custom?: Record<string, string>
+}
+
+export function extractWebsiteMetadata(metadata: Metadata[]): ParsedMetadata {
+  return metadata.reduce((acc, m) => {
+    if (m.key === LAST_UPDATE_KEY) {
+      acc.lastUpdate = m.value
+    } else if (m.key === TITLE_METADATA_KEY) {
+      acc.title = m.value
+    } else if (m.key === DESCRIPTION_METADATA_KEY) {
+      acc.description = m.value
+    } else if (m.key.startsWith(KEYWORD_METADATA_KEY_PREFIX)) {
+      if (!acc.keywords) {
+        acc.keywords = []
+      }
+      acc.keywords.push(m.value)
+    } else {
+      if (!acc.custom) {
+        acc.custom = {}
+      }
+      acc.custom[m.key] = m.value
+    }
+    return acc
+  }, {} as ParsedMetadata)
+}
 
 /**
  * Returns the title, description and keywords of a website stored on Massa blockchain
@@ -57,31 +87,9 @@ export async function getGlobalMetadata(
 export async function getWebsiteMetadata(
   provider: PublicProvider,
   address: string
-): Promise<{
-  title: string
-  description: string
-  keywords: string[]
-  lastUpdate: string
-}> {
+): Promise<ParsedMetadata> {
   const metadata = await getGlobalMetadata(provider, address)
-
-  const title = metadata.find((m) => m.key === TITLE_METADATA_KEY)?.value
-  const description = metadata.find(
-    (m) => m.key === DESCRIPTION_METADATA_KEY
-  )?.value
-  const keywords = metadata
-    .filter((m) => m.key.startsWith(KEYWORD_METADATA_KEY_PREFIX))
-    .sort()
-    .map((m) => m.value)
-
-  const lastUpdate = metadata.find((m) => m.key === LAST_UPDATE_KEY)?.value
-
-  return {
-    title: title ?? '',
-    description: description ?? '',
-    keywords,
-    lastUpdate: lastUpdate ?? '',
-  }
+  return extractWebsiteMetadata(metadata)
 }
 
 /**
