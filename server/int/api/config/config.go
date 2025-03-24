@@ -14,33 +14,47 @@ const (
 	DefaultDomain         = "localhost"
 	DefaultNetworkNodeURL = "https://mainnet.massa.net/api/v2"
 	DefaultAPIPort        = 8080
+
+	// Default cache size limits
+	DefaultMaxRAMEntries                uint64 = 1000  // Maximum number of file entries in RAM cache
+	DefaultMaxDiskEntries               uint64 = 10000 // Maximum number of file entries in disk cache
+	DefaultFileListCacheDurationSeconds        = 60    // Default expiration of the file list cache
 )
 
 type ServerConfig struct {
-	Domain       string
-	APIPort      int
-	NetworkInfos msConfig.NetworkInfos
-	AllowList    []string
-	BlockList    []string
+	Domain                       string
+	APIPort                      int
+	NetworkInfos                 msConfig.NetworkInfos
+	AllowList                    []string
+	BlockList                    []string
+	SiteRAMCacheMaxItems         uint64
+	SiteDiskCacheMaxItems        uint64
+	FileListCacheDurationSeconds int
 }
 
 type yamlServerConfig struct {
-	Domain         string   `yaml:"domain"`
-	NetworkNodeURL string   `yaml:"network_node_url"`
-	APIPort        int      `yaml:"api_port"`
-	AllowList      []string `yaml:"allow_list"`
-	BlockList      []string `yaml:"block_list"`
+	Domain                       string   `yaml:"domain"`
+	NetworkNodeURL               string   `yaml:"network_node_url"`
+	APIPort                      int      `yaml:"api_port"`
+	AllowList                    []string `yaml:"allow_list"`
+	BlockList                    []string `yaml:"block_list"`
+	SiteRAMCacheMaxItems         uint64   `yaml:"site_ram_cache_max_items"`
+	SiteDiskCacheMaxItems        uint64   `yaml:"site_disk_cache_max_items"`
+	FileListCacheDurationSeconds int      `yaml:"file_list_cache_duration_seconds"`
 }
 
 func DefaultConfig() *ServerConfig {
 	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       DefaultDomain,
-		APIPort:      DefaultAPIPort,
-		NetworkInfos: networkInfos,
-		AllowList:    []string{},
-		BlockList:    []string{},
+		Domain:                       DefaultDomain,
+		APIPort:                      DefaultAPIPort,
+		NetworkInfos:                 networkInfos,
+		AllowList:                    []string{},
+		BlockList:                    []string{},
+		SiteRAMCacheMaxItems:         DefaultMaxRAMEntries,
+		SiteDiskCacheMaxItems:        DefaultMaxDiskEntries,
+		FileListCacheDurationSeconds: DefaultFileListCacheDurationSeconds,
 	}
 }
 
@@ -79,13 +93,29 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		yamlConf.APIPort = DefaultAPIPort
 	}
 
+	// Set default values for cache settings if not specified
+	if yamlConf.SiteRAMCacheMaxItems == 0 {
+		yamlConf.SiteRAMCacheMaxItems = DefaultMaxRAMEntries
+	}
+
+	if yamlConf.SiteDiskCacheMaxItems == 0 {
+		yamlConf.SiteDiskCacheMaxItems = DefaultMaxDiskEntries
+	}
+
+	if yamlConf.FileListCacheDurationSeconds == 0 {
+		yamlConf.FileListCacheDurationSeconds = DefaultFileListCacheDurationSeconds
+	}
+
 	networkInfos := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
 
 	return &ServerConfig{
-		Domain:       yamlConf.Domain,
-		APIPort:      yamlConf.APIPort,
-		NetworkInfos: networkInfos,
-		AllowList:    yamlConf.AllowList,
-		BlockList:    yamlConf.BlockList,
+		Domain:                       yamlConf.Domain,
+		APIPort:                      yamlConf.APIPort,
+		NetworkInfos:                 networkInfos,
+		AllowList:                    yamlConf.AllowList,
+		BlockList:                    yamlConf.BlockList,
+		SiteRAMCacheMaxItems:         yamlConf.SiteRAMCacheMaxItems,
+		SiteDiskCacheMaxItems:        yamlConf.SiteDiskCacheMaxItems,
+		FileListCacheDurationSeconds: yamlConf.FileListCacheDurationSeconds,
 	}, nil
 }

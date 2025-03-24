@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
-	"github.com/massalabs/station/int/config"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
@@ -20,8 +22,82 @@ const (
 	lastUpdateTimestampKey = "LAST_UPDATE"
 )
 
+// filePathListCacheEntry represents a cached file path list with its expiration time
+type filePathListCacheEntry struct {
+	files      map[string]struct{} // Using map for O(1) lookups
+	expiration time.Time
+}
+
+// filePathListCache is a thread-safe cache for file path lists
+type filePathListCache struct {
+	mu    sync.RWMutex
+	cache map[string]*filePathListCacheEntry
+}
+
+var (
+	globalFilePathListCache = &filePathListCache{
+		cache: make(map[string]*filePathListCacheEntry),
+	}
+	serverConfig *config.ServerConfig
+)
+
+// SetConfig sets the server configuration for the website package
+func SetConfig(config *config.ServerConfig) {
+	serverConfig = config
+}
+
+// get retrieves the file path list from cache if it exists and is not expired
+func (c *filePathListCache) get(websiteAddress string) (map[string]struct{}, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entry, exists := c.cache[websiteAddress]
+	if !exists {
+		return nil, false
+	}
+
+	if time.Now().After(entry.expiration) {
+		return nil, false
+	}
+
+	return entry.files, true
+}
+
+// set stores the file path list in the cache with an expiration time based on config
+func (c *filePathListCache) set(websiteAddress string, files []string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Clean up expired entries before adding new ones
+	now := time.Now()
+	for key, entry := range c.cache {
+		if now.After(entry.expiration) {
+			delete(c.cache, key)
+		}
+	}
+
+	// Convert slice to map for O(1) lookups
+	filesMap := make(map[string]struct{}, len(files))
+	for _, file := range files {
+		filesMap[file] = struct{}{}
+	}
+
+	// Get expiration duration from config or use default
+	var cacheDuration time.Duration
+	if serverConfig != nil {
+		cacheDuration = time.Duration(serverConfig.FileListCacheDurationSeconds) * time.Second
+	} else {
+		cacheDuration = time.Duration(config.DefaultFileListCacheDurationSeconds) * time.Second
+	}
+
+	c.cache[websiteAddress] = &filePathListCacheEntry{
+		files:      filesMap,
+		expiration: now.Add(cacheDuration),
+	}
+}
+
 // Fetch retrieves the complete data of a website as bytes.
-func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
+func Fetch(network *msConfig.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
 	client := node.NewClient(network.NodeURL)
 
 	isPresent, err := FilePathExists(network, websiteAddress, filePath)
@@ -82,6 +158,17 @@ func GetFilesPathList(
 	client *node.Client,
 	websiteAddress string,
 ) ([]string, error) {
+	// Try to get from cache first
+	if files, exists := globalFilePathListCache.get(websiteAddress); exists {
+		// Convert map back to slice
+		result := make([]string, 0, len(files))
+		for file := range files {
+			result = append(result, file)
+		}
+
+		return result, nil
+	}
+
 	filteredKeys, err := getFileLocationKeys(client, websiteAddress)
 	if err != nil {
 		return nil, fmt.Errorf("fetching website file location keys: %w", err)
@@ -97,6 +184,9 @@ func GetFilesPathList(
 	for i, entry := range filesPathListResponse {
 		filesPathList[i] = string(entry.FinalValue)
 	}
+
+	// Store in cache
+	globalFilePathListCache.set(websiteAddress, filesPathList)
 
 	return filesPathList, nil
 }
@@ -132,8 +222,11 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 	}
 
 	var dataStore []byte
+	totalBatches := (int(chunkNumber) + datastoreBatchSize - 1) / datastoreBatchSize
 
-	for start := 0; start < int(chunkNumber); start += datastoreBatchSize {
+	for batch := 0; batch < totalBatches; batch++ {
+		start := batch * datastoreBatchSize
+
 		end := start + datastoreBatchSize
 		if end > int(chunkNumber) {
 			end = int(chunkNumber)
@@ -157,13 +250,15 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 
 			dataStore = append(dataStore, entry.FinalValue...)
 		}
+
+		logger.Debugf("Processed batch %d/%d", batch+1, totalBatches)
 	}
 
 	return dataStore, nil
 }
 
 // GetOwner retrieves the owner of the website.
-func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, error) {
+func GetOwner(network *msConfig.NetworkInfos, websiteAddress string) (string, error) {
 	client := node.NewClient(network.NodeURL)
 
 	ownerResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(ownerKey))
@@ -175,7 +270,7 @@ func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, erro
 }
 
 // GetLastUpdateTimestamp retrieves the last update timestamp of the website.
-func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (*time.Time, error) {
+func GetLastUpdateTimestamp(network *msConfig.NetworkInfos, websiteAddress string) (*time.Time, error) {
 	client := node.NewClient(network.NodeURL)
 
 	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, storagekeys.GlobalMetadataKey(convert.ToBytes(lastUpdateTimestampKey)))
@@ -200,7 +295,14 @@ func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string)
 }
 
 // Check if the requested filePath exists in the SC FilesPathList
-func FilePathExists(network *config.NetworkInfos, websiteAddress string, filePath string) (bool, error) {
+func FilePathExists(network *msConfig.NetworkInfos, websiteAddress string, filePath string) (bool, error) {
+	// Try to get from cache first
+	if files, exists := globalFilePathListCache.get(websiteAddress); exists {
+		_, exists := files[filePath]
+		return exists, nil
+	}
+
+	// If not in cache, fetch from chain
 	client := node.NewClient(network.NodeURL)
 	if client == nil {
 		return false, fmt.Errorf("failed to create node client")
@@ -211,10 +313,13 @@ func FilePathExists(network *config.NetworkInfos, websiteAddress string, filePat
 		return false, fmt.Errorf("failed to get files path list: %w", err)
 	}
 
-	for _, file := range files {
-		if file == filePath {
-			return true, nil
-		}
+	// Store in cache for future use
+	globalFilePathListCache.set(websiteAddress, files)
+
+	// Return the result from cache
+	if files, exists := globalFilePathListCache.get(websiteAddress); exists {
+		_, exists := files[filePath]
+		return exists, nil
 	}
 
 	return false, nil
