@@ -165,6 +165,7 @@ func GetFilesPathList(
 		for file := range files {
 			result = append(result, file)
 		}
+
 		return result, nil
 	}
 
@@ -225,6 +226,7 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 
 	for batch := 0; batch < totalBatches; batch++ {
 		start := batch * datastoreBatchSize
+
 		end := start + datastoreBatchSize
 		if end > int(chunkNumber) {
 			end = int(chunkNumber)
@@ -248,6 +250,7 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 
 			dataStore = append(dataStore, entry.FinalValue...)
 		}
+
 		logger.Debugf("Processed batch %d/%d", batch+1, totalBatches)
 	}
 
@@ -304,6 +307,7 @@ func FilePathExists(network *msConfig.NetworkInfos, websiteAddress string, fileP
 	if client == nil {
 		return false, fmt.Errorf("failed to create node client")
 	}
+
 	files, err := GetFilesPathList(client, websiteAddress)
 	if err != nil {
 		return false, fmt.Errorf("failed to get files path list: %w", err)

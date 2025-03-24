@@ -58,6 +58,7 @@ func NewCache(cacheDir string, maxRAMEntries, maxDiskEntries uint64) (*Cache, er
 		// Set the RAM cache after successful initialization
 		instance.ramCache = ramCache
 	})
+
 	return instance, initErr
 }
 
@@ -66,6 +67,7 @@ func getHashKey(websiteAddress, resourceName string) uint64 {
 	h := fnv.New64a()
 	h.Write([]byte(websiteAddress))
 	h.Write([]byte(resourceName))
+
 	return h.Sum64()
 }
 
@@ -184,6 +186,7 @@ func (c *Cache) Close() error {
 		if !ok {
 			continue
 		}
+
 		entry, ok := value.(*cacheEntry)
 		if !ok {
 			continue

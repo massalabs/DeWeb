@@ -16,9 +16,6 @@ const (
 	entrySubTagData   = 0x02 // Subtag for entry data
 	entrySubTagTime   = 0x03 // Subtag for entry timestamp
 	idCounterIndexTag = 0x02
-
-	// Bucket IDs
-	entryBucketID = 0x10
 )
 
 // getCacheKey returns a unique key for a website and resource as a byte slice
@@ -59,6 +56,7 @@ func createEntryPrefix(websiteAddress, resourceName string) []byte {
 	prefix := make([]byte, 1+len(cacheKey))
 	prefix[0] = entryTag
 	copy(prefix[1:], cacheKey)
+
 	return prefix
 }
 
@@ -71,6 +69,7 @@ func createIdKey(entryPrefix []byte) []byte {
 	key := make([]byte, len(entryPrefix)+1)
 	copy(key, entryPrefix)
 	key[len(entryPrefix)] = entrySubTagID
+
 	return key
 }
 
@@ -83,6 +82,7 @@ func createDataKey(entryPrefix []byte) []byte {
 	key := make([]byte, len(entryPrefix)+1)
 	copy(key, entryPrefix)
 	key[len(entryPrefix)] = entrySubTagData
+
 	return key
 }
 
@@ -95,6 +95,7 @@ func createTimestampKey(entryPrefix []byte) []byte {
 	key := make([]byte, len(entryPrefix)+1)
 	copy(key, entryPrefix)
 	key[len(entryPrefix)] = entrySubTagTime
+
 	return key
 }
 
@@ -107,6 +108,7 @@ func createIdCounterIndexKey(id uint64) []byte {
 	key := make([]byte, 1+8)
 	key[0] = idCounterIndexTag
 	binary.BigEndian.PutUint64(key[1:], id)
+
 	return key
 }
 
@@ -121,13 +123,14 @@ type DiskCache struct {
 // NewDiskCache initializes the disk cache with configurable maximum size
 func NewDiskCache(cacheDir string, maxEntries uint64) (*DiskCache, error) {
 	// Check if cache directory exists and is writable
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %v", err)
 	}
 
 	// Initialize BadgerDB
 	opts := badger.DefaultOptions(cacheDir)
 	opts.Logger = nil // Disable BadgerDB's logger
+
 	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open BadgerDB: %v", err)
@@ -157,6 +160,7 @@ func NewDiskCache(cacheDir string, maxEntries uint64) (*DiskCache, error) {
 				if id+1 > diskCache.idCounter {
 					diskCache.idCounter = id + 1
 				}
+
 				diskCache.entryCount++
 			}
 		}
@@ -181,6 +185,7 @@ func (d *DiskCache) getTimestamp(txn *badger.Txn, entryPrefix []byte) (time.Time
 	if err == badger.ErrKeyNotFound {
 		return time.Time{}, fmt.Errorf("timestamp not found")
 	}
+
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -198,6 +203,7 @@ func (d *DiskCache) getTimestamp(txn *badger.Txn, entryPrefix []byte) (time.Time
 // GetLastModified returns the last modified time of a resource in the disk cache
 func (d *DiskCache) GetLastModified(websiteAddress, resourceName string) (time.Time, error) {
 	var modified time.Time
+
 	err := d.db.View(func(txn *badger.Txn) error {
 		// Create the entry key prefix
 		entryPrefix := createEntryPrefix(websiteAddress, resourceName)
@@ -209,6 +215,7 @@ func (d *DiskCache) GetLastModified(websiteAddress, resourceName string) (time.T
 		}
 
 		modified = timestamp
+
 		return nil
 	})
 	if err != nil {
@@ -230,6 +237,7 @@ func (d *DiskCache) deleteEntry(txn *badger.Txn, websiteAddress, resourceName st
 	if err == badger.ErrKeyNotFound {
 		return nil // Entry not found in disk cache
 	}
+
 	if err != nil {
 		return err
 	}
@@ -285,6 +293,7 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 	// Save the ID counter
 	idCounterValue := make([]byte, 8)
 	binary.BigEndian.PutUint64(idCounterValue, d.idCounter)
+
 	if err := txn.Set(idCounterKey, idCounterValue); err != nil {
 		return fmt.Errorf("failed to save ID counter: %v", err)
 	}
@@ -297,6 +306,7 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 	// Save the timestamp
 	timestampValue := make([]byte, 8)
 	binary.BigEndian.PutUint64(timestampValue, uint64(modified.UnixNano()))
+
 	if err := txn.Set(timestampKey, timestampValue); err != nil {
 		return fmt.Errorf("failed to save timestamp: %v", err)
 	}
@@ -327,6 +337,7 @@ func (d *DiskCache) evictOldestEntry(txn *badger.Txn) error {
 	// Find the oldest entry by looking at the lowest ID counter index
 	seekKey := []byte{idCounterIndexTag}
 	it.Seek(seekKey)
+
 	if !it.ValidForPrefix(seekKey) {
 		return nil // No entries to evict
 	}
@@ -398,6 +409,7 @@ func (d *DiskCache) RemoveAndGet(websiteAddress, resourceName string) ([]byte, t
 		if err == badger.ErrKeyNotFound {
 			return fmt.Errorf("data not found for website %s, resource %s", websiteAddress, resourceName)
 		}
+
 		if err != nil {
 			return err
 		}

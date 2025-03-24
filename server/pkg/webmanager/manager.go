@@ -48,6 +48,7 @@ func initCache() error {
 			return cacheErr
 		}
 	}
+
 	return nil
 }
 
@@ -62,6 +63,7 @@ func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 	}
 
 	logger.Debugf("Resource %s from %s successfully retrieved", resourceName, websiteAddress)
+
 	return content, nil
 }
 
@@ -92,6 +94,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 			if err = cacheInstance.Delete(scAddress, resourceName); err != nil {
 				logger.Warnf("Failed to delete outdated resource %s from %s: %v", resourceName, scAddress, err)
 			}
+
 			logger.Warnf("website %s is outdated, fetching...", resourceName)
 		}
 	}
@@ -118,6 +121,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 	}
 
 	logger.Debugf("RequestFile completed")
+
 	return websiteBytes, nil
 }
 
