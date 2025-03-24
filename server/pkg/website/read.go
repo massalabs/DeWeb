@@ -8,8 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
-	"github.com/massalabs/station/int/config"
+	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
@@ -37,7 +38,13 @@ var (
 	globalFilePathListCache = &filePathListCache{
 		cache: make(map[string]*filePathListCacheEntry),
 	}
+	serverConfig *config.ServerConfig
 )
+
+// SetConfig sets the server configuration for the website package
+func SetConfig(config *config.ServerConfig) {
+	serverConfig = config
+}
 
 // get retrieves the file path list from cache if it exists and is not expired
 func (c *filePathListCache) get(websiteAddress string) (map[string]struct{}, bool) {
@@ -56,7 +63,7 @@ func (c *filePathListCache) get(websiteAddress string) (map[string]struct{}, boo
 	return entry.files, true
 }
 
-// set stores the file path list in the cache with a 1-minute expiration
+// set stores the file path list in the cache with an expiration time based on config
 func (c *filePathListCache) set(websiteAddress string, files []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -75,14 +82,22 @@ func (c *filePathListCache) set(websiteAddress string, files []string) {
 		filesMap[file] = struct{}{}
 	}
 
+	// Get expiration duration from config or use default
+	var cacheDuration time.Duration
+	if serverConfig != nil {
+		cacheDuration = time.Duration(serverConfig.FileListCacheDurationSeconds) * time.Second
+	} else {
+		cacheDuration = time.Duration(config.DefaultFileListCacheDurationSeconds) * time.Second
+	}
+
 	c.cache[websiteAddress] = &filePathListCacheEntry{
 		files:      filesMap,
-		expiration: now.Add(time.Minute),
+		expiration: now.Add(cacheDuration),
 	}
 }
 
 // Fetch retrieves the complete data of a website as bytes.
-func Fetch(network *config.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
+func Fetch(network *msConfig.NetworkInfos, websiteAddress string, filePath string) ([]byte, error) {
 	client := node.NewClient(network.NodeURL)
 
 	isPresent, err := FilePathExists(network, websiteAddress, filePath)
@@ -240,7 +255,7 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 }
 
 // GetOwner retrieves the owner of the website.
-func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, error) {
+func GetOwner(network *msConfig.NetworkInfos, websiteAddress string) (string, error) {
 	client := node.NewClient(network.NodeURL)
 
 	ownerResponse, err := node.FetchDatastoreEntry(client, websiteAddress, convert.ToBytes(ownerKey))
@@ -252,7 +267,7 @@ func GetOwner(network *config.NetworkInfos, websiteAddress string) (string, erro
 }
 
 // GetLastUpdateTimestamp retrieves the last update timestamp of the website.
-func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string) (*time.Time, error) {
+func GetLastUpdateTimestamp(network *msConfig.NetworkInfos, websiteAddress string) (*time.Time, error) {
 	client := node.NewClient(network.NodeURL)
 
 	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, storagekeys.GlobalMetadataKey(convert.ToBytes(lastUpdateTimestampKey)))
@@ -277,7 +292,7 @@ func GetLastUpdateTimestamp(network *config.NetworkInfos, websiteAddress string)
 }
 
 // Check if the requested filePath exists in the SC FilesPathList
-func FilePathExists(network *config.NetworkInfos, websiteAddress string, filePath string) (bool, error) {
+func FilePathExists(network *msConfig.NetworkInfos, websiteAddress string, filePath string) (bool, error) {
 	// Try to get from cache first
 	if files, exists := globalFilePathListCache.get(websiteAddress); exists {
 		_, exists := files[filePath]

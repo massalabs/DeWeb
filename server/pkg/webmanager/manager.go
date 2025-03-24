@@ -3,6 +3,7 @@ package webmanager
 import (
 	"fmt"
 
+	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/cache"
 	"github.com/massalabs/deweb-server/pkg/website"
 	msConfig "github.com/massalabs/station/int/config"
@@ -11,16 +12,16 @@ import (
 
 const cacheDir = "./websitesCache/"
 
-// Default cache size limits
-const (
-	defaultMaxRAMEntries  = 1000  // Maximum number of entries in RAM cache
-	defaultMaxDiskEntries = 10000 // Maximum number of entries in disk cache
-)
-
 var (
 	cacheInstance *cache.Cache
 	cacheErr     error
+	serverConfig *config.ServerConfig
 )
+
+// SetConfig sets the server configuration for the webmanager
+func SetConfig(config *config.ServerConfig) {
+	serverConfig = config
+}
 
 // CacheInstance returns the global cache instance
 func CacheInstance() *cache.Cache {
@@ -30,7 +31,18 @@ func CacheInstance() *cache.Cache {
 // initCache initializes the cache instance if it hasn't been initialized yet
 func initCache() error {
 	if cacheInstance == nil {
-		cacheInstance, cacheErr = cache.NewCache(cacheDir, defaultMaxRAMEntries, defaultMaxDiskEntries)
+		// If serverConfig is not set, log a warning and use default values
+		var maxRAMEntries uint64 = config.DefaultMaxRAMEntries
+		var maxDiskEntries uint64 = config.DefaultMaxDiskEntries
+		
+		if serverConfig != nil {
+			maxRAMEntries = serverConfig.SiteRAMCacheMaxItems
+			maxDiskEntries = serverConfig.SiteDiskCacheMaxItems
+		} else {
+			logger.Debugf("Server config not set, using default cache values")
+		}
+		
+		cacheInstance, cacheErr = cache.NewCache(cacheDir, maxRAMEntries, maxDiskEntries)
 		if cacheErr != nil {
 			logger.Errorf("Failed to create cache: %v", cacheErr)
 			return cacheErr
