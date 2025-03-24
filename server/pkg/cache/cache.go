@@ -16,10 +16,10 @@ var (
 
 // Cache represents the dual caching system with RAM and disk storage
 type Cache struct {
-	ramCache       *lru.Cache
-	diskCache      *DiskCache
-	mu             sync.RWMutex
-	maxRAMEntries  uint64
+	ramCache      *lru.Cache
+	diskCache     *DiskCache
+	mu            sync.RWMutex
+	maxRAMEntries uint64
 }
 
 // NewCache initializes the cache with configurable maximum sizes for RAM and disk storage
@@ -205,8 +205,8 @@ func (c *Cache) Close() error {
 
 // cacheEntry represents a cached resource with its content and modification time
 type cacheEntry struct {
-	content         []byte
-	modified        time.Time
-	websiteAddress  string
-	resourceName    string
+	content        []byte
+	modified       time.Time
+	websiteAddress string
+	resourceName   string
 }

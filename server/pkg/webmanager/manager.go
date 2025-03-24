@@ -14,8 +14,8 @@ const cacheDir = "./websitesCache/"
 
 var (
 	cacheInstance *cache.Cache
-	cacheErr     error
-	serverConfig *config.ServerConfig
+	cacheErr      error
+	serverConfig  *config.ServerConfig
 )
 
 // SetConfig sets the server configuration for the webmanager
@@ -34,14 +34,14 @@ func initCache() error {
 		// If serverConfig is not set, log a warning and use default values
 		var maxRAMEntries uint64 = config.DefaultMaxRAMEntries
 		var maxDiskEntries uint64 = config.DefaultMaxDiskEntries
-		
+
 		if serverConfig != nil {
 			maxRAMEntries = serverConfig.SiteRAMCacheMaxItems
 			maxDiskEntries = serverConfig.SiteDiskCacheMaxItems
 		} else {
 			logger.Debugf("Server config not set, using default cache values")
 		}
-		
+
 		cacheInstance, cacheErr = cache.NewCache(cacheDir, maxRAMEntries, maxDiskEntries)
 		if cacheErr != nil {
 			logger.Errorf("Failed to create cache: %v", cacheErr)

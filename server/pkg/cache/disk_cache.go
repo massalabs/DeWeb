@@ -163,7 +163,6 @@ func NewDiskCache(cacheDir string, maxEntries uint64) (*DiskCache, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		db.Close()
 		return nil, fmt.Errorf("failed to initialize database: %v", err)
@@ -212,7 +211,6 @@ func (d *DiskCache) GetLastModified(websiteAddress, resourceName string) (time.T
 		modified = timestamp
 		return nil
 	})
-
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -305,7 +303,7 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 
 	// Save the ID counter index
 	idCounterIndexKey := createIdCounterIndexKey(d.idCounter)
-	
+
 	// Create cache key for the index value
 	indexValue := getCacheKey(websiteAddress, resourceName)
 	if err := txn.Set(idCounterIndexKey, indexValue); err != nil {
@@ -338,14 +336,14 @@ func (d *DiskCache) evictOldestEntry(txn *badger.Txn) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Extract website and resource name from cache key
 	websiteLen := binary.BigEndian.Uint64(cacheKey[:8])
-	websiteAddress := string(cacheKey[8:8+websiteLen])
-	
+	websiteAddress := string(cacheKey[8 : 8+websiteLen])
+
 	resourceOffset := 8 + websiteLen
-	resourceLen := binary.BigEndian.Uint64(cacheKey[resourceOffset:resourceOffset+8])
-	resourceName := string(cacheKey[resourceOffset+8:resourceOffset+8+resourceLen])
+	resourceLen := binary.BigEndian.Uint64(cacheKey[resourceOffset : resourceOffset+8])
+	resourceName := string(cacheKey[resourceOffset+8 : resourceOffset+8+resourceLen])
 
 	// Delete the entry
 	return d.deleteEntry(txn, websiteAddress, resourceName)
@@ -360,12 +358,12 @@ func (d *DiskCache) SaveResource(entry *cacheEntry) error {
 				return err
 			}
 		}
-		
+
 		// Delete existing entry if exists
 		if err := d.deleteEntry(txn, entry.websiteAddress, entry.resourceName); err != nil {
 			return err
 		}
-		
+
 		// Save the new entry
 		return d.saveEntry(txn, entry.websiteAddress, entry.resourceName, entry.content, entry.modified)
 	})
@@ -419,10 +417,9 @@ func (d *DiskCache) RemoveAndGet(websiteAddress, resourceName string) ([]byte, t
 		// Remove from disk
 		return d.deleteEntry(txn, websiteAddress, resourceName)
 	})
-
 	if err != nil {
 		return nil, time.Time{}, err
 	}
 
 	return content, modified, nil
-} 
+}

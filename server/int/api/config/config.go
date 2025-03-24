@@ -14,11 +14,11 @@ const (
 	DefaultDomain         = "localhost"
 	DefaultNetworkNodeURL = "https://mainnet.massa.net/api/v2"
 	DefaultAPIPort        = 8080
-	
+
 	// Default cache size limits
-	DefaultMaxRAMEntries  uint64 = 1000  // Maximum number of file entries in RAM cache
-	DefaultMaxDiskEntries uint64 = 10000 // Maximum number of file entries in disk cache
-	DefaultFileListCacheDurationSeconds = 60 // Default expiration of the file list cache
+	DefaultMaxRAMEntries                uint64 = 1000  // Maximum number of file entries in RAM cache
+	DefaultMaxDiskEntries               uint64 = 10000 // Maximum number of file entries in disk cache
+	DefaultFileListCacheDurationSeconds        = 60    // Default expiration of the file list cache
 )
 
 type ServerConfig struct {
