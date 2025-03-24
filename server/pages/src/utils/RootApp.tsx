@@ -1,3 +1,4 @@
+// @ts-ignore - React is used for JSX
 import React, { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { RootApp } from "../components/RootApp";
