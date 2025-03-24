@@ -1,5 +1,6 @@
-import { ReactNode, StrictMode } from "react";
+import React, { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
+import { RootApp } from "../components/RootApp";
 
 import "../index.css";
 
@@ -7,15 +8,6 @@ import "../index.css";
 interface RootAppProps {
   children: ReactNode;
   theme?: string;
-}
-
-
-function RootApp({ children }: RootAppProps) {
-  return (
-    <StrictMode>
-      {children}
-    </StrictMode>
-  );
 }
 
 export function renderApp({ children }: RootAppProps) {
