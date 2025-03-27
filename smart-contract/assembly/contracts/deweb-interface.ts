@@ -229,6 +229,9 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
   const hashLocation = args
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
+
+    assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
+
   const metadata = args
     .nextSerializableObjectArray<Metadata>()
     .expect('Invalid metadata');
@@ -258,6 +261,8 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
   const hashLocation = args
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
+
+  assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
 
   const metadata = args.next<string[]>().expect('Invalid key');
 
