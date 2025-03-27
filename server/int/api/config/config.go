@@ -7,7 +7,7 @@ import (
 	"github.com/massalabs/deweb-server/int/utils"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
 	msConfig "github.com/massalabs/station/int/config"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -30,17 +30,19 @@ type ServerConfig struct {
 	SiteRAMCacheMaxItems         uint64
 	SiteDiskCacheMaxItems        uint64
 	FileListCacheDurationSeconds int
+	MiscPublicInfoJson           interface{}
 }
 
 type yamlServerConfig struct {
-	Domain                       string   `yaml:"domain"`
-	NetworkNodeURL               string   `yaml:"network_node_url"`
-	APIPort                      int      `yaml:"api_port"`
-	AllowList                    []string `yaml:"allow_list"`
-	BlockList                    []string `yaml:"block_list"`
-	SiteRAMCacheMaxItems         uint64   `yaml:"site_ram_cache_max_items"`
-	SiteDiskCacheMaxItems        uint64   `yaml:"site_disk_cache_max_items"`
-	FileListCacheDurationSeconds int      `yaml:"file_list_cache_duration_seconds"`
+	Domain                       string      `yaml:"domain"`
+	NetworkNodeURL               string      `yaml:"network_node_url"`
+	APIPort                      int         `yaml:"api_port"`
+	AllowList                    []string    `yaml:"allow_list"`
+	BlockList                    []string    `yaml:"block_list"`
+	SiteRAMCacheMaxItems         uint64      `yaml:"site_ram_cache_max_items"`
+	SiteDiskCacheMaxItems        uint64      `yaml:"site_disk_cache_max_items"`
+	FileListCacheDurationSeconds int         `yaml:"file_list_cache_duration_seconds"`
+	MiscPublicInfoJson           interface{} `yaml:"misc_public_info"`
 }
 
 func DefaultConfig() *ServerConfig {
@@ -55,6 +57,7 @@ func DefaultConfig() *ServerConfig {
 		SiteRAMCacheMaxItems:         DefaultMaxRAMEntries,
 		SiteDiskCacheMaxItems:        DefaultMaxDiskEntries,
 		FileListCacheDurationSeconds: DefaultFileListCacheDurationSeconds,
+		MiscPublicInfoJson:           map[string]interface{}{},
 	}
 }
 
@@ -117,5 +120,37 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		SiteRAMCacheMaxItems:         yamlConf.SiteRAMCacheMaxItems,
 		SiteDiskCacheMaxItems:        yamlConf.SiteDiskCacheMaxItems,
 		FileListCacheDurationSeconds: yamlConf.FileListCacheDurationSeconds,
+		MiscPublicInfoJson:           convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
 	}, nil
+}
+
+/*
+convertYamlMisc2Json convert the config's "misc" json field from a
+map[interface{}]interface{} (as unmarshaled by yaml.Unmarshal function)
+format to a map[string]interface{} one.
+The input is expected to represent valid json.
+*/
+func convertYamlMisc2Json(input interface{}) interface{} {
+	switch x := input.(type) {
+	case map[interface{}]interface{}:
+		result := make(map[string]interface{})
+		for k, v := range x {
+			result[fmt.Sprint(k)] = convertYamlMisc2Json(v)
+		}
+
+		return result
+
+	case []interface{}:
+		for i, val := range x {
+			x[i] = convertYamlMisc2Json(val)
+		}
+
+		return x
+
+	case string:
+		return input.(string)
+
+	default:
+		return input
+	}
 }

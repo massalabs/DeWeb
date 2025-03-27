@@ -24,6 +24,8 @@ var notAvailableZip []byte
 //go:embed resources/brokenWebsite.zip
 var brokenWebsiteZip []byte
 
+var dewebInfoPath = "/__deweb_info"
+
 // SubdomainMiddleware handles subdomain website serving.
 func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -32,6 +34,14 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 		subdomain := extractSubdomain(r.Host, conf.Domain)
 		if subdomain == "" {
 			logger.Debug("SubdomainMiddleware: No subdomain found. Proceeding with the next handler.")
+			handler.ServeHTTP(w, r)
+
+			return
+		}
+
+		// __deweb_info endpoint must be available from all subdomains
+		if r.URL.Path == dewebInfoPath {
+			logger.Debug("SubdomainMiddleware: Requested __deweb_info endpoint. Preceding with the next handler.")
 			handler.ServeHTTP(w, r)
 
 			return
