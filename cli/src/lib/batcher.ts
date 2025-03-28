@@ -1,3 +1,5 @@
+import { Operation } from '@massalabs/massa-web3'
+import { BatchStatus } from './uploadManager'
 import { FileChunkPost } from './website/models/FileChunkPost'
 
 /**
@@ -6,6 +8,8 @@ import { FileChunkPost } from './website/models/FileChunkPost'
 export interface Batch {
   id: number
   chunks: FileChunkPost[]
+  status: BatchStatus
+  operation?: Operation
 }
 
 /**
@@ -38,6 +42,7 @@ export function batcher(chunks: FileChunkPost[], chunkSize: number): Batch[] {
       batches.push({
         id: batches.length,
         chunks: [chunk],
+        status: BatchStatus.WaitingUpload,
       })
     }
   }

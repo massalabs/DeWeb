@@ -18,19 +18,13 @@ export enum BatchStatus {
   Error = 3,
 }
 
-export interface UploadBatch extends Batch {
-  operation?: Operation
-  status: BatchStatus
-  gas: bigint
-}
-
 export class UploadManager {
-  private batches: UploadBatch[]
+  private batches: Batch[]
   private maxConcurrentOps: number
   private operations: Operation[] = []
 
   constructor(
-    batchedChunks: UploadBatch[],
+    batchedChunks: Batch[],
     options: UploadManagerOptions = { maxConcurrentOps: 1 }
   ) {
     this.batches = batchedChunks.map((batch, index) => ({
@@ -43,7 +37,7 @@ export class UploadManager {
 
   async startUpload(
     sc: SmartContract,
-    onUpdate: (batch: UploadBatch) => void
+    onUpdate: (batch: Batch) => void
   ): Promise<void> {
     const activeUploads: Promise<void>[] = []
 
@@ -66,9 +60,9 @@ export class UploadManager {
   }
 
   private async uploadBatch(
-    batch: UploadBatch,
+    batch: Batch,
     sc: SmartContract,
-    onUpdate: (batch: UploadBatch) => void
+    onUpdate: (batch: Batch) => void
   ): Promise<void> {
     batch.status = BatchStatus.Sent
     onUpdate(batch)
@@ -101,7 +95,7 @@ export class UploadManager {
     }
   }
 
-  getBatches(): UploadBatch[] {
+  getBatches(): Batch[] {
     return this.batches
   }
 

@@ -6,6 +6,7 @@ import { deleteCommand } from './commands/delete'
 import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
+import { metadataCommand } from './commands/metadata'
 
 import { existsSync } from 'fs'
 import {
@@ -34,6 +35,7 @@ program.addCommand(uploadCommand)
 program.addCommand(deleteCommand)
 program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
+program.addCommand(metadataCommand)
 
 interface OptionValues {
   config: string

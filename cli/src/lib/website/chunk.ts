@@ -1,10 +1,10 @@
 import { sha256 } from 'js-sha256'
 
-import { storageCostForEntry } from '../utils/storage'
 import { fileChunkKey } from './storageKeys'
 import { FileChunkPost } from './models/FileChunkPost'
 import { getFileFromAddress } from './read'
-import { Provider } from '@massalabs/massa-web3'
+import { Provider, StorageCost } from '@massalabs/massa-web3'
+import { fileHash } from './metadata'
 
 /**
  * Divide a data array into chunks of a given size.
@@ -48,15 +48,12 @@ export function divideIntoChunks(
 export function computeChunkCost(
   filePath: string,
   chunkID: bigint,
-  chunkSize: bigint
+  chunk: Uint8Array
 ): bigint {
-  const filePathHash = sha256.arrayBuffer(filePath)
-  const filePathHashBytes = new Uint8Array(filePathHash)
-
   // Storage of the chunk itself
-  let uploadCost = storageCostForEntry(
-    BigInt(fileChunkKey(filePathHashBytes, chunkID).length),
-    chunkSize
+  let uploadCost = StorageCost.datastoreEntry(
+    fileChunkKey(fileHash(filePath), chunkID),
+    chunk
   )
 
   return uploadCost

@@ -41,7 +41,7 @@ export function uploadBatchesTask(): ListrTask {
         throw new Error('Smart Contract should never be undefined here')
       }
 
-      const uploadManager = new UploadManager(ctx.uploadBatches, {
+      const uploadManager = new UploadManager(ctx.batches, {
         maxConcurrentOps: ctx.maxConcurrentOps,
       })
 

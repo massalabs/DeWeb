@@ -1,19 +1,34 @@
 import {
   Args,
+  ArrayTypes,
+  bytesToStr,
   Operation,
   Provider,
   PublicProvider,
+  StorageCost,
 } from '@massalabs/massa-web3'
-import { storageCostForEntry } from '../utils/storage'
 import { Metadata } from './models/Metadata'
-import { globalMetadataKey, GLOBAL_METADATA_TAG } from './storageKeys'
+import {
+  globalMetadataKey,
+  GLOBAL_METADATA_TAG,
+  fileMetadataKey,
+  FILE_METADATA_TAG,
+  FILE_TAG,
+} from './storageKeys'
+import { sha256 } from 'js-sha256'
+import isEqual from 'lodash.isequal'
 
 const SET_GLOBAL_METADATA_FUNCTION = 'setMetadataGlobal'
+const REMOVE_GLOBAL_METADATA_FUNCTION = 'removeMetadataGlobal'
+const SET_FILE_METADATA_FUNCTION = 'setMetadataFile'
+const REMOVE_FILE_METADATA_FUNCTION = 'removeMetadataFile'
 
 export const TITLE_METADATA_KEY = 'TITLE'
 export const DESCRIPTION_METADATA_KEY = 'DESCRIPTION'
 export const KEYWORD_METADATA_KEY_PREFIX = 'KEYWORD'
 export const LAST_UPDATE_KEY = 'LAST_UPDATE'
+
+export const HASH_LENGTH = 32
 
 /**
  * Get the global metadata of a website stored on Massa blockchain
@@ -37,15 +52,92 @@ export async function getGlobalMetadata(
     const metadataKeyBytes = metadataKeys[index].slice(
       GLOBAL_METADATA_TAG.length
     )
-    const key = String.fromCharCode(...new Uint8Array(metadataKeyBytes))
+    const key = bytesToStr(metadataKeyBytes)
     if (!m) {
       return new Metadata(key)
     }
-    const value = String.fromCharCode(...new Uint8Array(m))
+    const value = bytesToStr(m)
 
     return new Metadata(key, value)
   })
 }
+
+export function fileHash(filePath: string): Uint8Array {
+  return new Uint8Array(sha256.arrayBuffer(filePath))
+}
+
+export function fileHashHex(filePath: string): string {
+  return sha256(filePath)
+}
+
+function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/**
+ * Get the file metadata of a website stored on Massa blockchain
+ * @param provider - Provider instance
+ * @param address - Address of the website
+ * @param filePath - file path to query metadata. if ommited, return metadata of all files
+ * @param metadataKey - to query a specific metadata key only
+ * @returns - List of Metadata objects for each file hash
+ */
+export async function getFileMetadata(
+  provider: PublicProvider,
+  address: string,
+  filePath?: string,
+  metadataKey: Uint8Array = new Uint8Array()
+): Promise<Record<string, Metadata[]>> {
+  let prefix = FILE_TAG
+  if (filePath) {
+    prefix = fileMetadataKey(fileHash(filePath), metadataKey)
+  }
+
+  const metadataKeys = await provider.getStorageKeys(address, prefix)
+  const metadataValues = await provider.readStorage(address, metadataKeys)
+  return metadataValues.reduce(
+    (acc, valueBytes, index) => {
+      let offset = FILE_TAG.length
+      const fileHashBytes = new Uint8Array(
+        metadataKeys[index].slice(offset, offset + HASH_LENGTH)
+      )
+
+      offset += HASH_LENGTH
+      const metadataTag = metadataKeys[index].slice(
+        offset,
+        offset + FILE_METADATA_TAG.length
+      )
+
+      if (!isEqual(metadataTag, FILE_METADATA_TAG)) {
+        // its not a metadata key
+        return acc
+      }
+      offset += FILE_METADATA_TAG.length
+      const metadataKeyBytes = metadataKeys[index].slice(offset)
+      const key = bytesToStr(metadataKeyBytes)
+
+      let metadata: Metadata
+      if (!valueBytes) {
+        metadata = new Metadata(key)
+      } else {
+        const value = bytesToStr(valueBytes)
+        metadata = new Metadata(key, value)
+      }
+
+      if (!acc[bytesToHex(fileHashBytes)]) {
+        acc[bytesToHex(fileHashBytes)] = [metadata]
+      } else {
+        acc[bytesToHex(fileHashBytes)].push(metadata)
+      }
+
+      return acc
+    },
+    {} as Record<string, Metadata[]>
+  )
+}
+
 export type ParsedMetadata = {
   title?: string
   description?: string
@@ -92,6 +184,22 @@ export async function getWebsiteMetadata(
   return extractWebsiteMetadata(metadata)
 }
 
+function setMetadataStorageCost(
+  metadata: Metadata[],
+  isGlobalMetadata = true
+): bigint {
+  const prefixLen = isGlobalMetadata
+    ? GLOBAL_METADATA_TAG.length
+    : FILE_TAG.length + HASH_LENGTH + FILE_METADATA_TAG.length
+  return metadata.reduce(
+    (sum, metadata) =>
+      sum +
+      StorageCost.bytes(prefixLen) +
+      StorageCost.datastoreEntry(metadata.key, metadata.value),
+    0n
+  )
+}
+
 /**
  * Set a list of global metadata on a website stored on Massa blockchain
  * @param provider - Provider instance
@@ -103,57 +211,99 @@ export async function setGlobalMetadata(
   address: string,
   metadatas: Metadata[]
 ): Promise<Operation> {
-  const { updateRequired } = await divideMetadata(provider, address, metadatas)
-
-  const encoder = new TextEncoder()
-  const coins = updateRequired.reduce(
-    (sum, metadata) =>
-      sum +
-      storageCostForEntry(
-        BigInt(globalMetadataKey(encoder.encode(metadata.key)).length),
-        BigInt(metadata.value.length)
-      ),
-    0n
-  )
-
   const args = new Args().addSerializableObjectArray(metadatas).serialize()
 
   return provider.callSC({
     target: address,
     func: SET_GLOBAL_METADATA_FUNCTION,
     parameter: args,
-    coins: coins,
+    coins: setMetadataStorageCost(metadatas),
+  })
+}
+
+export async function setFileMetadata(
+  provider: Provider,
+  address: string,
+  filePath: string,
+  metadatas: Metadata[]
+): Promise<Operation> {
+  const args = new Args()
+    .addUint8Array(fileHash(filePath))
+    .addSerializableObjectArray(metadatas)
+    .serialize()
+
+  return provider.callSC({
+    target: address,
+    func: SET_FILE_METADATA_FUNCTION,
+    parameter: args,
+    coins: setMetadataStorageCost(metadatas, false),
   })
 }
 
 /**
- * Divide a list of metadatas into metadatas that require to be updated or not
+ * Remove a list of global metadata keys on a website stored on Massa blockchain
  * @param provider - Provider instance
  * @param address - Address of the website SC
- * @param metadatas - List of Metadata objects
- * @returns - An object with the metadatas that require to be updated and the ones that don't
+ * @param metadatas - List of Metadata keys
  */
-export async function divideMetadata(
-  provider: PublicProvider,
+export async function removeGlobalMetadata(
+  provider: Provider,
   address: string,
-  metadatas: Metadata[]
-): Promise<{ updateRequired: Metadata[]; noUpdateRequired: Metadata[] }> {
-  const storedGlobalMetadata = await getGlobalMetadata(provider, address)
-  const updateRequired = metadatas.filter(
-    (metadata) =>
-      !storedGlobalMetadata.some(
-        (storedMetadata) =>
-          storedMetadata.key === metadata.key &&
-          storedMetadata.value === metadata.value
-      )
-  )
-  const noUpdateRequired = metadatas.filter((metadata) =>
-    storedGlobalMetadata.some(
-      (storedMetadata) =>
-        storedMetadata.key === metadata.key &&
-        storedMetadata.value === metadata.value
-    )
-  )
+  keys: string[]
+): Promise<Operation> {
+  const args = new Args().addArray(keys, ArrayTypes.STRING).serialize()
 
-  return { updateRequired, noUpdateRequired }
+  return provider.callSC({
+    target: address,
+    func: REMOVE_GLOBAL_METADATA_FUNCTION,
+    parameter: args,
+  })
+}
+
+export async function removeFileMetadata(
+  provider: Provider,
+  address: string,
+  filePath: string,
+  keys: string[]
+): Promise<Operation> {
+  const args = new Args()
+    .addUint8Array(fileHash(filePath))
+    .addArray(keys, ArrayTypes.STRING)
+    .serialize()
+
+  return provider.callSC({
+    target: address,
+    func: REMOVE_FILE_METADATA_FUNCTION,
+    parameter: args,
+  })
+}
+
+function hasExactMetadata(
+  metadata: Metadata[],
+  key: string,
+  value: string
+): boolean {
+  return metadata.some((m) => m.key === key && m.value === value)
+}
+
+export function hasMetadataKey(metadata: Metadata[], key: string): boolean {
+  return metadata.some((m) => m.key === key)
+}
+
+/**
+ * Divide a list of metadatas into metadatas that require to be updated or not
+ * @param currentMetadatas - Current list of Metadata
+ * @param newMetadatas - List of Metadata objects to compare
+ * @returns - An object with the metadatas that require to be updated
+ */
+export async function filterMetadataToUpdate(
+  currentMetadatas: Metadata[] | undefined,
+  newMetadatas: Metadata[]
+): Promise<Metadata[]> {
+  if (!currentMetadatas || !currentMetadatas.length) {
+    return newMetadatas
+  }
+  return newMetadatas.filter(
+    (entry) => !hasExactMetadata(currentMetadatas, entry.key, entry.value)
+  )
 }
