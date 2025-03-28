@@ -3,17 +3,16 @@ import { SmartContract, Web3Provider } from '@massalabs/massa-web3'
 import { Listr } from 'listr2'
 
 import { deploySCTask } from '../tasks/deploy'
-import {
-  estimateGasTask,
-  recapTask,
-  showEstimatedCost,
-} from '../tasks/estimations'
+import { recapTask, showEstimatedCost } from '../tasks/estimations'
 import { prepareBatchesTask } from '../tasks/prepareChunk'
 import { prepareUploadTask } from '../tasks/prepareUpload'
 import { UploadCtx } from '../tasks/tasks'
 import { confirmUploadTask, uploadBatchesTask } from '../tasks/upload'
 
-import { divideMetadata } from '../lib/website/metadata'
+import {
+  filterMetadataToUpdate,
+  getGlobalMetadata,
+} from '../lib/website/metadata'
 import { Metadata } from '../lib/website/models/Metadata'
 import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
 
@@ -58,9 +57,9 @@ export const uploadCommand = new Command('upload')
 
       ctx.sc = new SmartContract(provider, address)
 
-      const { updateRequired } = await divideMetadata(
-        ctx.provider,
-        ctx.sc.address,
+      const currentGlobalMetadata = await getGlobalMetadata(provider, address)
+      const updateRequired = await filterMetadataToUpdate(
+        currentGlobalMetadata,
         globalOptions.metadatas as Metadata[]
       )
 
@@ -74,7 +73,6 @@ export const uploadCommand = new Command('upload')
       showEstimatedCost(),
       deploySCTask(),
       prepareUploadTask(),
-      estimateGasTask(),
       confirmUploadTask(),
       uploadBatchesTask(),
       recapTask(),
@@ -104,7 +102,6 @@ async function createUploadCtx(
   return {
     provider: provider,
     batches: [],
-    uploadBatches: [],
     chunks: [],
     fileInits: [],
     filesToDelete: [],

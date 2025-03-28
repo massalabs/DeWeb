@@ -4,11 +4,11 @@ import {
   Operation,
   Provider,
   SmartContract,
+  StorageCost,
 } from '@massalabs/massa-web3'
 
-import { storageCostForEntry } from '../utils/storage'
 import { updateWebsiteFunctionName } from './const'
-import { addressToOwnerBaseKey, indexByOwnerBaseKey } from './keys'
+import { addressToOwnerKey, indexByOwnerKey } from './keys'
 import { getWebsiteOwner } from './read'
 import { getOwnerFromWebsiteSC, getIndexSCAddress } from './utils'
 
@@ -29,7 +29,7 @@ export async function updateIndexScWebsite(
   const estimatedCost = await estimateIndexerCost(sc, address)
 
   return sc.call(updateWebsiteFunctionName, args, {
-    coins: estimatedCost,
+    coins: estimatedCost > 0n ? estimatedCost : 0n,
   })
 }
 
@@ -41,32 +41,26 @@ export async function estimateIndexerCost(
   sc: SmartContract,
   address: string
 ): Promise<Mas.Mas> {
-  return getWebsiteOwner(sc.provider, address)
-    .then(async (registeredOwner) => {
-      const scOwner = await getOwnerFromWebsiteSC(sc, address)
+  try {
+    const registeredOwner = await getWebsiteOwner(sc.provider, address)
+    const scOwner = await getOwnerFromWebsiteSC(sc, address)
 
-      return storageCostForEntry(
-        BigInt(Math.abs(scOwner.length - registeredOwner.length)),
-        0n
-      )
-    })
-    .catch(async () => {
-      // The website does not exist in the index, we have to create it
-      const owner = await getOwnerFromWebsiteSC(sc, address)
-      const addressToOwnerPrefix = addressToOwnerBaseKey(address)
-      const indexByOwnerPrefix = indexByOwnerBaseKey(owner)
+    // can be negative !!
+    return StorageCost.bytes(scOwner.length - registeredOwner.length)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
+    // The website does not exist in the index, we have to create it
+    const owner = await getOwnerFromWebsiteSC(sc, address)
 
-      const addressToOwnerKeyCost = storageCostForEntry(
-        BigInt(addressToOwnerPrefix.length) + BigInt(owner.length),
-        0n
-      )
-      const indexByOwnerKeyCost = storageCostForEntry(
-        BigInt(indexByOwnerPrefix.length) + BigInt(address.length),
-        0n
-      )
+    const addressToOwnerKeyCost = StorageCost.datastoreEntry(
+      addressToOwnerKey(address, owner),
+      ''
+    )
+    const indexByOwnerKeyCost = StorageCost.datastoreEntry(
+      indexByOwnerKey(owner, address),
+      ''
+    )
 
-      const totalCost = addressToOwnerKeyCost + indexByOwnerKeyCost
-
-      return totalCost
-    })
+    return addressToOwnerKeyCost + indexByOwnerKeyCost
+  }
 }

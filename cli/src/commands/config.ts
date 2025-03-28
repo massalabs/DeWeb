@@ -5,7 +5,7 @@ import { readFileSync } from 'fs'
 import { Metadata } from '../lib/website/models/Metadata'
 
 export const DEFAULT_CHUNK_SIZE = 64000
-const DEFAULT_NODE_URL = PublicApiUrl.Buildnet
+export const DEFAULT_NODE_URL = PublicApiUrl.Buildnet
 
 interface Config {
   wallet_password: string

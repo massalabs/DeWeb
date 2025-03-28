@@ -1,11 +1,8 @@
 import { formatMas } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { Batch } from '../lib/batcher'
-import { BatchStatus, UploadBatch } from '../lib/uploadManager'
 import { formatBytes } from '../lib/utils/utils'
 import { computeChunkCost } from '../lib/website/chunk'
-import { estimateUploadBatchesGas } from '../lib/website/uploadChunk'
 
 import { UploadCtx } from './tasks'
 import { deployCost } from '../lib/website/deploySC'
@@ -21,14 +18,7 @@ export function showEstimatedCost(): ListrTask {
     task: async (ctx: UploadCtx, task) => {
       const totalEstimatedGas = ctx.batches.reduce((sum, batch) => {
         const cost = batch.chunks.reduce((sum, chunk) => {
-          return (
-            sum +
-            computeChunkCost(
-              chunk.location,
-              chunk.index,
-              BigInt(chunk.data.length)
-            )
-          )
+          return sum + computeChunkCost(chunk.location, chunk.index, chunk.data)
         }, 0n)
         return sum + cost
       }, 0n)
@@ -53,50 +43,9 @@ export function showEstimatedCost(): ListrTask {
       const finalBalance = await ctx.provider.balance(true)
       if (finalBalance < ctx.currentTotalEstimation) {
         throw new Error(
-          'Final balance is not enough to cover the operation fees'
+          `Current balance ${finalBalance.toString()} too low to cover the operation fees`
         )
       }
-    },
-    rendererOptions: {
-      outputBar: Infinity,
-      persistentOutput: true,
-    },
-  }
-}
-
-/**
- * Create a task to prepare chunks from the website dir path
- * @returns a Listr task to prepare chunks
- */
-export function estimateGasTask(): ListrTask {
-  return {
-    title: 'Estimating gas cost for each batch',
-    skip: (ctx: UploadCtx) => ctx.batches.length === 0,
-    task: async (ctx: UploadCtx, task) => {
-      if (!ctx.sc) {
-        throw new Error('Smart Contract should never be undefined here')
-      }
-
-      const batches: UploadBatch[] = ctx.batches
-        .sort((a: Batch, b: Batch) => b.chunks.length - a.chunks.length)
-        .map((batch: Batch, index: number) => ({
-          ...batch,
-          status: BatchStatus.WaitingUpload,
-          id: index,
-          gas: 0n,
-        }))
-
-      ctx.uploadBatches = await estimateUploadBatchesGas(
-        ctx.provider,
-        ctx.sc.address,
-        batches
-      )
-
-      const totalGas = ctx.uploadBatches.reduce(
-        (sum: bigint, batch: UploadBatch) => sum + batch.gas,
-        0n
-      )
-      task.output = `Total gas cost: ${formatMas(totalGas)} MAS`
     },
     rendererOptions: {
       outputBar: Infinity,

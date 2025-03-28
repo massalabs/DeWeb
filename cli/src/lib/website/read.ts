@@ -6,6 +6,7 @@ import {
   fileChunkCountKey,
   fileChunkKey,
 } from './storageKeys'
+import { fileHash } from './metadata'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -80,7 +81,7 @@ export async function getFileFromAddress(
   scAddress: string,
   filePath: string
 ): Promise<Uint8Array> {
-  const filePathHash = sha256.arrayBuffer(filePath)
+  const filePathHash = fileHash(filePath)
   const fileTotalChunks = await getFileTotalChunks(
     provider,
     scAddress,
@@ -89,7 +90,7 @@ export async function getFileFromAddress(
 
   const datastoreKeys = []
   for (let i = 0n; i < fileTotalChunks; i++) {
-    datastoreKeys.push(fileChunkKey(new Uint8Array(filePathHash), i))
+    datastoreKeys.push(fileChunkKey(filePathHash, i))
   }
 
   const rawChunks = (await provider.readStorage(scAddress, datastoreKeys)).map(
