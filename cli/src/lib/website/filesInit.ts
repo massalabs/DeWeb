@@ -1,14 +1,11 @@
 import {
   Args,
-  Mas,
-  MAX_GAS_CALL,
-  MIN_GAS_CALL,
-  minBigInt,
   Operation,
   Provider,
   SmartContract,
   strToBytes,
   U32,
+  StorageCost,
 } from '@massalabs/massa-web3'
 
 import {
@@ -17,8 +14,6 @@ import {
   CallUpdate,
   FunctionCall,
 } from '../utils/callManager'
-import { storageCostForEntry } from '../utils/storage'
-import { maxBigInt } from '../utils/utils'
 import { FileDelete } from './models/FileDelete'
 
 import { FileInit } from './models/FileInit'
@@ -130,8 +125,7 @@ export async function sendFilesInits(
   files: FileInit[],
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
-  metadatasToDelete: Metadata[],
-  minimalFees: bigint = Mas.fromString('0.01')
+  metadatasToDelete: Metadata[]
 ): Promise<Operation[]> {
   const batches: Batch[] = createBatches(
     files,
@@ -145,7 +139,6 @@ export async function sendFilesInits(
 
   for (const batch of batches) {
     const coins = await batch.batchCost()
-    const gas = await batch.estimateGas(sc)
     const args = batch.serialize()
 
     calls.push({
@@ -154,8 +147,6 @@ export async function sendFilesInits(
       args,
       options: {
         coins: coins <= 0n ? 0n : coins,
-        maxGas: gas,
-        fee: minimalFees,
       },
     })
   }
@@ -198,9 +189,9 @@ export async function prepareCost(
   const filePathListCost = files.reduce((acc, chunk) => {
     return (
       acc +
-      storageCostForEntry(
-        BigInt(fileLocationKey(chunk.hashLocation).length),
-        BigInt(chunk.location.length + U32.SIZE_BYTE)
+      StorageCost.datastoreEntry(
+        fileLocationKey(chunk.hashLocation),
+        strToBytes(chunk.location)
       )
     )
   }, 0n)
@@ -208,39 +199,33 @@ export async function prepareCost(
   const storageCost = files.reduce((acc, chunk) => {
     return (
       acc +
-      storageCostForEntry(
-        BigInt(fileChunkCountKey(chunk.hashLocation).length),
-        BigInt(U32.SIZE_BYTE)
+      StorageCost.datastoreEntry(
+        fileChunkCountKey(chunk.hashLocation),
+        U32.toBytes(0n)
       )
     )
   }, 0n)
 
   const filesToDeleteCost = filesToDelete.reduce((acc, chunk) => {
-    return (
-      acc +
-      storageCostForEntry(
-        1n + BigInt(chunk.hashLocation.length),
-        BigInt(U32.SIZE_BYTE)
-      )
-    )
+    return acc - StorageCost.datastoreEntry(chunk.hashLocation, U32.toBytes(0n))
   }, 0n)
 
   const metadatasCost = metadatas.reduce((acc, metadata) => {
     return (
       acc +
-      storageCostForEntry(
-        BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + U32.SIZE_BYTE)
+      StorageCost.datastoreEntry(
+        globalMetadataKey(strToBytes(metadata.key)),
+        metadata.value
       )
     )
   }, 0n)
 
   const metadatasToDeleteCost = metadatasToDelete.reduce((acc, metadata) => {
     return (
-      acc +
-      storageCostForEntry(
-        BigInt(globalMetadataKey(strToBytes(metadata.key)).length),
-        BigInt(metadata.value.length + U32.SIZE_BYTE)
+      acc -
+      StorageCost.datastoreEntry(
+        globalMetadataKey(strToBytes(metadata.key)),
+        metadata.value
       )
     )
   }, 0n)
@@ -278,60 +263,6 @@ export async function filesInitCost(
 }
 
 /**
- * Estimate the gas cost for the prepare operation
- * Required until https://github.com/massalabs/massa/issues/4742 is fixed
- * @param sc - SmartContract instance
- * @param files - Array of FileInit instances
- * @param filesToDelete - Array of FileDelete instances
- * @param metadatas - Array of Metadata instances
- * @param metadatasToDelete - Array of Metadata instances to delete
- *
- * @returns - Estimated gas cost for the operation
- */
-async function estimatePrepareGas(
-  sc: SmartContract,
-  files: FileInit[],
-  filesToDelete: FileDelete[],
-  metadatas: Metadata[],
-  metadatasToDelete: Metadata[]
-): Promise<bigint> {
-  const coins = await filesInitCost(
-    files,
-    filesToDelete,
-    metadatas,
-    metadatasToDelete
-  )
-  const args = new Args()
-    .addSerializableObjectArray(files)
-    .addSerializableObjectArray(filesToDelete)
-    .addSerializableObjectArray(metadatas)
-    .addSerializableObjectArray(metadatasToDelete)
-    .serialize()
-
-  const result = await sc.read(functionName, args, {
-    coins: coins <= 0n ? 0n : coins,
-    maxGas: MAX_GAS_CALL,
-  })
-  if (result.info.error) {
-    console.error(result.info)
-    throw new Error(result.info.error)
-  }
-
-  const gasCost = BigInt(result.info.gasCost)
-  const numberOfElements = BigInt(
-    files.length +
-      filesToDelete.length +
-      metadatas.length +
-      metadatasToDelete.length
-  )
-
-  return minBigInt(
-    maxBigInt(gasCost * numberOfElements, MIN_GAS_CALL),
-    MAX_GAS_CALL
-  )
-}
-
-/**
  * Represents parameters for the filesInit function
  */
 class Batch {
@@ -353,16 +284,6 @@ class Batch {
 
   batchCost(): Promise<bigint> {
     return filesInitCost(
-      this.fileInits,
-      this.fileDeletes,
-      this.metadatas,
-      this.metadataDeletes
-    )
-  }
-
-  estimateGas(sc: SmartContract): Promise<bigint> {
-    return estimatePrepareGas(
-      sc,
       this.fileInits,
       this.fileDeletes,
       this.metadatas,

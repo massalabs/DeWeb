@@ -117,8 +117,7 @@ export function prepareUploadTask(): ListrTask {
                 ctx.fileInits,
                 ctx.filesToDelete,
                 ctx.metadatas,
-                ctx.metadatasToDelete,
-                ctx.minimalFees
+                ctx.metadatasToDelete
               )
 
               const results = await Promise.all(

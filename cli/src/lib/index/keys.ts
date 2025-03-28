@@ -10,14 +10,14 @@ export function addressToOwnerBaseKey(address: string): Uint8Array {
   const lengthBytes = I32.toBytes(BigInt(address.length))
   const addressBytes = strToBytes(address)
 
-  const result = new Uint8Array(
-    prefix.length + lengthBytes.length + addressBytes.length
-  )
-  result.set(prefix, 0)
-  result.set(lengthBytes, prefix.length)
-  result.set(addressBytes, prefix.length + lengthBytes.length)
+  return new Uint8Array([...prefix, ...lengthBytes, ...addressBytes])
+}
 
-  return result
+export function addressToOwnerKey(address: string, owner: string): Uint8Array {
+  return new Uint8Array([
+    ...addressToOwnerBaseKey(address),
+    ...strToBytes(owner),
+  ])
 }
 
 /**
@@ -30,12 +30,9 @@ export function indexByOwnerBaseKey(owner: string): Uint8Array {
   const lengthBytes = I32.toBytes(BigInt(owner.length))
   const ownerBytes = strToBytes(owner)
 
-  const result = new Uint8Array(
-    prefix.length + lengthBytes.length + ownerBytes.length
-  )
-  result.set(prefix, 0)
-  result.set(lengthBytes, prefix.length)
-  result.set(ownerBytes, prefix.length + lengthBytes.length)
+  return new Uint8Array([...prefix, ...lengthBytes, ...ownerBytes])
+}
 
-  return result
+export function indexByOwnerKey(owner: string, address: string): Uint8Array {
+  return new Uint8Array([...indexByOwnerBaseKey(owner), ...strToBytes(address)])
 }

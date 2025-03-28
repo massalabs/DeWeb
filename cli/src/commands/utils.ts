@@ -4,13 +4,13 @@ import {
   Address,
   JsonRpcPublicProvider,
   Account as KeyPair,
-  PublicApiUrl,
   PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
 import { readFileSync } from 'fs'
 import { parse as yamlParse } from 'yaml'
+import { DEFAULT_NODE_URL } from './config'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
 
@@ -79,7 +79,7 @@ export async function makeProviderFromNodeURLAndSecret(
 export async function initPublicProvider(
   globalOptions: OptionValues
 ): Promise<PublicProvider> {
-  let rpcUrl: string = PublicApiUrl.Mainnet
+  let rpcUrl: string = DEFAULT_NODE_URL
   if (globalOptions.node_url) {
     rpcUrl = globalOptions.node_url as string
   } else {

@@ -1,5 +1,5 @@
 import { Command } from '@commander-js/extra-typings'
-import { SmartContract } from '@massalabs/massa-web3'
+import { bytesToStr } from '@massalabs/massa-web3'
 
 import { getFileFromAddress } from '../lib/website/read'
 
@@ -14,11 +14,8 @@ export const showFileCommand = new Command('show')
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    let sc: SmartContract
     if (options.address) {
       validateAddress(options.address)
-
-      sc = new SmartContract(provider, options.address)
     } else {
       console.log(
         "No address provided, targeting user's address isn't supported yet"
@@ -27,12 +24,13 @@ export const showFileCommand = new Command('show')
       process.exit(1)
     }
 
-    console.log('Targeting website at address', sc.address)
+    console.log('Targeting website at address', options.address)
 
-    const fileContent = await getFileFromAddress(provider, sc.address, filePath)
-    const fileContentString = Array.from(new Uint8Array(fileContent))
-      .map((byte) => String.fromCharCode(byte))
-      .join('')
-
+    const fileContent = await getFileFromAddress(
+      provider,
+      options.address,
+      filePath
+    )
+    const fileContentString = bytesToStr(fileContent)
     console.log(fileContentString)
   })
