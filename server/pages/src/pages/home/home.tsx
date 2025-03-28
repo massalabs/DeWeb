@@ -1,6 +1,6 @@
 import { FiSearch } from "react-icons/fi";
 import { useState } from "react";
-import { GenerateTheme } from "../../hooks/GenerateTheme";
+import { UseGenerateTheme } from "../../hooks/UseGenerateTheme";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -12,7 +12,7 @@ export default function Home() {
     window.location.href = redirectUrl;
   };
 
-  const theme = GenerateTheme();
+  const theme = UseGenerateTheme();
 
   return (
     <div
