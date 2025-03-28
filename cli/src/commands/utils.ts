@@ -2,7 +2,10 @@ import {
   Account,
   AccountKeyStore,
   Address,
+  JsonRpcPublicProvider,
   Account as KeyPair,
+  PublicApiUrl,
+  PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
@@ -66,6 +69,26 @@ export async function makeProviderFromNodeURLAndSecret(
     console.error(`Failed to initialize provider: ${error}`)
     throw new Error('Failed to initialize provider with any available method')
   }
+}
+
+/**
+ * Initialize a public provider
+ * @param globalOptions - the global options
+ * @returns the public provider
+ */
+export async function initPublicProvider(
+  globalOptions: OptionValues
+): Promise<PublicProvider> {
+  let rpcUrl: string = PublicApiUrl.Mainnet
+  if (globalOptions.node_url) {
+    rpcUrl = globalOptions.node_url as string
+  } else {
+    console.warn(
+      `No node_url provided, using default public API URL: ${rpcUrl}`
+    )
+  }
+
+  return JsonRpcPublicProvider.fromRPCUrl(rpcUrl)
 }
 
 /**
