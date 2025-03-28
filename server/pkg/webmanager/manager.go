@@ -53,25 +53,30 @@ func initCache() error {
 }
 
 // getWebsiteResource fetches a resource from a website and returns its content.
-func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, error) {
+func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, map[string]string, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
-	content, err := RequestFile(websiteAddress, network, resourceName)
+	content, httpHeaders, err := RequestFile(websiteAddress, network, resourceName)
 	if err != nil {
-		logger.Debugf("GetWebsiteResource failed")
-		return nil, fmt.Errorf("failed to get file %s from website %s: %w", resourceName, websiteAddress, err)
+		return nil, nil, fmt.Errorf("failed to get file %s from website %s: %w", resourceName, websiteAddress, err)
 	}
 
 	logger.Debugf("Resource %s from %s successfully retrieved", resourceName, websiteAddress)
 
-	return content, nil
+	return content, httpHeaders, nil
 }
 
 // RequestFile fetches a website and caches it, or retrieves it from the cache if already present.
-func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string) ([]byte, error) {
+func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string) ([]byte, map[string]string, error) {
 	// Initialize cache if needed
 	if err := initCache(); err != nil {
 		logger.Errorf("Failed to initialize cache: %v", err)
+	}
+
+	// This could be cached as well.
+	httpHeaders, err := website.GetHttpHeaders(networkInfo, scAddress, resourceName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch http header metadata: %w", err)
 	}
 
 	// Get the last update timestamp from the website
@@ -88,7 +93,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 				logger.Warnf("Failed to read cached resource %s from %s: %v", resourceName, scAddress, err)
 			} else {
 				logger.Debugf("RequestFile completed (cache hit)")
-				return content, nil
+				return content, httpHeaders, nil
 			}
 		} else {
 			if err = cacheInstance.Delete(scAddress, resourceName); err != nil {
@@ -105,7 +110,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 	websiteBytes, err := website.Fetch(networkInfo, scAddress, resourceName)
 	if err != nil {
 		logger.Debugf("RequestFile failed")
-		return nil, fmt.Errorf("failed to fetch %s from %s: %w", resourceName, scAddress, err)
+		return nil, nil, fmt.Errorf("failed to fetch %s from %s: %w", resourceName, scAddress, err)
 	}
 
 	logger.Debugf("%s: %s successfully fetched with size: %d bytes", scAddress, resourceName, len(websiteBytes))
@@ -122,7 +127,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 
 	logger.Debugf("RequestFile completed")
 
-	return websiteBytes, nil
+	return websiteBytes, httpHeaders, nil
 }
 
 func ResourceExistsOnChain(network *msConfig.NetworkInfos, websiteAddress, filePath string) (bool, error) {

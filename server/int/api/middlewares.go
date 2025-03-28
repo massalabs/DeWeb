@@ -82,7 +82,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 // serveContent serves the requested resource for the given website address.
 func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
-	content, mimeType, err := getWebsiteResource(&conf.NetworkInfos, address, path)
+	content, mimeType, httpHeaders, err := getWebsiteResource(&conf.NetworkInfos, address, path)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
 
@@ -92,6 +92,10 @@ func serveContent(conf *config.ServerConfig, address string, path string, w http
 	}
 
 	w.Header().Set("Content-Type", mimeType)
+
+	for key, value := range httpHeaders {
+		w.Header().Set(key, value)
+	}
 
 	_, err = w.Write(content)
 	if err != nil {
@@ -170,17 +174,17 @@ func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourc
 	return resourceName, nil
 }
 
-func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, error) {
+func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resourceName string) ([]byte, string, map[string]string, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
 	resourceName, err := resolveResourceName(network, websiteAddress, resourceName)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to resolve resource name: %w", err)
+		return nil, "", nil, fmt.Errorf("failed to resolve resource name: %w", err)
 	}
 
-	content, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
+	content, httpHeaders, err := webmanager.GetWebsiteResource(network, websiteAddress, resourceName)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get website %s resource %s: %w", websiteAddress, resourceName, err)
+		return nil, "", nil, fmt.Errorf("failed to get website %s resource %s: %w", websiteAddress, resourceName, err)
 	}
 
 	contentType := ContentType(resourceName, content)
@@ -192,7 +196,7 @@ func getWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 		content = InjectOnChainBox(content, network.ChainID)
 	}
 
-	return content, contentType, nil
+	return content, contentType, httpHeaders, nil
 }
 
 // isWebsiteAllowed checks the allow and block lists and returns false if the address or domain is not allowed.

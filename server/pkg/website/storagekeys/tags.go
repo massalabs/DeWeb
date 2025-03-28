@@ -17,3 +17,15 @@ const (
 func FileLocationTag() []byte {
 	return convert.ToBytes(FILE_LOCATION_TAG)
 }
+
+func FileTag() []byte {
+	return convert.ToBytes(FILE_TAG)
+}
+
+func MetadataFileTag() []byte {
+	return convert.ToBytes(FILE_METADATA_TAG)
+}
+
+func GlobalMetadataTag() []byte {
+	return convert.ToBytes(GLOBAL_METADATA_TAG)
+}
