@@ -30,9 +30,9 @@ func CacheInstance() *cache.Cache {
 func initCache() error {
 	if cacheInstance == nil {
 		// If serverConfig is not set, log a warning and use default values
-		var maxRAMEntries uint64 = config.DefaultMaxRAMEntries
-		var maxDiskEntries uint64 = config.DefaultMaxDiskEntries
-		var cacheDir = config.DefaultCacheDir
+		maxRAMEntries := config.DefaultMaxRAMEntries
+		maxDiskEntries := config.DefaultMaxDiskEntries
+		cacheDir := config.DefaultCacheDir
 
 		if serverConfig != nil {
 			maxRAMEntries = serverConfig.SiteRAMCacheMaxItems
