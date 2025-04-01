@@ -1,4 +1,5 @@
 import { UseGenerateTheme } from "../../hooks/UseGenerateTheme";
+import { DEWEB_REDIRECT_URL } from "@massalabs/massa-web3";
 import { useEffect, useState } from "react";
 
 export default function NotAvailable() {
@@ -11,7 +12,7 @@ export default function NotAvailable() {
     const currentDomain = hostname.split(".")[0];
 
     const mnsUrl = `${currentDomain}.massa${pathname}${queryParams}`;
-    setRedirectionUrl(`https://deweb.massa.network/deweb_redirect?deweb_url="${mnsUrl}"`);
+    setRedirectionUrl(`${DEWEB_REDIRECT_URL}?deweb_url="${mnsUrl}"`);
   }, []);
 
   return (
