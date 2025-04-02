@@ -96,16 +96,25 @@ export async function getFileMetadata(
   }
 
   const metadataKeys = await provider.getStorageKeys(address, prefix)
-  const metadataValues = await provider.readStorage(address, metadataKeys)
+
+  // filter out keys that are not file metadata
+  const fileMetadataTagStr = FILE_METADATA_TAG.join(',')
+  const filteredKeys = metadataKeys.filter((key) => {
+    const keyStr = key.join(',')
+    return keyStr.includes(fileMetadataTagStr)
+  })
+
+  const metadataValues = await provider.readStorage(address, filteredKeys)
+
   return metadataValues.reduce(
     (acc, valueBytes, index) => {
       let offset = FILE_TAG.length
       const fileHashBytes = new Uint8Array(
-        metadataKeys[index].slice(offset, offset + HASH_LENGTH)
+        filteredKeys[index].slice(offset, offset + HASH_LENGTH)
       )
 
       offset += HASH_LENGTH
-      const metadataTag = metadataKeys[index].slice(
+      const metadataTag = filteredKeys[index].slice(
         offset,
         offset + FILE_METADATA_TAG.length
       )
@@ -115,7 +124,7 @@ export async function getFileMetadata(
         return acc
       }
       offset += FILE_METADATA_TAG.length
-      const metadataKeyBytes = metadataKeys[index].slice(offset)
+      const metadataKeyBytes = filteredKeys[index].slice(offset)
       const key = bytesToStr(metadataKeyBytes)
 
       let metadata: Metadata
