@@ -1,7 +1,20 @@
-import { GenerateTheme } from "../../hooks/GenerateTheme";
+import { UseGenerateTheme } from "../../hooks/UseGenerateTheme";
+import { DEWEB_REDIRECT_URL } from "@massalabs/massa-web3";
+import { useEffect, useState } from "react";
 
 export default function NotAvailable() {
-  const theme = GenerateTheme();
+  const theme = UseGenerateTheme();
+
+  const [redirectionUrl, setRedirectionUrl] = useState("");
+
+  useEffect(() => {
+    const { hostname, pathname, search: queryParams } = window.location;
+    const currentDomain = hostname.split(".")[0];
+
+    const mnsUrl = `${currentDomain}.massa${pathname}${queryParams}`;
+    setRedirectionUrl(`${DEWEB_REDIRECT_URL}?deweb_url="${mnsUrl}"`);
+  }, []);
+
   return (
     <div
       className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}
@@ -13,6 +26,17 @@ export default function NotAvailable() {
       <p className="paragraph-md max-w-2xl">
         If you are the owner of this website, you might want to contact the
         DeWeb provider to get your website available on this provider.
+      </p>
+      <p className="paragraph-md max-w-2xl">
+        You can also try to access the website using another DeWeb provider or by running your own one:
+        <a
+          href={redirectionUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline"
+        >
+          Find another provider
+        </a>
       </p>
     </div>
   );

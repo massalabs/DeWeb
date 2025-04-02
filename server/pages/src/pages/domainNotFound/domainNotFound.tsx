@@ -1,4 +1,4 @@
-import { GenerateTheme } from "../../hooks/GenerateTheme";
+import { UseGenerateTheme } from "../../hooks/UseGenerateTheme";
 import Avara404 from "../../assets/404_avara.svg?react";
 import Old404 from "../../assets/404_old.svg?react";
 import Format404 from "../../assets/404_format.svg?react";
@@ -16,7 +16,7 @@ export default function DomainNotFound() {
     <Linux404 width={width} height={height} />,
     <Pixel404 width={width} height={height} />,
   ];
-  const theme = GenerateTheme();
+  const theme = UseGenerateTheme();
   return (
     <div
       className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8`}

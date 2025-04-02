@@ -1,7 +1,7 @@
-import { GenerateTheme } from "../../hooks/GenerateTheme";
+import { UseGenerateTheme } from "../../hooks/UseGenerateTheme";
 
 export default function BrokenWebsite() {
-  const theme = GenerateTheme();
+  const theme = UseGenerateTheme();
   return (
     <div
       className={`${theme} bg-primary text-secondary  flex flex-col items-center justify-center min-h-screen text-center gap-8`}
