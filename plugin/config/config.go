@@ -36,8 +36,8 @@ func LoadConfig(pluginDir string) (PluginConfig, error) {
 		NetworkURL: DefaultNetworkURL,
 		CacheConfig: apiConfig.CacheConfig{
 			DiskCacheDir:                 filepath.Join(pluginDir, DefaultCacheDir),
-			SiteRAMCacheMaxItems:         apiConfig.DefaultMaxRAMUsageMB,
-			SiteDiskCacheMaxItems:        apiConfig.DefaultMaxDiskUsageMB,
+			SiteRAMCacheMaxItems:         apiConfig.DefaultMaxRAMItems,
+			SiteDiskCacheMaxItems:        apiConfig.DefaultMaxDiskItems,
 			FileListCacheDurationSeconds: apiConfig.DefaultFileListCachePeriod,
 		},
 	}
