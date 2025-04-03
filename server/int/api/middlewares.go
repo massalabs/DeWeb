@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/massalabs/deweb-server/int/api/config"
+	"github.com/massalabs/deweb-server/pkg/cache"
 	"github.com/massalabs/deweb-server/pkg/mns"
 	"github.com/massalabs/deweb-server/pkg/webmanager"
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
@@ -51,6 +52,13 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 
 		logger.Debugf("SubdomainMiddleware: Subdomain %s found, resolving address", subdomain)
 
+		logger.Debugf("SubdomainMiddleware: Getting cache from context")
+
+		cache := GetCacheFromContext(r)
+		if cache == nil {
+			logger.Warnf("No cache instance found in context")
+		}
+
 		address, err := resolveAddress(subdomain, conf.NetworkInfos)
 		if err != nil {
 			logger.Warnf("Subdomain %s could not be resolved to an address: %v", subdomain, err)
@@ -76,13 +84,13 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 			return
 		}
 
-		serveContent(conf, address, path, w)
+		serveContent(conf, address, path, w, cache)
 	})
 }
 
 // serveContent serves the requested resource for the given website address.
-func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter) {
-	content, mimeType, httpHeaders, err := getWebsiteResource(conf, address, path)
+func serveContent(conf *config.ServerConfig, address string, path string, w http.ResponseWriter, cache *cache.Cache) {
+	content, mimeType, httpHeaders, err := getWebsiteResource(conf, address, path, cache)
 	if err != nil {
 		logger.Errorf("Failed to get website %s resource %s: %v", address, path, err)
 
@@ -177,7 +185,7 @@ func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourc
 	return resourceName, nil
 }
 
-func getWebsiteResource(config *config.ServerConfig, websiteAddress, resourceName string) ([]byte, string, map[string]string, error) {
+func getWebsiteResource(config *config.ServerConfig, websiteAddress, resourceName string, cache *cache.Cache) ([]byte, string, map[string]string, error) {
 	logger.Debugf("Getting website %s resource %s", websiteAddress, resourceName)
 
 	// TODO: Check in cache before resolving the resource name ?
@@ -186,7 +194,7 @@ func getWebsiteResource(config *config.ServerConfig, websiteAddress, resourceNam
 		return nil, "", nil, fmt.Errorf("failed to resolve resource name: %w", err)
 	}
 
-	content, httpHeaders, err := webmanager.GetWebsiteResource(&config.NetworkInfos, websiteAddress, resourceName)
+	content, httpHeaders, err := webmanager.GetWebsiteResource(&config.NetworkInfos, websiteAddress, resourceName, cache)
 	if err != nil {
 		return nil, "", nil, fmt.Errorf("failed to get website %s resource %s: %w", websiteAddress, resourceName, err)
 	}
