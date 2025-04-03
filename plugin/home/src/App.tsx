@@ -1,6 +1,6 @@
 import { FiSearch, FiInfo } from "react-icons/fi";
 import { useEffect, useState } from "react";
-import { GenerateTheme } from "deweb-pages/src/hooks/GenerateTheme";
+import { UseGenerateTheme } from "deweb-pages/src/hooks/UseGenerateTheme";
 
 type QuickAccessItemProps = {
   path: string;
@@ -93,7 +93,7 @@ export default function App() {
     }
   ];
 
-  const theme = GenerateTheme();
+  const theme = UseGenerateTheme();
 
   return (
     <div
