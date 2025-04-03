@@ -43,13 +43,13 @@ func main() {
 		APIPort:      conf.APIPort,
 		Domain:       "localhost",
 		NetworkInfos: pkgConfig.NewNetworkConfig(conf.NetworkURL),
-		CacheDir:     conf.CacheDir,
+		CacheConfig:  conf.CacheConfig,
 	}
 
 	logger.Infof("Starting DeWeb plugin with configuration:")
 	logger.Infof("  API Port: %d", serverConfig.APIPort)
 	logger.Infof("  Network URL: %s", serverConfig.NetworkInfos.NodeURL)
-	logger.Infof("  Cache Directory: %s", serverConfig.CacheDir)
+	logger.Infof("  Cache Directory: %s", serverConfig.CacheConfig.DiskCacheDir)
 
 	api := api.NewPluginAPI(&serverConfig, homeZip)
 	api.Start()

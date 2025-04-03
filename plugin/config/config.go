@@ -5,7 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
+	apiConfig "github.com/massalabs/deweb-server/int/api/config"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -16,9 +17,15 @@ const (
 
 // PluginConfig represents the configuration for the DeWeb plugin
 type PluginConfig struct {
-	APIPort    int    `yaml:"api_port"`
-	NetworkURL string `yaml:"network_url"`
-	CacheDir   string `yaml:"cache_dir"`
+	APIPort     int
+	NetworkURL  string
+	CacheConfig apiConfig.CacheConfig
+}
+
+type YamlPluginConfig struct {
+	APIPort     *int                      `yaml:"api_port"`
+	NetworkURL  string                    `yaml:"network_url"`
+	CacheConfig apiConfig.YamlCacheConfig `yaml:"cache"`
 }
 
 // LoadConfig loads the configuration from a YAML file
@@ -27,7 +34,12 @@ func LoadConfig(pluginDir string) (PluginConfig, error) {
 	config := PluginConfig{
 		APIPort:    0, // Default port (0 means a random port will be assigned by OS)
 		NetworkURL: DefaultNetworkURL,
-		CacheDir:   filepath.Join(pluginDir, DefaultCacheDir),
+		CacheConfig: apiConfig.CacheConfig{
+			DiskCacheDir:                 filepath.Join(pluginDir, DefaultCacheDir),
+			SiteRAMCacheMaxItems:         apiConfig.DefaultMaxRAMUsageMB,
+			SiteDiskCacheMaxItems:        apiConfig.DefaultMaxDiskUsageMB,
+			FileListCacheDurationSeconds: apiConfig.DefaultFileListCachePeriod,
+		},
 	}
 
 	configPath := filepath.Join(pluginDir, ConfigFileName)
@@ -42,8 +54,8 @@ func LoadConfig(pluginDir string) (PluginConfig, error) {
 
 // loadFromFile attempts to load config from a file
 // Returns the loaded config and an error if loading failed
-func loadFromFile(configPath string) (PluginConfig, error) {
-	var pluginConfig PluginConfig
+func loadFromFile(configPath string) (YamlPluginConfig, error) {
+	var pluginConfig YamlPluginConfig
 
 	// Check if config file exists
 	_, err := os.Stat(configPath)
@@ -70,20 +82,19 @@ func loadFromFile(configPath string) (PluginConfig, error) {
 
 // mergeConfig applies non-empty values from source to target
 // Handles both absolute and relative paths for CacheDir
-func mergeConfig(source PluginConfig, target *PluginConfig, pluginDir string) {
-	if source.APIPort != 0 {
-		target.APIPort = source.APIPort
+func mergeConfig(source YamlPluginConfig, target *PluginConfig, pluginDir string) {
+	if source.APIPort != nil {
+		target.APIPort = *source.APIPort
 	}
 
 	if source.NetworkURL != "" {
 		target.NetworkURL = source.NetworkURL
 	}
 
-	if source.CacheDir != "" {
-		if filepath.IsAbs(source.CacheDir) {
-			target.CacheDir = source.CacheDir
-		} else {
-			target.CacheDir = filepath.Join(pluginDir, source.CacheDir)
-		}
+	cacheConfig := apiConfig.ConvertYamlCacheConfig(&source.CacheConfig)
+	target.CacheConfig = cacheConfig
+
+	if !filepath.IsAbs(target.CacheConfig.DiskCacheDir) {
+		target.CacheConfig.DiskCacheDir = filepath.Join(pluginDir, target.CacheConfig.DiskCacheDir)
 	}
 }
