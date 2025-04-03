@@ -24,6 +24,10 @@ const (
 	mnsCacheKey mnsCacheKeyType = "mnsCache"
 )
 
+type cacheKeyType string
+
+const cacheKey cacheKeyType = "cache"
+
 type API struct {
 	Conf      *config.ServerConfig
 	APIServer *restapi.Server
