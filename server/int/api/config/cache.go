@@ -4,8 +4,8 @@ import "github.com/massalabs/station/pkg/logger"
 
 const (
 	// Default cache size limits
-	DefaultMaxRAMUsageMB       uint64 = 512                // Maximum RAM usage in MB, Default is 512MB
-	DefaultMaxDiskUsageMB      uint64 = 4096               // Maximum disk usage in MB, Default is 4GB
+	DefaultMaxRAMItems         uint64 = 1000               // Maximum RAM items, Default is 1000
+	DefaultMaxDiskItems        uint64 = 10000              // Maximum disk items, Default is 10000
 	DefaultFileListCachePeriod        = 60                 // Default expiration of the file list cache in seconds
 	DefaultDiskCacheDir               = "./websitesCache/" // Default cache directory
 )
@@ -29,8 +29,8 @@ type YamlCacheConfig struct {
 func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
 		Enabled:                      true,
-		SiteRAMCacheMaxItems:         DefaultMaxRAMUsageMB,
-		SiteDiskCacheMaxItems:        DefaultMaxDiskUsageMB,
+		SiteRAMCacheMaxItems:         DefaultMaxRAMItems,
+		SiteDiskCacheMaxItems:        DefaultMaxDiskItems,
 		DiskCacheDir:                 DefaultDiskCacheDir,
 		FileListCacheDurationSeconds: DefaultFileListCachePeriod,
 	}
