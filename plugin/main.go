@@ -63,11 +63,15 @@ func PluginDir() (string, error) {
 
 	path := filepath.Join(configDir, directoryName)
 
-	// create the directory if it doesn't exist
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, os.ModePerm)
-		if err != nil {
-			return "", fmt.Errorf("creating account directory '%s': %w", path, err)
+	_, err = os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.MkdirAll(path, os.ModePerm)
+			if err != nil {
+				return "", fmt.Errorf("creating account directory '%s': %w", path, err)
+			}
+		} else {
+			return "", fmt.Errorf("checking directory '%s': %w", path, err)
 		}
 	}
 
