@@ -1,10 +1,10 @@
-name: Release workflow
+name: Server Release
 
 on:
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: "Version to produce"
+      version:
+        description: 'Server version for this release (without v prefix)'
         required: true
         type: string
       release-as-draft:
@@ -22,39 +22,36 @@ on:
         required: true
         type: boolean
         default: true
-
+  
 jobs:
-  validate-input:
-    name: if tag_name is provided it must not start with "v"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if tag_name starts with "v"
-        run: |
-          if [[ "${{ github.event.inputs.tag_name }}" == v* ]]; then
-            echo "tag_name starts with v"
-            exit 1
-          fi
-
-  build-release:
-    needs: validate-input
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
+  build-server:
+    uses: ./.github/workflows/server.yml
     with:
-      tag_name: ${{ github.event.inputs.tag_name }}
+      version: ${{ inputs.version }}
+    secrets: inherit
 
   create-release:
-    name: Release
-    needs: build-release
-
+    needs: build-server
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/download-artifact@v4
-      - name: Create release and upload binaries
+      - name: Download all server artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: 'deweb-server_*'
+
+      - name: List artifacts
+        run: ls -R artifacts
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.tag_name }}
+          tag_name: v${{ inputs.version }}
+          name: server v${{ inputs.version }}
           draft: ${{ inputs.release-as-draft }}
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}
           files: |
-            ./deweb-*/deweb-*
+            artifacts/deweb-server_*/deweb-server_*
