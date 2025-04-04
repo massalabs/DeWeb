@@ -3,7 +3,7 @@
 # Network node URL to connect to (default: "https://mainnet.massa.net/api/v2")
 network_node_url: "https://mainnet.massa.net/api/v2"
 
-# API port to listen on (default: 0)
+# API port to listen on (default: 0 -> which means a random port will be assigned by OS)
 api_port: 0
 
 # Cache configuration
