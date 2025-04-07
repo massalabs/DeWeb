@@ -10,7 +10,6 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
-	"github.com/massalabs/deweb-server/pkg/webmanager"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -44,13 +43,7 @@ func configureAPI(api *operations.DeWebAPI) http.Handler {
 		})
 	}
 
-	api.PreServerShutdown = func() {
-		if webmanager.CacheInstance() != nil {
-			if err := webmanager.CacheInstance().Close(); err != nil {
-				logger.Errorf("Failed to close cache: %v", err)
-			}
-		}
-	}
+	api.PreServerShutdown = func() {}
 
 	api.ServerShutdown = func() {}
 

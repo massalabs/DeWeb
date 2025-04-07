@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -8,15 +9,24 @@ import (
 	"github.com/massalabs/deweb-server/api/read/restapi"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
 	"github.com/massalabs/deweb-server/int/api/config"
+	"github.com/massalabs/deweb-server/pkg/cache"
+	"github.com/massalabs/station/pkg/logger"
 )
 
+type cacheKeyType string
+
+const cacheKey cacheKeyType = "cache"
+
 type API struct {
-	conf      *config.ServerConfig
-	apiServer *restapi.Server
-	dewebAPI  *operations.DeWebAPI
+	Conf      *config.ServerConfig
+	APIServer *restapi.Server
+	DewebAPI  *operations.DeWebAPI
+	Cache     *cache.Cache
 }
 
 func NewAPI(conf *config.ServerConfig) *API {
+	logger.Debugf("Initializing API with config: %+v", conf)
+
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
 		log.Fatalln(err)
@@ -25,42 +35,71 @@ func NewAPI(conf *config.ServerConfig) *API {
 	dewebAPI := operations.NewDeWebAPI(swaggerSpec)
 	server := restapi.NewServer(dewebAPI)
 
-	return &API{
-		conf:      conf,
-		apiServer: server,
-		dewebAPI:  dewebAPI,
+	var cacheInstance *cache.Cache = nil
+	// Initialize cache
+	if conf.CacheConfig.Enabled {
+		cacheInstance, err = cache.NewCache(conf.CacheConfig.DiskCacheDir, conf.CacheConfig.SiteRAMCacheMaxItems, conf.CacheConfig.SiteDiskCacheMaxItems)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
+
+	return &API{
+		Conf:      conf,
+		APIServer: server,
+		DewebAPI:  dewebAPI,
+		Cache:     cacheInstance,
+	}
+}
+
+// CacheMiddleware injects the cache instance into the request context
+func (a *API) CacheMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debugf("CacheMiddleware: Injecting cache into context")
+		ctx := context.WithValue(r.Context(), cacheKey, a.Cache)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// createHandler creates the base handler chain with common middleware
+func (a *API) createHandler() http.Handler {
+	return a.CacheMiddleware(SubdomainMiddleware(a.DewebAPI.Serve(nil), a.Conf))
 }
 
 // Start starts the API server.
 func (a *API) Start() {
 	defer func() {
-		if err := a.apiServer.Shutdown(); err != nil {
+		if a.Cache != nil {
+			a.Cache.Close()
+		}
+
+		if err := a.APIServer.Shutdown(); err != nil {
 			log.Fatalln(err)
 		}
 	}()
 
-	a.apiServer.Port = a.conf.APIPort
+	a.APIServer.Port = a.Conf.APIPort
 
 	a.configureAPI()
 
-	a.apiServer.ConfigureAPI()
+	a.APIServer.ConfigureAPI()
 
-	a.apiServer.SetHandler(SubdomainMiddleware(a.dewebAPI.Serve(nil), a.conf))
+	// Set handler using the createHandler method
+	a.APIServer.SetHandler(a.createHandler())
 
-	if err := a.apiServer.Serve(); err != nil {
+	if err := a.APIServer.Serve(); err != nil {
 		log.Fatalln(err)
 	}
 }
 
 // ConfigureAPI sets up the API handlers and error handling.
 func (a *API) configureAPI() {
-	a.dewebAPI.ServeError = func(w http.ResponseWriter, r *http.Request, err error) {
+	a.DewebAPI.ServeError = func(w http.ResponseWriter, r *http.Request, err error) {
 		log.Printf("ServeError: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	a.dewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getResourceHandler)
-	a.dewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(defaultPageHandler)
-	a.dewebAPI.GetDeWebInfoHandler = NewDewebInfo(a.conf.MiscPublicInfoJson)
+	a.DewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getResourceHandler)
+	a.DewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(defaultPageHandler)
+	a.DewebAPI.GetDeWebInfoHandler = NewDewebInfo(a.Conf.MiscPublicInfoJson)
 }
