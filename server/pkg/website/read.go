@@ -86,9 +86,9 @@ func (c *filePathListCache) set(websiteAddress string, files []string) {
 	// Get expiration duration from config or use default
 	var cacheDuration time.Duration
 	if serverConfig != nil {
-		cacheDuration = time.Duration(serverConfig.FileListCacheDurationSeconds) * time.Second
+		cacheDuration = time.Duration(serverConfig.CacheConfig.FileListCacheDurationSeconds) * time.Second
 	} else {
-		cacheDuration = time.Duration(config.DefaultFileListCacheDurationSeconds) * time.Second
+		cacheDuration = time.Duration(config.DefaultFileListCachePeriod) * time.Second
 	}
 
 	c.cache[websiteAddress] = &filePathListCacheEntry{
