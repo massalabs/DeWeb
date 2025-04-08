@@ -26,6 +26,7 @@ func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 // RequestFile fetches a website and caches it, or retrieves it from the cache if already present.
 func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string, cache *cache.Cache) ([]byte, map[string]string, error) {
 	// Get the last update timestamp from the website
+	// FIXME: We shouldn't fetch the last update timestamp for each resource. It should be cached and fetched once per period.
 	lastUpdated, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
 	if err != nil {
 		logger.Warnf("Failed to get last update timestamp: %v", err)
