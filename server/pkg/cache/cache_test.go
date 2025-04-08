@@ -61,6 +61,7 @@ func TestCacheItems(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to get header for item %d: %v", i, err)
 		}
+
 		if headerValue != fmt.Sprintf("Value %d", i) {
 			t.Errorf("Header mismatch for item %d:\nExpected: %s\nGot: %s", i, fmt.Sprintf("Value %d", i), headerValue)
 		}
@@ -70,6 +71,7 @@ func TestCacheItems(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to get headers for item %d: %v", i, err)
 		}
+
 		if headers["My-Header"] != fmt.Sprintf("Value %d", i) {
 			t.Errorf("Headers mismatch for item %d:\nExpected: %v\nGot: %v", i, map[string]string{"My-Header": fmt.Sprintf("Value %d", i)}, headers)
 		}
