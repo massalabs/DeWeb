@@ -18,6 +18,10 @@ const (
 	entrySubTagTime    = 0x03 // Subtag for entry timestamp
 	entrySubTagHeaders = 0x04 // Subtag for entry headers
 	idCounterIndexTag  = 0x02
+
+	// Header serialization separators
+	headerKeyValueSep = "\x1E" // Record Separator (RS) - separates key and value
+	headerLineSep     = "\x1F" // Unit Separator (US) - separates header entries
 )
 
 // getCacheKey returns a unique key for a website and resource as a byte slice
@@ -125,6 +129,48 @@ func createIdCounterIndexKey(id uint64) []byte {
 	binary.BigEndian.PutUint64(key[1:], id)
 
 	return key
+}
+
+// serializeHttpHeaders converts a map of HTTP headers to a byte slice
+// using control characters as separators
+func serializeHttpHeaders(headers map[string]string) []byte {
+	if len(headers) == 0 {
+		return nil
+	}
+
+	var buf bytes.Buffer
+	first := true
+	for name, value := range headers {
+		if !first {
+			buf.WriteString(headerLineSep)
+		}
+		buf.WriteString(name)
+		buf.WriteString(headerKeyValueSep)
+		buf.WriteString(value)
+		first = false
+	}
+	return buf.Bytes()
+}
+
+// deserializeHttpHeaders converts a byte slice back to a map of HTTP headers
+// using control characters as separators
+func deserializeHttpHeaders(data []byte) (map[string]string, error) {
+	if len(data) == 0 {
+		return make(map[string]string), nil
+	}
+
+	headers := make(map[string]string)
+	entries := bytes.Split(data, []byte(headerLineSep))
+
+	for _, entry := range entries {
+		parts := bytes.SplitN(entry, []byte(headerKeyValueSep), 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("invalid header format: %s", string(entry))
+		}
+		headers[string(parts[0])] = string(parts[1])
+	}
+
+	return headers, nil
 }
 
 // DiskCache represents the disk storage component of the cache
@@ -259,17 +305,12 @@ func (d *DiskCache) getHeaders(txn *badger.Txn, entryPrefix []byte) (map[string]
 		return nil, err
 	}
 
-	headers := make(map[string]string)
-
-	lines := bytes.Split(headersValue, []byte("\n"))
-	for _, line := range lines {
-		parts := bytes.SplitN(line, []byte(":"), 2)
-		if len(parts) == 2 {
-			headers[string(parts[0])] = string(parts[1])
-		}
+	deserializedHeaders, err := deserializeHttpHeaders(headersValue)
+	if err != nil {
+		return nil, fmt.Errorf("failed to deserialize headers: %v", err)
 	}
 
-	return headers, nil
+	return deserializedHeaders, nil
 }
 
 // deleteEntry removes an entry from the disk cache
@@ -360,14 +401,7 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 	}
 
 	// Save the headers
-	var headersValue []byte
-	for name, value := range headers {
-		headersValue = append(headersValue, []byte(name)...)
-		headersValue = append(headersValue, ':')
-		headersValue = append(headersValue, []byte(value)...)
-		headersValue = append(headersValue, '\n')
-	}
-
+	headersValue := serializeHttpHeaders(headers)
 	if err := txn.Set(headersKey, headersValue); err != nil {
 		return fmt.Errorf("failed to save headers: %v", err)
 	}
