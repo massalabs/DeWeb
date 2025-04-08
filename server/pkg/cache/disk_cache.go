@@ -139,16 +139,19 @@ func serializeHttpHeaders(headers map[string]string) []byte {
 	}
 
 	var buf bytes.Buffer
+
 	first := true
 	for name, value := range headers {
 		if !first {
 			buf.WriteString(headerLineSep)
 		}
+
 		buf.WriteString(name)
 		buf.WriteString(headerKeyValueSep)
 		buf.WriteString(value)
 		first = false
 	}
+
 	return buf.Bytes()
 }
 
