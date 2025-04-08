@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 var (
@@ -16,10 +16,19 @@ var (
 
 // Cache represents the dual caching system with RAM and disk storage
 type Cache struct {
-	ramCache      *lru.Cache
+	ramCache      *lru.Cache[interface{}, interface{}]
 	diskCache     *DiskCache
 	mu            sync.RWMutex
 	maxRAMEntries uint64
+}
+
+// cacheEntry represents a cached resource with its content and modification time
+type cacheEntry struct {
+	content        []byte
+	modified       time.Time
+	headers        map[string]string
+	websiteAddress string
+	resourceName   string
 }
 
 // NewCache initializes the cache with configurable maximum sizes for RAM and disk storage
@@ -95,7 +104,7 @@ func (c *Cache) GetLastModified(websiteAddress string, fileName string) (time.Ti
 }
 
 // Read returns the content of a resource in the cache for a given website
-func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error) {
+func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, map[string]string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -104,20 +113,22 @@ func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error)
 	// First try RAM cache and promote if found
 	if value, ok := c.ramCache.Get(key); ok {
 		if entry, ok := value.(*cacheEntry); ok {
-			return entry.content, nil
+			return entry.content, entry.headers, nil
 		}
 	}
 
 	// If not in RAM cache, check disk cache and move to RAM cache
-	content, modified, err := c.diskCache.RemoveAndGet(websiteAddress, resourceName)
+	content, modified, headers, err := c.diskCache.RemoveAndGet(websiteAddress, resourceName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Create a cache entry
 	entry := &cacheEntry{
-		content:        content,
-		modified:       modified,
+		content:  content,
+		modified: modified,
+		headers:  headers,
+
 		websiteAddress: websiteAddress,
 		resourceName:   resourceName,
 	}
@@ -125,11 +136,11 @@ func (c *Cache) Read(websiteAddress string, resourceName string) ([]byte, error)
 	// Add to RAM cache - eviction will be handled automatically by the callback
 	c.ramCache.Add(key, entry)
 
-	return content, nil
+	return content, headers, nil
 }
 
 // Save a resource in the cache for a given website
-func (c *Cache) Save(websiteAddress string, resourceName string, content []byte, modified time.Time) error {
+func (c *Cache) Save(websiteAddress string, resourceName string, content []byte, modified time.Time, headers map[string]string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -137,6 +148,7 @@ func (c *Cache) Save(websiteAddress string, resourceName string, content []byte,
 	entry := &cacheEntry{
 		content:        content,
 		modified:       modified,
+		headers:        headers,
 		websiteAddress: websiteAddress,
 		resourceName:   resourceName,
 	}
@@ -206,10 +218,85 @@ func (c *Cache) Close() error {
 	return nil
 }
 
-// cacheEntry represents a cached resource with its content and modification time
-type cacheEntry struct {
-	content        []byte
-	modified       time.Time
-	websiteAddress string
-	resourceName   string
+// GetAllWithPrefix returns all cache entries whose keys start with the given prefix
+func (c *Cache) GetAllWithPrefix(prefix string) (map[string][]byte, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entries := make(map[string][]byte)
+
+	for _, key := range c.ramCache.Keys() {
+		if value, ok := c.ramCache.Peek(key); ok {
+			if entry, ok := value.(*cacheEntry); ok {
+				entries[entry.resourceName] = entry.content
+			}
+		}
+	}
+
+	return entries, nil
+}
+
+// HeaderCacheKey generates a cache key for a header
+func HeaderCacheKey(websiteAddress string, resourceName string, headerName string) string {
+	return fmt.Sprintf("headers:%s:%s:%s", websiteAddress, resourceName, headerName)
+}
+
+// CacheHeader stores a header value in the cache
+func (c *Cache) CacheHeader(websiteAddress string, resourceName string, headerName string, headerValue string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	key := getHashKey(websiteAddress, resourceName)
+
+	// Get or create the cache entry
+	var entry *cacheEntry
+	if value, ok := c.ramCache.Get(key); ok {
+		entry = value.(*cacheEntry)
+	} else {
+		entry = &cacheEntry{
+			websiteAddress: websiteAddress,
+			resourceName:   resourceName,
+			headers:        make(map[string]string),
+		}
+	}
+
+	// Update the header
+	entry.headers[headerName] = headerValue
+
+	// Save back to cache
+	c.ramCache.Add(key, entry)
+
+	return nil
+}
+
+// GetHeader retrieves a header value from the cache
+func (c *Cache) GetHeader(websiteAddress string, resourceName string, headerName string) (string, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	key := getHashKey(websiteAddress, resourceName)
+
+	if value, ok := c.ramCache.Get(key); ok {
+		entry := value.(*cacheEntry)
+		if value, exists := entry.headers[headerName]; exists {
+			return value, nil
+		}
+	}
+
+	return "", fmt.Errorf("header not found: %s", headerName)
+}
+
+// GetHeadersForResource retrieves all headers for a specific resource
+func (c *Cache) GetHeadersForResource(websiteAddress string, resourceName string) (map[string]string, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	key := getHashKey(websiteAddress, resourceName)
+
+	if value, ok := c.ramCache.Get(key); ok {
+		entry := value.(*cacheEntry)
+		return entry.headers, nil
+	}
+
+	return nil, fmt.Errorf("resource not found: %s", resourceName)
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/cache"
 	"github.com/massalabs/deweb-server/pkg/mns"
+	mnscache "github.com/massalabs/deweb-server/pkg/mns/cache"
 	"github.com/massalabs/deweb-server/pkg/webmanager"
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
 	msConfig "github.com/massalabs/station/int/config"
@@ -59,7 +60,12 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 			logger.Warnf("No cache instance found in context")
 		}
 
-		address, err := resolveAddress(subdomain, conf.NetworkInfos)
+		mnsCache := GetMNSCacheFromContext(r)
+		if mnsCache == nil {
+			logger.Warnf("No MNS cache instance found in context")
+		}
+
+		address, err := resolveAddress(subdomain, conf.NetworkInfos, mnsCache)
 		if err != nil {
 			logger.Warnf("Subdomain %s could not be resolved to an address: %v", subdomain, err)
 
@@ -131,13 +137,25 @@ func cleanPath(urlPath string) string {
 }
 
 // resolveAddress resolves the subdomain to an address.
-func resolveAddress(subdomain string, network msConfig.NetworkInfos) (string, error) {
+func resolveAddress(subdomain string, network msConfig.NetworkInfos, mnsCache *mnscache.MNSCache) (string, error) {
+	if mnsCache != nil {
+		domainTarget, ok := mnsCache.Get(subdomain)
+		if ok {
+			logger.Debugf("Resolved subdomain %s to address %s", subdomain, domainTarget)
+			return domainTarget, nil
+		}
+	}
+
 	domainTarget, err := mns.ResolveDomain(&network, subdomain)
 	if err != nil {
 		return "", fmt.Errorf("could not resolve MNS domain: %w", err)
 	}
 
 	logger.Debugf("Resolved subdomain %s to address %s", subdomain, domainTarget)
+
+	if mnsCache != nil {
+		mnsCache.Set(subdomain, domainTarget)
+	}
 
 	return domainTarget, nil
 }

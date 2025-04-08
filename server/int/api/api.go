@@ -10,18 +10,26 @@ import (
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/cache"
+	mnscache "github.com/massalabs/deweb-server/pkg/mns/cache"
 	"github.com/massalabs/station/pkg/logger"
 )
 
-type cacheKeyType string
+type (
+	cacheKeyType    string
+	mnsCacheKeyType string
+)
 
-const cacheKey cacheKeyType = "cache"
+const (
+	cacheKey    cacheKeyType    = "cache"
+	mnsCacheKey mnsCacheKeyType = "mnsCache"
+)
 
 type API struct {
 	Conf      *config.ServerConfig
 	APIServer *restapi.Server
 	DewebAPI  *operations.DeWebAPI
 	Cache     *cache.Cache
+	MNSCache  *mnscache.MNSCache
 }
 
 func NewAPI(conf *config.ServerConfig) *API {
@@ -44,11 +52,17 @@ func NewAPI(conf *config.ServerConfig) *API {
 		}
 	}
 
+	var mnsCacheInstance *mnscache.MNSCache = nil
+	if conf.CacheConfig.Enabled {
+		mnsCacheInstance = mnscache.NewMNSCache(0, int(conf.CacheConfig.SiteRAMCacheMaxItems))
+	}
+
 	return &API{
 		Conf:      conf,
 		APIServer: server,
 		DewebAPI:  dewebAPI,
 		Cache:     cacheInstance,
+		MNSCache:  mnsCacheInstance,
 	}
 }
 
@@ -61,9 +75,18 @@ func (a *API) CacheMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// MNSCacheMiddleware injects the mns cache instance into the request context
+func (a *API) MNSCacheMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debugf("MNSCacheMiddleware: Injecting mns cache into context")
+		ctx := context.WithValue(r.Context(), mnsCacheKey, a.MNSCache)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 // createHandler creates the base handler chain with common middleware
 func (a *API) createHandler() http.Handler {
-	return a.CacheMiddleware(SubdomainMiddleware(a.DewebAPI.Serve(nil), a.Conf))
+	return a.MNSCacheMiddleware(a.CacheMiddleware(SubdomainMiddleware(a.DewebAPI.Serve(nil), a.Conf)))
 }
 
 // Start starts the API server.

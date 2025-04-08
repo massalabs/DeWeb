@@ -25,13 +25,9 @@ func GetWebsiteResource(network *msConfig.NetworkInfos, websiteAddress, resource
 
 // RequestFile fetches a website and caches it, or retrieves it from the cache if already present.
 func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceName string, cache *cache.Cache) ([]byte, map[string]string, error) {
-	// This could be cached as well.
-	httpHeaders, err := website.GetHttpHeaders(networkInfo, scAddress, resourceName)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch http header metadata: %w", err)
-	}
-
 	// Get the last update timestamp from the website
+	// FIXME: We shouldn't fetch the last update timestamp for each resource. It should be cached and fetched once per period.
+	// https://github.com/massalabs/DeWeb/issues/280
 	lastUpdated, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
 	if err != nil {
 		logger.Warnf("Failed to get last update timestamp: %v", err)
@@ -40,12 +36,12 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 		if err != nil {
 			logger.Debugf("Resource %s from %s not in cache", resourceName, scAddress)
 		} else if !lastModified.Before(*lastUpdated) {
-			content, err := cache.Read(scAddress, resourceName)
+			content, headers, err := cache.Read(scAddress, resourceName)
 			if err != nil {
 				logger.Warnf("Failed to read cached resource %s from %s: %v", resourceName, scAddress, err)
 			} else {
 				logger.Debugf("RequestFile: Cache hit for %s", resourceName)
-				return content, httpHeaders, nil
+				return content, headers, nil
 			}
 		} else {
 			if err = cache.Delete(scAddress, resourceName); err != nil {
@@ -67,9 +63,16 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 
 	logger.Debugf("%s: %s successfully fetched with size: %d bytes", scAddress, resourceName, len(websiteBytes))
 
+	httpHeaders, err := website.GetHttpHeaders(networkInfo, scAddress, resourceName)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch http header metadata: %w", err)
+	}
+
+	logger.Debugf("RequestFile: Headers for %s successfully fetched: %v", resourceName, httpHeaders)
+
 	// Save to cache if available
 	if cache != nil {
-		err = cache.Save(scAddress, resourceName, websiteBytes, *lastUpdated)
+		err = cache.Save(scAddress, resourceName, websiteBytes, *lastUpdated, httpHeaders)
 		if err != nil {
 			logger.Warnf("Failed to save %s to %s cache: %v", resourceName, scAddress, err)
 		} else {

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/massalabs/deweb-server/pkg/cache"
+	mnscache "github.com/massalabs/deweb-server/pkg/mns/cache"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -30,6 +31,18 @@ func GetCacheFromContext(r *http.Request) *cache.Cache {
 	}
 
 	logger.Debugf("GetCacheFromContext: No cache found in context")
+
+	return nil
+}
+
+// GetMNSCacheFromContext retrieves the mns cache instance from the request context
+func GetMNSCacheFromContext(r *http.Request) *mnscache.MNSCache {
+	if cache, ok := r.Context().Value(mnsCacheKey).(*mnscache.MNSCache); ok {
+		logger.Debugf("GetMNSCacheFromContext: MNSCache found in context")
+		return cache
+	}
+
+	logger.Debugf("GetMNSCacheFromContext: No MNSCache found in context")
 
 	return nil
 }
