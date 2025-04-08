@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 
 // Cache represents the dual caching system with RAM and disk storage
 type Cache struct {
-	ramCache      *lru.Cache
+	ramCache      *lru.Cache[interface{}, interface{}]
 	diskCache     *DiskCache
 	mu            sync.RWMutex
 	maxRAMEntries uint64
