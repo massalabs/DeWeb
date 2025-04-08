@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"os"
@@ -11,11 +12,12 @@ import (
 
 const (
 	// DB tags for different types of data
-	entryTag          = 0x01
-	entrySubTagID     = 0x01 // Subtag for entry ID counter
-	entrySubTagData   = 0x02 // Subtag for entry data
-	entrySubTagTime   = 0x03 // Subtag for entry timestamp
-	idCounterIndexTag = 0x02
+	entryTag           = 0x01
+	entrySubTagID      = 0x01 // Subtag for entry ID counter
+	entrySubTagData    = 0x02 // Subtag for entry data
+	entrySubTagTime    = 0x03 // Subtag for entry timestamp
+	entrySubTagHeaders = 0x04 // Subtag for entry headers
+	idCounterIndexTag  = 0x02
 )
 
 // getCacheKey returns a unique key for a website and resource as a byte slice
@@ -95,6 +97,19 @@ func createTimestampKey(entryPrefix []byte) []byte {
 	key := make([]byte, len(entryPrefix)+1)
 	copy(key, entryPrefix)
 	key[len(entryPrefix)] = entrySubTagTime
+
+	return key
+}
+
+// createHeadersKey returns a key for an entry's headers
+// Note: We create a new byte slice and copy data rather than using append
+// because Badger requires variables within a transaction to have stable
+// underlying storage. Modifying slices in-place can cause bugs with Badger
+// as it may reference the memory later.
+func createHeadersKey(entryPrefix []byte) []byte {
+	key := make([]byte, len(entryPrefix)+1)
+	copy(key, entryPrefix)
+	key[len(entryPrefix)] = entrySubTagHeaders
 
 	return key
 }
@@ -225,6 +240,38 @@ func (d *DiskCache) GetLastModified(websiteAddress, resourceName string) (time.T
 	return modified, nil
 }
 
+// getHeaders retrieves and parses headers from the database
+func (d *DiskCache) getHeaders(txn *badger.Txn, entryPrefix []byte) (map[string]string, error) {
+	// Create headers key
+	headersKey := createHeadersKey(entryPrefix)
+
+	item, err := txn.Get(headersKey)
+	if err == badger.ErrKeyNotFound {
+		return make(map[string]string), nil // Return empty map if no headers
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	headersValue, err := item.ValueCopy(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := make(map[string]string)
+
+	lines := bytes.Split(headersValue, []byte("\n"))
+	for _, line := range lines {
+		parts := bytes.SplitN(line, []byte(":"), 2)
+		if len(parts) == 2 {
+			headers[string(parts[0])] = string(parts[1])
+		}
+	}
+
+	return headers, nil
+}
+
 // deleteEntry removes an entry from the disk cache
 func (d *DiskCache) deleteEntry(txn *badger.Txn, websiteAddress, resourceName string) error {
 	// Create the entry key prefix
@@ -281,7 +328,7 @@ func (d *DiskCache) deleteEntry(txn *badger.Txn, websiteAddress, resourceName st
 }
 
 // saveEntry saves an entry to the disk cache
-func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName string, content []byte, modified time.Time) error {
+func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName string, content []byte, headers map[string]string, modified time.Time) error {
 	// Create the entry key prefix
 	entryPrefix := createEntryPrefix(websiteAddress, resourceName)
 
@@ -289,6 +336,7 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 	idCounterKey := createIdKey(entryPrefix)
 	dataKey := createDataKey(entryPrefix)
 	timestampKey := createTimestampKey(entryPrefix)
+	headersKey := createHeadersKey(entryPrefix)
 
 	// Save the ID counter
 	idCounterValue := make([]byte, 8)
@@ -309,6 +357,19 @@ func (d *DiskCache) saveEntry(txn *badger.Txn, websiteAddress, resourceName stri
 
 	if err := txn.Set(timestampKey, timestampValue); err != nil {
 		return fmt.Errorf("failed to save timestamp: %v", err)
+	}
+
+	// Save the headers
+	var headersValue []byte
+	for name, value := range headers {
+		headersValue = append(headersValue, []byte(name)...)
+		headersValue = append(headersValue, ':')
+		headersValue = append(headersValue, []byte(value)...)
+		headersValue = append(headersValue, '\n')
+	}
+
+	if err := txn.Set(headersKey, headersValue); err != nil {
+		return fmt.Errorf("failed to save headers: %v", err)
 	}
 
 	// Save the ID counter index
@@ -376,7 +437,7 @@ func (d *DiskCache) SaveResource(entry *cacheEntry) error {
 		}
 
 		// Save the new entry
-		return d.saveEntry(txn, entry.websiteAddress, entry.resourceName, entry.content, entry.modified)
+		return d.saveEntry(txn, entry.websiteAddress, entry.resourceName, entry.content, entry.headers, entry.modified)
 	})
 }
 
@@ -393,9 +454,10 @@ func (d *DiskCache) Close() error {
 }
 
 // RemoveAndGet retrieves a resource from disk cache, removes it, and returns its content and timestamp
-func (d *DiskCache) RemoveAndGet(websiteAddress, resourceName string) ([]byte, time.Time, error) {
+func (d *DiskCache) RemoveAndGet(websiteAddress, resourceName string) ([]byte, time.Time, map[string]string, error) {
 	var content []byte
 	var modified time.Time
+	var headers map[string]string
 
 	err := d.db.Update(func(txn *badger.Txn) error {
 		// Create the entry key prefix
@@ -426,12 +488,18 @@ func (d *DiskCache) RemoveAndGet(websiteAddress, resourceName string) ([]byte, t
 		}
 		modified = timestamp
 
+		// Get the headers
+		headers, err = d.getHeaders(txn, entryPrefix)
+		if err != nil {
+			return fmt.Errorf("headers not found for website %s, resource %s: %v", websiteAddress, resourceName, err)
+		}
+
 		// Remove from disk
 		return d.deleteEntry(txn, websiteAddress, resourceName)
 	})
 	if err != nil {
-		return nil, time.Time{}, err
+		return nil, time.Time{}, nil, err
 	}
 
-	return content, modified, nil
+	return content, modified, headers, nil
 }
