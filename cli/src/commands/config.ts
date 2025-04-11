@@ -1,59 +1,43 @@
-import { Address, PublicApiUrl } from '@massalabs/massa-web3'
-import { OptionValues } from 'commander'
-import { readFileSync } from 'fs'
+import { PublicApiUrl } from '@massalabs/massa-web3'
+import { existsSync, readFileSync } from 'fs'
 
 import { Metadata } from '../lib/website/models/Metadata'
+import { OptionValues } from 'commander'
+import { validateWebsiteAddress } from './utils'
 
 export const DEFAULT_CHUNK_SIZE = 64000
 export const DEFAULT_NODE_URL = PublicApiUrl.Buildnet
+export const DEFAULT_CONFIG_FILE = 'deweb_cli_config.json'
 
 interface Config {
-  wallet_password: string
-  wallet_path: string
+  wallet_password?: string
+  wallet_path?: string
   node_url: string
   chunk_size: number
-  secret_key: string
-  address: string
-  metadatas: { [key: string]: string }
+  secret_key?: string
+  address?: string
+  metadatas?: Metadata[]
+  config: string
 }
 
-export function parseConfigFile(filePath: string): Config {
-  const fileContent = readFileSync(filePath, 'utf-8')
-  try {
-    const config = JSON.parse(fileContent) as Config
+const DEFAULT_CONFIG: Config = {
+  config: DEFAULT_CONFIG_FILE,
+  node_url: DEFAULT_NODE_URL,
+  chunk_size: DEFAULT_CHUNK_SIZE,
+}
 
-    // If address is provided, make sure it's valid
-    if (config.address) {
-      try {
-        Address.fromString(config.address)
-      } catch (error) {
-        throw new Error(`Invalid address in config file: ${error}`)
-      }
+function parseConfigFile(filePath: string): Config {
+  if (!existsSync(filePath)) {
+    if (filePath !== DEFAULT_CONFIG_FILE) {
+      throw new Error(`Config file not found: ${filePath}`)
     }
-
-    return config
+    return DEFAULT_CONFIG
+  }
+  try {
+    const config = JSON.parse(readFileSync(filePath, 'utf-8'))
+    return { ...config, metadatas: makeMetadataArray(config.metadatas) }
   } catch (error) {
     throw new Error(`Failed to parse file: ${error}`)
-  }
-}
-
-export function mergeConfigAndOptions(
-  commandOptions: OptionValues,
-  configOptions: Config
-): OptionValues {
-  if (!configOptions) return commandOptions
-
-  return {
-    wallet: commandOptions.wallet || configOptions.wallet_path,
-    password: commandOptions.password || configOptions.wallet_password,
-    node_url:
-      commandOptions.node_url || configOptions.node_url || DEFAULT_NODE_URL,
-    chunk_size: configOptions.chunk_size || DEFAULT_CHUNK_SIZE,
-    secret_key: configOptions.secret_key || '',
-    address: configOptions.address || '',
-    metadatas: configOptions.metadatas
-      ? makeMetadataArray(configOptions.metadatas)
-      : [],
   }
 }
 
@@ -63,13 +47,22 @@ function makeMetadataArray(metadatas: { [key: string]: string }): Metadata[] {
   )
 }
 
-export function setDefaultValues(commandOptions: OptionValues): OptionValues {
-  return {
-    node_url: commandOptions.node_url || DEFAULT_NODE_URL,
-    chunk_size: commandOptions.chunk_size || DEFAULT_CHUNK_SIZE,
-    wallet: commandOptions.wallet || '',
-    password: commandOptions.password || '',
-    address: '',
-    metadatas: [],
+function validateConfig(config: Config): void {
+  // If address is provided, make sure it's valid
+  if (config.address) {
+    validateWebsiteAddress(config.address)
   }
+}
+
+export function loadConfig(options: OptionValues): Config {
+  const config = parseConfigFile(options.config as string)
+
+  // commandOptions get priority over configOptions
+  const conf = {
+    ...DEFAULT_CONFIG,
+    ...config,
+    ...options,
+  }
+  validateConfig(conf)
+  return conf
 }

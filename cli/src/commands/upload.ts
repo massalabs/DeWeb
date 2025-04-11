@@ -13,8 +13,8 @@ import {
   filterMetadataToUpdate,
   getGlobalMetadata,
 } from '../lib/website/metadata'
-import { Metadata } from '../lib/website/models/Metadata'
-import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+import { makeProviderFromNodeURLAndSecret } from './utils'
+import { loadConfig } from './config'
 
 export const uploadCommand = new Command('upload')
   .alias('u')
@@ -30,42 +30,38 @@ export const uploadCommand = new Command('upload')
     false
   )
   .action(async (websiteDirPath, options, command) => {
-    const globalOptions = command.optsWithGlobals()
+    const globalOptions = loadConfig(command.optsWithGlobals())
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    // set chunksize from options or config
-    const chunkSize =
-      parseInt(options.chunkSize as string) ||
-      (globalOptions.chunk_size as number)
-
     const ctx: UploadCtx = await createUploadCtx(
       provider,
-      chunkSize,
+      globalOptions.chunk_size,
       websiteDirPath,
       options.yes,
       options.noIndex,
       options.skipIndexHtmlCheck
     )
 
-    // if we edit an already deployed website
-    if (options.address || globalOptions.address) {
-      const address = options.address || (globalOptions.address as string)
-      console.log(`Editing website at address ${address}, no deploy needed`)
+    const newMetadatas = globalOptions.metadatas ?? []
 
-      validateAddress(address)
+    // if we edit an already deployed website
+    if (globalOptions.address) {
+      const address = globalOptions.address
+      console.log(`Editing website at address ${address}, no deploy needed`)
 
       ctx.sc = new SmartContract(provider, address)
 
       const currentGlobalMetadata = await getGlobalMetadata(provider, address)
+
       const updateRequired = await filterMetadataToUpdate(
         currentGlobalMetadata,
-        globalOptions.metadatas as Metadata[]
+        newMetadatas
       )
 
       ctx.metadatas.push(...updateRequired)
     } else {
-      ctx.metadatas.push(...(globalOptions.metadatas as Metadata[]))
+      ctx.metadatas.push(...newMetadatas)
     }
 
     const tasksArray = [

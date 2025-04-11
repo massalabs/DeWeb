@@ -2,31 +2,36 @@ import { Command } from '@commander-js/extra-typings'
 
 import { listFiles } from '../lib/website/read'
 
-import { initPublicProvider, validateAddress } from './utils'
+import { initPublicProvider, validateWebsiteAddress } from './utils'
 import {
   extractWebsiteMetadata,
   fileHashHex,
   getFileMetadata,
   getGlobalMetadata,
 } from '../lib/website/metadata'
+import { loadConfig } from './config'
 
 export const listFilesCommand = new Command('list')
   .alias('ls')
   .description(
     'Lists files and metadatas from the given website on Massa blockchain'
   )
-  .argument('<address>', 'Address of the website to add metadata to')
+  .argument('[address]', 'Address of the website to add metadata to')
   .action(async (address, _, command) => {
-    const globalOptions = command.optsWithGlobals()
+    const globalOptions = loadConfig(command.optsWithGlobals())
 
     const provider = await initPublicProvider(globalOptions)
 
-    validateAddress(address)
+    const webSiteAddress = address || globalOptions.address
+    if (!webSiteAddress) {
+      throw new Error('No address provided')
+    }
+    validateWebsiteAddress(webSiteAddress)
 
-    const metadatas = await getGlobalMetadata(provider, address)
+    const metadatas = await getGlobalMetadata(provider, webSiteAddress)
     const webSiteDefaultMetadata = extractWebsiteMetadata(metadatas)
 
-    console.log('Targeting website at address', address)
+    console.log('Targeting website at address', webSiteAddress)
     console.log('\nMetadatas:')
     console.log(`\tTitle: ${webSiteDefaultMetadata.title}`)
     console.log(`\tDescription: ${webSiteDefaultMetadata.description}`)
@@ -43,9 +48,9 @@ export const listFilesCommand = new Command('list')
       )
     }
 
-    const filesMetadata = await getFileMetadata(provider, address)
+    const filesMetadata = await getFileMetadata(provider, webSiteAddress)
 
-    const { files, notFoundKeys } = await listFiles(provider, address)
+    const { files, notFoundKeys } = await listFiles(provider, webSiteAddress)
     console.log(`\nTotal of ${files.length} files:`)
     files.sort().forEach((f) => {
       console.log(`\t${f}`)
