@@ -33,3 +33,7 @@ Ensure you have `task` installed. Follow the instructions [here](https://taskfil
 ## Usage
 
 You can find the usage instructions for DeWeb Server in the [DeWeb Server documentation](https://docs.massa.net/docs/deweb/local-server-config/server-config).
+
+
+## License
+See [here](./LICENSE.md)
