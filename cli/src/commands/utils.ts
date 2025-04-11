@@ -4,6 +4,7 @@ import {
   Address,
   JsonRpcPublicProvider,
   Account as KeyPair,
+  Mas,
   PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
@@ -64,7 +65,16 @@ export async function makeProviderFromNodeURLAndSecret(
   try {
     const keyPair = await loadKeyPair(globalOptions)
 
-    return Web3Provider.fromRPCUrl(globalOptions.node_url as string, keyPair)
+    const provider = Web3Provider.fromRPCUrl(
+      globalOptions.node_url as string,
+      keyPair
+    )
+    console.log(
+      `Using account ${provider.address}. Balance: ${Mas.toString(await provider.balance())} Mas`
+    )
+    const { name } = await provider.networkInfos()
+    console.log(`Network: ${name}`)
+    return provider
   } catch (error) {
     console.error(`Failed to initialize provider: ${error}`)
     throw new Error('Failed to initialize provider with any available method')
