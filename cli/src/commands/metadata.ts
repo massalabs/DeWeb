@@ -38,11 +38,11 @@ export const metadataCommand = new Command('metadata')
      For file metadata this option is mandatory.`
   )
   .action(async (address, options, command) => {
-    const globalOptions = loadConfig(command.optsWithGlobals())
+    const globalOptions = loadConfig({ ...command.optsWithGlobals(), address })
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    const webSiteAddress = address || globalOptions.address
+    const webSiteAddress = globalOptions.address
     if (!webSiteAddress) {
       throw new Error('No address provided')
     }
