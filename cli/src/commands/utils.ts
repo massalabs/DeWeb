@@ -4,13 +4,13 @@ import {
   Address,
   JsonRpcPublicProvider,
   Account as KeyPair,
+  Mas,
   PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
 import { OptionValues } from 'commander'
 import { readFileSync } from 'fs'
 import { parse as yamlParse } from 'yaml'
-import { DEFAULT_NODE_URL } from './config'
 
 const KEY_ENV_NAME = 'SECRET_KEY'
 
@@ -20,33 +20,25 @@ const KEY_ENV_NAME = 'SECRET_KEY'
  * @returns the keypair
  */
 async function loadKeyPair(globalOptions: OptionValues): Promise<KeyPair> {
-  try {
-    const envSecretKey = process.env[KEY_ENV_NAME]
+  const envSecretKey = process.env[KEY_ENV_NAME]
 
-    if (envSecretKey) {
-      return await KeyPair.fromEnv(KEY_ENV_NAME)
-    }
-
-    if (globalOptions.secret_key) {
-      return await KeyPair.fromPrivateKey(globalOptions.secret_key)
-    }
-
-    if (
-      globalOptions.wallet &&
-      globalOptions.password &&
-      globalOptions.wallet.endsWith('.yaml')
-    ) {
-      return await importFromYamlKeyStore(
-        globalOptions.wallet,
-        globalOptions.password
-      )
-    }
-
-    throw new Error('No valid method to load keypair.')
-  } catch (error) {
-    console.warn(`Failed to initialize keyPair: ${error}`)
-    throw error
+  if (envSecretKey) {
+    return KeyPair.fromEnv(KEY_ENV_NAME)
   }
+
+  if (globalOptions.secret_key) {
+    return KeyPair.fromPrivateKey(globalOptions.secret_key)
+  }
+
+  if (
+    globalOptions.wallet &&
+    globalOptions.password &&
+    globalOptions.wallet.endsWith('.yaml')
+  ) {
+    return importFromYamlKeyStore(globalOptions.wallet, globalOptions.password)
+  }
+
+  throw new Error('No valid method to load keypair.')
 }
 
 /**
@@ -57,18 +49,16 @@ async function loadKeyPair(globalOptions: OptionValues): Promise<KeyPair> {
 export async function makeProviderFromNodeURLAndSecret(
   globalOptions: OptionValues
 ): Promise<Web3Provider> {
-  if (!globalOptions.node_url) {
-    throw new Error('node_url is not defined. Please use --node_url to set one')
-  }
+  const keyPair = await loadKeyPair(globalOptions)
 
-  try {
-    const keyPair = await loadKeyPair(globalOptions)
+  const provider = Web3Provider.fromRPCUrl(globalOptions.node_url, keyPair)
 
-    return Web3Provider.fromRPCUrl(globalOptions.node_url as string, keyPair)
-  } catch (error) {
-    console.error(`Failed to initialize provider: ${error}`)
-    throw new Error('Failed to initialize provider with any available method')
-  }
+  const { name } = await provider.networkInfos()
+  console.log(
+    `Using account ${provider.address}. Balance: ${Mas.toString(await provider.balance())} Mas`
+  )
+  console.log(`Network: ${name}`)
+  return provider
 }
 
 /**
@@ -79,16 +69,7 @@ export async function makeProviderFromNodeURLAndSecret(
 export async function initPublicProvider(
   globalOptions: OptionValues
 ): Promise<PublicProvider> {
-  let rpcUrl: string = DEFAULT_NODE_URL
-  if (globalOptions.node_url) {
-    rpcUrl = globalOptions.node_url as string
-  } else {
-    console.warn(
-      `No node_url provided, using default public API URL: ${rpcUrl}`
-    )
-  }
-
-  return JsonRpcPublicProvider.fromRPCUrl(rpcUrl)
+  return JsonRpcPublicProvider.fromRPCUrl(globalOptions.node_url)
 }
 
 /**
@@ -104,7 +85,7 @@ async function importFromYamlKeyStore(
   const fileContent = readFileSync(filepath, 'utf8')
   const parsedData = yamlParse(fileContent) as AccountKeyStore
 
-  return await Account.fromKeyStore(parsedData, password)
+  return Account.fromKeyStore(parsedData, password)
 }
 
 /**
