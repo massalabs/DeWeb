@@ -4,6 +4,7 @@ import {
   Address,
   JsonRpcPublicProvider,
   Account as KeyPair,
+  Mas,
   PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
@@ -64,7 +65,16 @@ export async function makeProviderFromNodeURLAndSecret(
   try {
     const keyPair = await loadKeyPair(globalOptions)
 
-    return Web3Provider.fromRPCUrl(globalOptions.node_url as string, keyPair)
+    const provider = Web3Provider.fromRPCUrl(
+      globalOptions.node_url as string,
+      keyPair
+    )
+    console.log(
+      `Using account ${provider.address}. Balance: ${Mas.toString(await provider.balance())} Mas`
+    )
+    const { name } = await provider.networkInfos()
+    console.log(`Network: ${name}`)
+    return provider
   } catch (error) {
     console.error(`Failed to initialize provider: ${error}`)
     throw new Error('Failed to initialize provider with any available method')
@@ -111,16 +121,11 @@ async function importFromYamlKeyStore(
  * Validate the address
  * @param address - the address to validate
  */
-export function validateAddress(address: string) {
-  try {
-    Address.fromString(address)
-  } catch (error) {
-    console.error('Invalid address provided:', error)
-    process.exit(1)
-  }
-
-  if (!address.startsWith('AS')) {
-    console.error('User addresses are not supported yet')
-    process.exit(1)
+export function validateWebsiteAddress(address: string) {
+  const addr = Address.fromString(address)
+  if (addr.isEOA) {
+    throw new Error(
+      `Invalid address: ${address}. This is not a website address.`
+    )
   }
 }

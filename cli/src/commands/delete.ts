@@ -12,6 +12,7 @@ import {
 import { DeleteCtx } from '../tasks/tasks'
 
 import { makeProviderFromNodeURLAndSecret } from './utils'
+import { loadConfig } from './config'
 
 export const deleteCommand = new Command('delete')
   .alias('d')
@@ -24,7 +25,7 @@ export const deleteCommand = new Command('delete')
     false
   )
   .action(async (address, options, command) => {
-    const globalOptions = command.optsWithGlobals()
+    const globalOptions = loadConfig(command.optsWithGlobals())
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
