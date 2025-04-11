@@ -1,5 +1,8 @@
 import { Command } from '@commander-js/extra-typings'
-import { makeProviderFromNodeURLAndSecret, validateAddress } from './utils'
+import {
+  makeProviderFromNodeURLAndSecret,
+  validateWebsiteAddress,
+} from './utils'
 import {
   fileHashHex,
   filterMetadataToUpdate,
@@ -13,11 +16,12 @@ import {
 } from '../lib/website/metadata'
 import { Metadata } from '../lib/website/models/Metadata'
 import { listFiles } from '../lib/website/read'
+import { loadConfig } from './config'
 
 export const metadataCommand = new Command('metadata')
   .alias('m')
   .description('Adds metadata to an existing website on Massa blockchain')
-  .argument('<address>', 'Address of the website to add metadata to')
+  .argument('[address]', 'Address of the website to add metadata to')
   .option(
     '-f, --file <file_path>',
     'Add/Delete metadata only to the specified file'
@@ -34,11 +38,15 @@ export const metadataCommand = new Command('metadata')
      For file metadata this option is mandatory.`
   )
   .action(async (address, options, command) => {
-    const globalOptions = command.optsWithGlobals()
+    const globalOptions = loadConfig(command.optsWithGlobals())
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
-    validateAddress(address)
+    const webSiteAddress = address || globalOptions.address
+    if (!webSiteAddress) {
+      throw new Error('No address provided')
+    }
+    validateWebsiteAddress(webSiteAddress)
 
     let metadatas: Metadata[] = []
     if (options.delete) {
@@ -52,7 +60,7 @@ export const metadataCommand = new Command('metadata')
         }
         metadatas = parseAddOption(options.add)
       } else {
-        metadatas = globalOptions.metadatas as Metadata[]
+        metadatas = globalOptions.metadatas ?? []
 
         if (options.add) {
           metadatas = [...metadatas, ...parseAddOption(options.add)]
@@ -66,7 +74,7 @@ export const metadataCommand = new Command('metadata')
 
     let operation
     if (options.file) {
-      const { files } = await listFiles(provider, address)
+      const { files } = await listFiles(provider, webSiteAddress)
 
       if (!files.includes(options.file)) {
         throw new Error(`File ${options.file} does not exist on the website`)
@@ -74,7 +82,7 @@ export const metadataCommand = new Command('metadata')
 
       const currentFilesMetadatas = await getFileMetadata(
         provider,
-        address,
+        webSiteAddress,
         options.file
       )
 
@@ -103,7 +111,7 @@ export const metadataCommand = new Command('metadata')
 
         operation = await removeFileMetadata(
           provider,
-          address,
+          webSiteAddress,
           options.file,
           updateRequired.map((m) => m.key)
         )
@@ -116,13 +124,16 @@ export const metadataCommand = new Command('metadata')
         updateRequired.map((m) => console.log(` - ${m.key}: ${m.value}`))
         operation = await setFileMetadata(
           provider,
-          address,
+          webSiteAddress,
           options.file,
           updateRequired
         )
       }
     } else {
-      const currentGlobalMetadata = await getGlobalMetadata(provider, address)
+      const currentGlobalMetadata = await getGlobalMetadata(
+        provider,
+        webSiteAddress
+      )
 
       const updateRequired = await filterMetadataToUpdate(
         currentGlobalMetadata,
@@ -143,7 +154,7 @@ export const metadataCommand = new Command('metadata')
         updateRequired.map((m) => console.log(` - ${m.key}`))
         operation = await removeGlobalMetadata(
           provider,
-          address,
+          webSiteAddress,
           updateRequired.map((m) => m.key)
         )
       } else {
@@ -153,7 +164,11 @@ export const metadataCommand = new Command('metadata')
         }
         console.log('Adding global metadata(s) to the website:')
         updateRequired.map((m) => console.log(` - ${m.key}: ${m.value}`))
-        operation = await setGlobalMetadata(provider, address, updateRequired)
+        operation = await setGlobalMetadata(
+          provider,
+          webSiteAddress,
+          updateRequired
+        )
       }
     }
     console.log(

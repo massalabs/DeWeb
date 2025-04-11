@@ -111,16 +111,11 @@ async function importFromYamlKeyStore(
  * Validate the address
  * @param address - the address to validate
  */
-export function validateAddress(address: string) {
-  try {
-    Address.fromString(address)
-  } catch (error) {
-    console.error('Invalid address provided:', error)
-    process.exit(1)
-  }
-
-  if (!address.startsWith('AS')) {
-    console.error('User addresses are not supported yet')
-    process.exit(1)
+export function validateWebsiteAddress(address: string) {
+  const addr = Address.fromString(address)
+  if (addr.isEOA) {
+    throw new Error(
+      `Invalid address: ${address}. This is not a website address.`
+    )
   }
 }
