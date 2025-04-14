@@ -7,7 +7,7 @@ import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
-import { DEFAULT_CONFIG_FILE, DEFAULT_NODE_URL } from './commands/config'
+import { DEFAULT_CONFIG_FILE } from './commands/config'
 
 const version = process.env.VERSION || 'dev'
 
@@ -18,7 +18,7 @@ program
   .description('CLI app for deploying websites')
   .version(version)
   .option('-c, --config <path>', 'Path to the config file', DEFAULT_CONFIG_FILE)
-  .option('-n, --node_url <url>', 'Node URL', DEFAULT_NODE_URL)
+  .option('-n, --node_url <url>', 'Node URL')
   .option('-w, --wallet <path>', 'Path to the wallet file')
   .option('-p, --password <password>', 'Password for the wallet file')
 
