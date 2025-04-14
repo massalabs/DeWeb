@@ -1,8 +1,5 @@
 import { Command } from '@commander-js/extra-typings'
-import {
-  makeProviderFromNodeURLAndSecret,
-  validateWebsiteAddress,
-} from './utils'
+import { makeProviderFromNodeURLAndSecret } from './utils'
 import {
   fileHashHex,
   filterMetadataToUpdate,
@@ -40,13 +37,12 @@ export const metadataCommand = new Command('metadata')
   .action(async (address, options, command) => {
     const globalOptions = loadConfig({ ...command.optsWithGlobals(), address })
 
-    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
-
     const webSiteAddress = globalOptions.address
     if (!webSiteAddress) {
       throw new Error('No address provided')
     }
-    validateWebsiteAddress(webSiteAddress)
+
+    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     let metadatas: Metadata[] = []
     if (options.delete) {
