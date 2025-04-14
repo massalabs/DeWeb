@@ -18,7 +18,6 @@ import { FileInit } from '../lib/website/models/FileInit'
 
 import { FileDelete } from '../lib/website/models/FileDelete'
 import { UploadCtx } from './tasks'
-import { filterUselessFileInits } from '../lib/website/filesInit'
 
 /**
  * Create a task to prepare batches from the website file
@@ -34,6 +33,7 @@ export function prepareBatchesTask(): ListrTask {
         ctx.chunkSize,
         ctx.sc
       )
+      ctx.fileInits = fileInits
 
       // check that the provided website directory has correct format
       if (!ctx.skipIndexHtmlCheck && !localFiles.includes('index.html')) {
@@ -59,9 +59,6 @@ export function prepareBatchesTask(): ListrTask {
       }
 
       ctx.batches = batcher(chunks, ctx.chunkSize)
-      ctx.fileInits = ctx.sc
-        ? await filterUselessFileInits(ctx.provider, ctx.sc.address, fileInits)
-        : fileInits
 
       if (ctx.batches.length < 16) {
         for (const batch of ctx.batches) {
@@ -72,14 +69,16 @@ export function prepareBatchesTask(): ListrTask {
         }
       }
 
-      task.output = `Total of ${fileInits.length} files, ${ctx.fileInits.length} require update`
+      task.output = `Total of ${localFiles.length} files, ${fileInits.length} require update`
       task.output = `${ctx.filesToDelete.length} files will be deleted from the smart contract`
       if (ctx.filesToDelete.length < 16) {
         for (const file of ctx.filesToDelete) {
           task.output = `- ${file.location}`
         }
       }
-      task.output = `Total of ${chunks.length} chunks divided into ${ctx.batches.length} batches`
+      if (ctx.batches.length) {
+        task.output = `Total of ${chunks.length} chunks divided into ${ctx.batches.length} batches`
+      }
     },
     rendererOptions: {
       outputBar: Infinity,

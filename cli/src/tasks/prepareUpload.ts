@@ -26,7 +26,7 @@ export function prepareUploadTask(): ListrTask {
         ctx.metadatas.length === 0 &&
         ctx.metadatasToDelete.length === 0
       ) {
-        task.skip('All files are ready for upload, and no metadata changes')
+        task.skip('No changes in files and metadata to upload')
         return
       }
 

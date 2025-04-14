@@ -88,29 +88,17 @@ export async function getFileFromAddress(
     filePath
   )
 
-  const datastoreKeys = []
+  const chunksKeys = []
   for (let i = 0n; i < fileTotalChunks; i++) {
-    datastoreKeys.push(fileChunkKey(filePathHash, i))
+    chunksKeys.push(fileChunkKey(filePathHash, i))
   }
 
-  const rawChunks = (await provider.readStorage(scAddress, datastoreKeys)).map(
-    // allow to return Uint8Array[] instead of (Uint8Array | null)[]
-    (chunk, i) => {
-      if (!chunk || chunk.length === 0) {
-        throw new Error(`file ${filePath} Chunk ${i} not found`)
-      }
-      return chunk
-    }
-  )
+  const fileChunks = await provider.readStorage(scAddress, chunksKeys)
 
-  const totalLength = rawChunks.reduce((acc, chunk) => acc + chunk.length, 0)
-  const concatenatedArray = new Uint8Array(totalLength)
-
-  let offset = 0
-  for (const chunk of rawChunks) {
-    concatenatedArray.set(chunk, offset)
-    offset += chunk.length
-  }
-
-  return concatenatedArray
+  return fileChunks
+    .filter((chunk) => !!chunk)
+    .reduce(
+      (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
+      new Uint8Array()
+    )
 }

@@ -1,7 +1,6 @@
 import {
   Args,
   Operation,
-  Provider,
   SmartContract,
   strToBytes,
   U32,
@@ -20,7 +19,6 @@ import { FileInit } from './models/FileInit'
 import { Metadata } from './models/Metadata'
 
 import {
-  FILE_TAG,
   fileChunkCountKey,
   fileLocationKey,
   globalMetadataKey,
@@ -290,64 +288,4 @@ class Batch {
       this.metadataDeletes
     )
   }
-}
-
-/**
- * Filter out pre-stores that are already stored on the blockchain
- * @param provider - the web3 provider
- * @param scAddress - the smart contract address
- * @param fileInits - the pre-stores to filter
- * @returns the pre-stores that are not stored on the blockchain
- */
-export async function filterUselessFileInits(
-  provider: Provider,
-  scAddress: string,
-  fileInits: FileInit[]
-): Promise<FileInit[]> {
-  const fileInitsWithKey = fileInits.map((preStore) => {
-    return {
-      preStore: preStore,
-      totalChunkKey: fileChunkCountKey(preStore.hashLocation),
-    }
-  })
-
-  const batches: {
-    preStore: FileInit
-    totalChunkKey: Uint8Array
-  }[][] = []
-
-  for (let i = 0; i < fileInitsWithKey.length; i += 100) {
-    batches.push(fileInitsWithKey.slice(i, i + 100))
-  }
-
-  const fileInitsToKeep: FileInit[] = []
-
-  const keys = await provider.getStorageKeys(scAddress, FILE_TAG)
-  for (const batch of batches) {
-    // Remove missing keys from the batch and add them to the list of files to keep
-    for (let i = batch.length - 1; i >= 0; i--) {
-      if (!keys.includes(batch[i].totalChunkKey)) {
-        fileInitsToKeep.push(batch[i].preStore)
-        batch.splice(i, 1)
-      }
-    }
-
-    const results = await provider.readStorage(
-      scAddress,
-      batch.map((key) => key.totalChunkKey)
-    )
-
-    for (let i = 0; i < batch.length; i++) {
-      const chunkData = results[i]
-      if (
-        !chunkData ||
-        chunkData.length !== U32.SIZE_BYTE ||
-        U32.fromBytes(chunkData) !== batch[i].preStore.totalChunk
-      ) {
-        fileInitsToKeep.push(batch[i].preStore)
-      }
-    }
-  }
-
-  return fileInitsToKeep
 }

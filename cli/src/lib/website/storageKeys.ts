@@ -41,7 +41,7 @@ export function fileChunkKey(
 ): Uint8Array {
   return new Uint8Array([
     ...fileKey(hashLocation),
-    ...CHUNK_NB_TAG,
+    ...CHUNK_TAG,
     ...U32.toBytes(index),
   ])
 }
