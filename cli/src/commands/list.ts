@@ -2,7 +2,7 @@ import { Command } from '@commander-js/extra-typings'
 
 import { listFiles } from '../lib/website/read'
 
-import { initPublicProvider, validateWebsiteAddress } from './utils'
+import { initPublicProvider } from './utils'
 import {
   extractWebsiteMetadata,
   fileHashHex,
@@ -20,13 +20,12 @@ export const listFilesCommand = new Command('list')
   .action(async (address, _, command) => {
     const globalOptions = loadConfig({ ...command.optsWithGlobals(), address })
 
-    const provider = await initPublicProvider(globalOptions)
-
     const webSiteAddress = globalOptions.address
     if (!webSiteAddress) {
       throw new Error('No address provided')
     }
-    validateWebsiteAddress(webSiteAddress)
+
+    const provider = await initPublicProvider(globalOptions)
 
     const metadatas = await getGlobalMetadata(provider, webSiteAddress)
     const webSiteDefaultMetadata = extractWebsiteMetadata(metadatas)

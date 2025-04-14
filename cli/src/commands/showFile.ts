@@ -3,10 +3,7 @@ import { bytesToStr } from '@massalabs/massa-web3'
 
 import { getFileFromAddress } from '../lib/website/read'
 
-import {
-  makeProviderFromNodeURLAndSecret,
-  validateWebsiteAddress,
-} from './utils'
+import { initPublicProvider } from './utils'
 import { loadConfig } from './config'
 
 export const showFileCommand = new Command('show')
@@ -14,19 +11,16 @@ export const showFileCommand = new Command('show')
   .argument('<file_path>', 'Path of the file to show')
   .option('-a, --address <address>', 'Address of the website to edit')
   .action(async (filePath, options, command) => {
-    const globalOptions = loadConfig(command.optsWithGlobals())
+    const globalOptions = loadConfig({
+      ...command.optsWithGlobals(),
+      address: options.address,
+    })
 
-    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
-
-    if (globalOptions.address) {
-      validateWebsiteAddress(globalOptions.address)
-    } else {
-      console.log(
-        "No address provided, targeting user's address isn't supported yet"
-      )
-      console.log('User address is', provider.address)
-      process.exit(1)
+    if (!globalOptions.address) {
+      throw new Error('No address provided')
     }
+
+    const provider = await initPublicProvider(globalOptions)
 
     console.log('Targeting website at address', globalOptions.address)
 
