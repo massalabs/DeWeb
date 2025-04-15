@@ -31,10 +31,12 @@ function parseConfigFile(filePath: string): Config {
     if (filePath !== DEFAULT_CONFIG_FILE) {
       throw new Error(`Config file not found: ${filePath}`)
     }
+    console.log(`No config file found, using default config`)
     return DEFAULT_CONFIG
   }
   try {
     const config = JSON.parse(readFileSync(filePath, 'utf-8'))
+    console.log(`Using config file: ${filePath}`)
     return { ...config, metadatas: makeMetadataArray(config.metadatas) }
   } catch (error) {
     throw new Error(`Failed to parse file: ${error}`)

@@ -141,7 +141,7 @@ export async function sendFilesInits(
 
     calls.push({
       sc,
-      functionName: functionName,
+      functionName,
       args,
       options: {
         coins: coins <= 0n ? 0n : coins,
