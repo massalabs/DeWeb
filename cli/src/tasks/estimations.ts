@@ -16,23 +16,20 @@ export function showEstimatedCost(): ListrTask {
     title: 'Estimated upload cost',
     skip: (ctx: UploadCtx) => ctx.batches.length === 0,
     task: async (ctx: UploadCtx, task) => {
-      const totalEstimatedGas = ctx.batches.reduce((sum, batch) => {
+      let totalBytes = 0
+
+      const chunkStorageCosts = ctx.batches.reduce((sum, batch) => {
         const cost = batch.chunks.reduce((sum, chunk) => {
+          totalBytes += chunk.data.length
           return sum + computeChunkCost(chunk.location, chunk.index, chunk.data)
         }, 0n)
         return sum + cost
       }, 0n)
 
-      const totalBytes = ctx.batches.reduce(
-        (sum, batch) =>
-          sum + batch.chunks.reduce((sum, chunk) => sum + chunk.data.length, 0),
-        0
-      )
-
       const opFees = ctx.minimalFees * BigInt(ctx.batches.length)
 
       ctx.currentTotalEstimation += opFees
-      ctx.currentTotalEstimation += totalEstimatedGas
+      ctx.currentTotalEstimation += chunkStorageCosts
       if (!ctx.sc) {
         ctx.currentTotalEstimation += deployCost(ctx.provider, ctx.minimalFees)
       }

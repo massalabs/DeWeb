@@ -1,4 +1,4 @@
-import { PublicProvider, U32 } from '@massalabs/massa-web3'
+import { bytesToStr, PublicProvider, U32 } from '@massalabs/massa-web3'
 import { sha256 } from 'js-sha256'
 
 import {
@@ -30,7 +30,7 @@ export async function listFiles(
     if (!location) {
       notFoundKeys.push(allStorageKeys[i])
     } else {
-      files.push(String.fromCharCode(...new Uint8Array(location)))
+      files.push(bytesToStr(location))
     }
   })
 
