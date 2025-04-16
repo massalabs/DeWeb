@@ -47,3 +47,7 @@ To run the CLI in development mode, you can use:
 ```bash
 npm run dev
 ```
+
+## LICENSE
+
+See [here](./LICENSE.md)
