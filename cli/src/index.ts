@@ -30,7 +30,7 @@ program
   .option('-c, --config <path>', 'Path to the config file', DEFAULT_CONFIG_FILE)
   .option('-n, --node_url <url>', 'Node URL')
   .option('-w, --wallet <path>', 'Path to the wallet file')
-  .option('-p, --password <password>', 'Password for the wallet file', "ap")
+  .option('-p, --password <password>', 'Password for the wallet file')
   .option('-a, --accept_disclaimer', 'Accept the legal disclaimer')
 
 program.addCommand(uploadCommand)
@@ -49,7 +49,7 @@ interface OptionValues {
   accept_disclaimer: boolean
 }
 
-function setupConfigs() {
+function setupConfigs(commandOptions: OptionValues) {
   if (existsSync(commandOptions.config)) {
     const configOptions = parseConfigFile(commandOptions.config)
     // commandOptions get priority over configOptions
@@ -66,19 +66,18 @@ function setupConfigs() {
   }
 }
 
-const commandOptions: OptionValues = program.opts() as OptionValues
-
-if (!commandOptions.accept_disclaimer) {
-  handleDisclaimer()
-    .then(() => {
-      setupConfigs()
-      program.parse()
-    })
-    .catch((error) => {
-      console.error('Failed terms of uses validation, got : ' + error.message)
+program.hook('preAction', async () => {
+  const commandOptions: OptionValues = program.opts() as OptionValues
+  if (!commandOptions.accept_disclaimer) {
+    try {
+      await handleDisclaimer()
+    } catch (error) {
+      console.error('Failed terms of uses validation, got : ' + error)
       process.exit(1)
-    })
-} else {
-  setupConfigs()
-  program.parse()
-}
+    }
+  }
+  
+  setupConfigs(commandOptions)
+});
+
+program.parse()
