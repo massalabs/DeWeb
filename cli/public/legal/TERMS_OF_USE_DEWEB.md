@@ -10,7 +10,7 @@ The underlying technology of Massa DeWeb (the “Protocol”) was initially deve
 
 The Massa DeWeb allows developers to build and host their projects directly on the Massa Blockchain. This unique approach mitigates the risks of censorship and hacking, providing a seamless Web 3 experience for users.
 
-Developers can register ".massa" domains using Massa Name System (the “Massa Name System”, “MNS”), a decentralized, blockchain-based naming protocol, and build and host both front-end and back-end components of their websites or decentralized applications (“Dapps”) directly on the Massa Blockchain (“Decentralized Web Hosting”).
+Developers can register ".massa" domains using Massa Name System (the “Massa Name System”, “MNS”), a decentralized, blockchain-based naming protocol, and build and host both front-end and back-end components of their websites or decentralized applications (“Dapps”) directly on the Massa Blockchain (“Decentralized Web Hosting”).  
 
 These terms of use (together with all appendices and exhibits hereto, which are hereby incorporated by reference, these “Terms,” or this “Agreement”) explain the terms and conditions by which You, as a user (“User(s)”), either personally or on behalf of an entity (“you” or “You”), may access and use the Massa DeWeb Protocol and the on-chain systems provided within its fully decentralized ecosystem.
 
@@ -82,11 +82,11 @@ By registering a Massa Name, Users acknowledge and agree that their Massa Name i
 
 The registration fee for a Massa Name is determined by the length of the name:
 
-- 10,000 MAS Tokens for a 2-character Massa Name;
-- 1,000 MAS Tokens for a 3-character Massa Name;
-- 100 MAS Tokens for a 4-character Massa Name;
-- 10 MAS Tokens for a 5-character Massa Name;
-- 1 MAS Token for Massa Names of 6 or more characters.
+* 10,000 MAS Tokens for a 2-character Massa Name;
+* 1,000 MAS Tokens for a 3-character Massa Name;
+* 100 MAS Tokens for a 4-character Massa Name;
+* 10 MAS Tokens for a 5-character Massa Name;
+* 1 MAS Token for Massa Names of 6 or more characters.
 
 To complete the registration, Users must use their connected Massa Wallet to pay the required fee in MAS Tokens, as well as any other applicable fees or taxes.
 
@@ -130,7 +130,7 @@ Before uploading, Users must ensure the following: (a) they have a Massa Wallet 
 
 #### 6.3.2. Access to the website or DApp
 
-To be able to access your website or DApp, You need to associate it with a Massa domain, meaning that a Massa Name needs to be assigned to your website to link your deployed website address to a custom Massa domain.
+To be able to access your website or DApp, You need to associate it with a Massa domain, meaning that a Massa Name needs to be assigned to your website to link your deployed website address to a custom Massa domain.  
 
 #### 6.3.3. Fees
 
@@ -169,17 +169,17 @@ By accessing or using Massa DeWeb, including the MNS procotol, the Decentralized
 The following actions are strictly prohibited:
 
 1. Hosting or distributing illegal content: You may not use Massa DeWeb to store, host, distribute, or facilitate access to any form of illegal content, including but not limited to:
-   - child sexual abuse material (CSAM) or any form of pedophilic content;
-   - terrorist propaganda or materials promoting violence or hate crimes;
-   - content promoting or facilitating human trafficking, exploitation, or abuse;
-   - unlawful gambling, drug sales, or other prohibited commercial activities;
-   - materials that infringe on intellectual property rights, such as unlicensed copyrighted works, pirated software, or counterfeit goods.
+   * child sexual abuse material (CSAM) or any form of pedophilic content;
+   * terrorist propaganda or materials promoting violence or hate crimes;
+   * content promoting or facilitating human trafficking, exploitation, or abuse;
+   * unlawful gambling, drug sales, or other prohibited commercial activities;
+   * materials that infringe on intellectual property rights, such as unlicensed copyrighted works, pirated software, or counterfeit goods.
 2. Engaging in fraudulent, malicious, or deceptive activities: You may not use Massa DeWeb for scams, phishing, identity theft, Ponzi schemes, financial fraud, or other deceptive practices intended to exploit or defraud others.
 3. Unauthorized access and security violations: You may not attempt to gain unauthorized access to Massa DeWeb systems, registered Massa Names owned by other Users, or infrastructure supporting the decentralized web. This includes hacking, exploiting vulnerabilities, or compromising the security of Massa DeWeb Protocol.
 4. Bad faith registrations and misuse of Massa Names: You may not register Massa Names in bad faith, including for:
-   - cybersquatting (registering names for resale at inflated prices without intent to use);
-   - impersonating individuals, brands, or organizations; or
-   - disrupting the intended functionality of Massa DeWeb's DNS or website hosting.
+   * cybersquatting (registering names for resale at inflated prices without intent to use);
+   * impersonating individuals, brands, or organizations; or
+   * disrupting the intended functionality of Massa DeWeb's DNS or website hosting.
 5. Tampering with the Protocol or associated systems: You may not attempt to reverse-engineer, decompile, modify, or tamper with the Massa DeWeb Protocol, smart contracts, or related infrastructure in any way that undermines security or stability.
 6. Spreading malware or harmful code: You may not use Massa DeWeb to transmit, distribute, or store malware, viruses, or any malicious code designed to compromise, damage, or interfere with the integrity of Massa DeWeb or its Users.
 7. Abusing network resources: You may not engage in activities that overburden the network or disrupt decentralized web services, including excessive automated registrations, spam deployments, or distributed denial-of-service (DDoS) attacks.
@@ -331,19 +331,19 @@ Nothing in this clause prevents either party from seeking urgent provisional or 
 
 For the purposes of these Terms, the capitalized terms shall have the following definitions:
 
-- Decentralized Web Hosting: refers to the hosting of websites directly on the Massa Blockchain, without reliance on centralized servers or intermediaries. Websites or DApps are uploaded via the Massa DeWeb command-line interface (CLI) and stored immutably on the blockchain, ensuring censorship resistance, security, and autonomy. Users retain full ownership and control over their content, secured by cryptographic keys, and can link their websites to Massa Names through the MNS.
-- DeWeb Website Index Smart Contract: refers to the decentralized registry that stores metadata for all on-chain websites. The registry will later be used for indexing and decentralized search using the websites’ metadata.
-- DNS: stands for Domain Name System.
-- Intellectual Property Right(s): means past, present and future copyrights, patents, registered designs, design rights, know-how or any other proprietary or industrial right, which includes, without limitation, any patents, trademarks, service marks, registered designs, database rights, know-how, trade secrets, Confidential Information, trade and business names and any other similar protected rights in any country, whether registered or unregistered, as well as applications for any of these rights.
-- Massa Blockchain: refers to Massa layer-1 blockchain protocol.
-- Massa Community: refers to the decentralized network of node runners, developers, contributors who participate in the maintenance, governance, and evolution of the Massa Blockchain. As a fully decentralized network, the Massa Community collectively supports the Massa protocol’s development, ensures network security, and drives innovation without reliance on a central authority.
-- Massa Community Charter: means the Massa community charter available at this URL: https://github.com/massalabs/massa/blob/main/COMMUNITY_CHARTER.md
-- Massa DeWeb: means the fully decentralized on-chain web ecosystem provided on the Massa Blockchain allowing Users to store their website or DApps fully on-chain (both the front-end and back-end hosting) and to register Massa Name through the decentralized MNS. Within these Terms, the Massa DeWeb protocol is also referred to as the “Protocol”.
-- Massa Name(s): means the “.massa” on-chain domain names registered using the MNS protocol, creating unique, recognizable web addresses. Massa Names are on-chain, fully replicated, and immutable non-fungible tokens (NFT).
-- Massa Name System / MNS: Massa Name System is a decentralized blockchain-based domain naming protocol which allows Users and smart contracts to be recognized on the Massa Blockchain.
-- MAS Tokens: means the native tokens of the Massa Blockchain protocol.
-- Massa Wallet: means the non-custodial digital wallet designed to interact with the Massa Blockchain.
-- Personal Data: means any information relating to an identified or identifiable natural or legal person, an identifiable person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that person.
-- Provider(s): refers to the Massa DeWeb providers or any entity, company, or individual enabling access to the Massa DeWeb through their own domain, as described under https://docs.massa.net/docs/deweb/provider/setup-public-instance.
-- User(s): means any natural person acting on his/her own behalf or any natural person acting on behalf of a legal person who makes use of the Massa DeWeb and its associated systems, including MNS or Massa Decentralized Web Hosting.
+* Decentralized Web Hosting: refers to the hosting of websites directly on the Massa Blockchain, without reliance on centralized servers or intermediaries. Websites or DApps are uploaded via the Massa DeWeb command-line interface (CLI) and stored immutably on the blockchain, ensuring censorship resistance, security, and autonomy. Users retain full ownership and control over their content, secured by cryptographic keys, and can link their websites to Massa Names through the MNS.
+* DeWeb Website Index Smart Contract: refers to the decentralized registry that stores metadata for all on-chain websites. The registry will later be used for indexing and decentralized search using the websites’ metadata.
+* DNS: stands for Domain Name System.
+* Intellectual Property Right(s): means past, present and future copyrights, patents, registered designs, design rights, know-how or any other proprietary or industrial right, which includes, without limitation, any patents, trademarks, service marks, registered designs, database rights, know-how, trade secrets, Confidential Information, trade and business names and any other similar protected rights in any country, whether registered or unregistered, as well as applications for any of these rights.
+* Massa Blockchain: refers to Massa layer-1 blockchain protocol.
+* Massa Community: refers to the decentralized network of node runners, developers, contributors who participate in the maintenance, governance, and evolution of the Massa Blockchain. As a fully decentralized network, the Massa Community collectively supports the Massa protocol’s development, ensures network security, and drives innovation without reliance on a central authority.
+* Massa Community Charter: means the Massa community charter available at this URL: https://github.com/massalabs/massa/blob/main/COMMUNITY_CHARTER.md
+* Massa DeWeb: means the fully decentralized on-chain web ecosystem provided on the Massa Blockchain allowing Users to store their website or DApps fully on-chain (both the front-end and back-end hosting) and to register Massa Name through the decentralized MNS. Within these Terms, the Massa DeWeb protocol is also referred to as the “Protocol”.
+* Massa Name(s): means the “.massa” on-chain domain names registered using the MNS protocol, creating unique, recognizable web addresses. Massa Names are on-chain, fully replicated, and immutable non-fungible tokens (NFT).
+* Massa Name System / MNS: Massa Name System is a decentralized blockchain-based domain naming protocol which allows Users and smart contracts to be recognized on the Massa Blockchain.
+* MAS Tokens: means the native tokens of the Massa Blockchain protocol.
+* Massa Wallet: means the non-custodial digital wallet designed to interact with the Massa Blockchain.
+* Personal Data: means any information relating to an identified or identifiable natural or legal person, an identifiable person is one who can be identified, directly or indirectly, in particular by reference to an identifier such as a name, an identification number, location data, an online identifier or to one or more factors specific to the physical, physiological, genetic, mental, economic, cultural or social identity of that person.
+* Provider(s): refers to the Massa DeWeb providers or any entity, company, or individual enabling access to the Massa DeWeb through their own domain, as described under https://docs.massa.net/docs/deweb/provider/setup-public-instance.  
+* User(s): means any natural person acting on his/her own behalf or any natural person acting on behalf of a legal person who makes use of the Massa DeWeb and its associated systems, including MNS or Massa Decentralized Web Hosting.
   The User is also referred to as “You” or “You” as well as “Your” or “Your”.

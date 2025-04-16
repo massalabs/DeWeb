@@ -9,13 +9,6 @@ import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
 import { DEFAULT_CONFIG_FILE } from './commands/config'
 
-import { existsSync } from 'fs'
-import {
-  mergeConfigAndOptions,
-  parseConfigFile,
-  setDefaultValues,
-} from './commands/config'
-
 import { Metadata } from './lib/website/models/Metadata'
 import { handleDisclaimer } from './tasks/disclaimer'
 
@@ -49,24 +42,7 @@ interface OptionValues {
   accept_disclaimer: boolean
 }
 
-function setupConfigs(commandOptions: OptionValues) {
-  if (existsSync(commandOptions.config)) {
-    const configOptions = parseConfigFile(commandOptions.config)
-    // commandOptions get priority over configOptions
-    const programOptions = mergeConfigAndOptions(commandOptions, configOptions)
-    for (const [key, value] of Object.entries(programOptions)) {
-      program.setOptionValue(key, value)
-    }
-  } else {
-    const defaultValues = setDefaultValues(commandOptions)
-
-    for (const [key, value] of Object.entries(defaultValues)) {
-      program.setOptionValue(key, value)
-    }
-  }
-}
-
-program.hook('preAction', async () => {
+async function disclaimer() {
   const commandOptions: OptionValues = program.opts() as OptionValues
   if (!commandOptions.accept_disclaimer) {
     try {
@@ -76,8 +52,16 @@ program.hook('preAction', async () => {
       process.exit(1)
     }
   }
-  
-  setupConfigs(commandOptions)
+}
+
+// execute before each command
+program.hook('preAction', async () => {
+  await disclaimer()
 });
+
+// execute when the cli is run without any command
+program.action(async () => {
+  await disclaimer()
+})
 
 program.parse()

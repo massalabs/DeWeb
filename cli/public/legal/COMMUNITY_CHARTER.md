@@ -8,10 +8,10 @@ This charter (the “Charter”) serves as the social contract that governs the 
 
 For the purposes of this Charter, a “Member” is defined as any individual, entity, or group that:
 
-- operates or hosts a Massa node, contributing to network security, decentralization, and consensus;
-- participates in block creation and validation within the Massa Blockchain;
-- uses, modifies, or interacts with Massa’s open-source software, which is made available under its respective license and requires compliance with this Charter; or
-- engages with systems and applications deployed on the Massa Blockchain.
+* operates or hosts a Massa node, contributing to network security, decentralization, and consensus;
+* participates in block creation and validation within the Massa Blockchain;
+* uses, modifies, or interacts with Massa’s open-source software, which is made available under its respective license and requires compliance with this Charter; or
+* engages with systems and applications deployed on the Massa Blockchain.
 
 ## 2. Acceptance
 
@@ -47,11 +47,11 @@ In line with the Decentralization Policy described in section 4, any form of del
 
 The Massa Community strictly prohibits any attempt to bypass the delegation restrictions through indirect or concealed means. Members commit to refraining from any actions that would violate this prohibition and specifically undertake not to engage in, including but not limited to, the following actions:
 
-- operate multiple validator nodes or establish multiple staking entities under different identities to circumvent the Delegation Threshold;
-- accept, manage, or stake MAS tokens on behalf of third parties beyond the specified Delegation Threshold;
-- operate a staking delegation pool or other similar mechanisms that facilitate delegation beyond the Delegation Threshold;
-- run validator nodes or stake MAS tokens on behalf of another entity or individual;
-- establish corporate structures or proxy entities to circumvent the Delegation Threshold.
+* operate multiple validator nodes or establish multiple staking entities under different identities to circumvent the Delegation Threshold;
+* accept, manage, or stake MAS tokens on behalf of third parties beyond the specified Delegation Threshold;
+* operate a staking delegation pool or other similar mechanisms that facilitate delegation beyond the Delegation Threshold;
+* run validator nodes or stake MAS tokens on behalf of another entity or individual;
+* establish corporate structures or proxy entities to circumvent the Delegation Threshold.
 
 Violations of this prohibition shall result in enforcement actions, which may include but are not limited to:
 
@@ -75,10 +75,10 @@ THE MASSA BLOCKCHAIN AND THE MASSA NETWORK, INCLUDING ALL ASSOCIATED INFRASTRUCT
 
 TO THE FULLEST EXTENT PERMITTED BY LAW, MASSA LABS AND THE MASSA FOUNDATION EXPRESSLY DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO:
 
-- IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT;
-- WARRANTIES REGARDING THE RELIABILITY, AVAILABILITY, ACCURACY, SECURITY, OR PERFORMANCE OF THE MASSA BLOCKCHAIN, THE MASSA NETWORK, OR ANY ASSOCIATED INFRASTRUCTURE, SOFTWARE, PLATFORMS, SYSTEMS, OR APPLICATION;
-- WARRANTIES RELATED TO THE OPERATION, SECURITY, OR UNINTERRUPTED PERFORMANCE OF NODES, INCLUDING BUT NOT LIMITED TO NETWORK DISRUPTIONS, SOFTWARE BUGS, REQUIRED PROTOCOL UPDATES, PENALTIES, OR EXTERNAL ATTACKS THAT MAY IMPACT MEMBERS;
-- WARRANTIES CONCERNING STAKING ACTIVITIES, INCLUDING ANY GUARANTEE OF REWARDS, SECURITY OF STAKED FUNDS, VALIDATOR PERFORMANCE, OR RISKS RELATED TO PENALTIES, LEGAL ACTION, OR MISBEHAVIOR.
+* IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT;
+* WARRANTIES REGARDING THE RELIABILITY, AVAILABILITY, ACCURACY, SECURITY, OR PERFORMANCE OF THE MASSA BLOCKCHAIN, THE MASSA NETWORK, OR ANY ASSOCIATED INFRASTRUCTURE, SOFTWARE, PLATFORMS, SYSTEMS, OR APPLICATION;
+* WARRANTIES RELATED TO THE OPERATION, SECURITY, OR UNINTERRUPTED PERFORMANCE OF NODES, INCLUDING BUT NOT LIMITED TO NETWORK DISRUPTIONS, SOFTWARE BUGS, REQUIRED PROTOCOL UPDATES, PENALTIES, OR EXTERNAL ATTACKS THAT MAY IMPACT MEMBERS;
+* WARRANTIES CONCERNING STAKING ACTIVITIES, INCLUDING ANY GUARANTEE OF REWARDS, SECURITY OF STAKED FUNDS, VALIDATOR PERFORMANCE, OR RISKS RELATED TO PENALTIES, LEGAL ACTION, OR MISBEHAVIOR.
 
 FURTHERMORE, MASSA LABS AND THE MASSA FOUNDATION DO NOT WARRANT OR GUARANTEE THAT MEMBERS OF THE MASSA NETWORK WILL COMPLY WITH THIS COMMUNITY CHARTER OR ACT IN ALIGNMENT WITH THE PRINCIPLES OF THE MASSA NETWORK. ANY RELIANCE ON THE ACTIONS, STATEMENTS, OR COMMITMENTS OF OTHER MEMBERS IS SOLELY AT THE USER’S OWN RISK.
 
@@ -88,14 +88,14 @@ MEMBERS ACKNOWLEDGE AND AGREE THAT THEIR PARTICIPATION IN THE MASSA BLOCKCHAIN A
 
 TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, MASSA LABS AND THE MASSA FOUNDATION EXPRESSLY DISCLAIM ALL LIABILITY FOR ANY DIRECT, INDIRECT, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, OR SPECIAL DAMAGES ARISING FROM OR IN ANY WAY RELATED TO:
 
-- THE OPERATION OF NODES, VALIDATION OF TRANSACTIONS, AND OVERALL PARTICIPATION IN THE MASSA BLOCKCHAIN AND NETWORK, INCLUDING BUT NOT LIMITED TO NETWORK FAILURES, INTERRUPTIONS, SECURITY BREACHES, OR TECHNICAL ERRORS;
-- THE RELIABILITY, ACCURACY, AVAILABILITY, OR INTEGRITY OF THE MASSA BLOCKCHAIN, THE MASSA NETWORK, OR ANY CONTENT PUBLISHED, STORED, OR HOSTED ON THEM;
-- THE DEPLOYMENT, EXECUTION, OR INTERACTION WITH SMART CONTRACTS, INCLUDING VULNERABILITIES, EXPLOITS, UNINTENDED CONSEQUENCES, OR SECURITY RISKS;
-- FRAUDULENT, UNLAWFUL, OR UNAUTHORIZED ACTIVITIES CONDUCTED BY THIRD PARTIES OR OTHER MEMBERS WITHIN THE MASSA NETWORK;
-- LOSS, THEFT, OR COMPROMISE OF CRYPTOGRAPHIC KEYS, DIGITAL ASSETS, WALLETS, OR CREDENTIALS DUE TO SECURITY FLAWS, TECHNICAL MALFUNCTIONS, OR MEMBER ERROR;
-- BREACHES OF DATA PROTECTION LAWS, INTELLECTUAL PROPERTY RIGHTS, OR OTHER LEGAL PROVISIONS RESULTING FROM DECENTRALIZED HOSTING, PEER-TO-PEER TRANSACTIONS, OR AUTONOMOUS INTERACTIONS WITHIN THE MASSA BLOCKCHAIN OR NETWORK;
-- BREACHES OF INTERNATIONAL LAWS, REGULATIONS, OR COMPLIANCE REQUIREMENTS ARISING FROM THE DECENTRALIZED NATURE OF THE MASSA BLOCKCHAIN AND NETWORK;
-- ISSUES RESULTING FROM THIRD-PARTY TOOLS, SERVICES, PROTOCOLS, OR INTEGRATIONS, WHETHER OR NOT THEY ARE REFERENCED, RECOMMENDED, OR ACCESSIBLE THROUGH THE MASSA BLOCKCHAIN OR NETWORK.
+* THE OPERATION OF NODES, VALIDATION OF TRANSACTIONS, AND OVERALL PARTICIPATION IN THE MASSA BLOCKCHAIN AND NETWORK, INCLUDING BUT NOT LIMITED TO NETWORK FAILURES, INTERRUPTIONS, SECURITY BREACHES, OR TECHNICAL ERRORS;
+* THE RELIABILITY, ACCURACY, AVAILABILITY, OR INTEGRITY OF THE MASSA BLOCKCHAIN, THE MASSA NETWORK, OR ANY CONTENT PUBLISHED, STORED, OR HOSTED ON THEM;
+* THE DEPLOYMENT, EXECUTION, OR INTERACTION WITH SMART CONTRACTS, INCLUDING VULNERABILITIES, EXPLOITS, UNINTENDED CONSEQUENCES, OR SECURITY RISKS;
+* FRAUDULENT, UNLAWFUL, OR UNAUTHORIZED ACTIVITIES CONDUCTED BY THIRD PARTIES OR OTHER MEMBERS WITHIN THE MASSA NETWORK;
+* LOSS, THEFT, OR COMPROMISE OF CRYPTOGRAPHIC KEYS, DIGITAL ASSETS, WALLETS, OR CREDENTIALS DUE TO SECURITY FLAWS, TECHNICAL MALFUNCTIONS, OR MEMBER ERROR;
+* BREACHES OF DATA PROTECTION LAWS, INTELLECTUAL PROPERTY RIGHTS, OR OTHER LEGAL PROVISIONS RESULTING FROM DECENTRALIZED HOSTING, PEER-TO-PEER TRANSACTIONS, OR AUTONOMOUS INTERACTIONS WITHIN THE MASSA BLOCKCHAIN OR NETWORK;
+* BREACHES OF INTERNATIONAL LAWS, REGULATIONS, OR COMPLIANCE REQUIREMENTS ARISING FROM THE DECENTRALIZED NATURE OF THE MASSA BLOCKCHAIN AND NETWORK;
+* ISSUES RESULTING FROM THIRD-PARTY TOOLS, SERVICES, PROTOCOLS, OR INTEGRATIONS, WHETHER OR NOT THEY ARE REFERENCED, RECOMMENDED, OR ACCESSIBLE THROUGH THE MASSA BLOCKCHAIN OR NETWORK.
 
 MEMBERS BEAR SOLE RESPONSIBILITY FOR ENSURING THAT THEIR OPERATION OF NODES, EXECUTION OF SMART CONTRACTS, AND ANY OTHER USE OF THE MASSA BLOCKCHAIN AND THE MASSA NETWORK COMPLY WITH ALL APPLICABLE LAWS AND REGULATIONS IN THEIR JURISDICTION. MEMBERS ARE ALSO SOLELY RESPONSIBLE FOR ANY CONSEQUENCES ARISING FROM THEIR ACTIONS, INCLUDING ANY FAILURE TO PROPERLY CONFIGURE, MAINTAIN, OR SECURE THEIR NODES OR DIGITAL ASSETS.
 
@@ -146,9 +146,9 @@ The Massa Community reserves the right to amend, modify, or update this Charter 
 
 For the purposes of this Charter, the capitalized terms shall have the following definitions:
 
-- Massa Blockchain: means the Massa layer 1 blockchain network.
-- Massa Decentralized Web: means the fully decentralized web experience online platform provided on the Massa Blockchain.
-- Massa Foundation: refers to the Swiss-based foundation that is supporting the development of the Massa Network, registered under identification number CHE-403.846.550, at c/o Calliopée Sàrl, Rue de Chantepoulet 10, 1201 Genève.
-- Massa Labs: refers to the lab that developed the Massa technology, a French company, registered under identification number 881 320 592 R.C.S., at 226 Boulevard Voltaire, 75011 Paris, France.
-- MAS tokens: means the native tokens of the Massa Blockchain protocol.
-- Member(s): means any individual, entity, or organization that participates in the Massa Network and is within the scope of application defined in section 1 of the present Massa Community Charter. By engaging with the Massa Network, Members acknowledge and agree to adhere to the principles, rules, and obligations outlined in this Charter.
+* Massa Blockchain: means the Massa layer 1 blockchain network.
+* Massa Decentralized Web: means the fully decentralized web experience online platform provided on the Massa Blockchain.
+* Massa Foundation: refers to the Swiss-based foundation that is supporting the development of the Massa Network, registered under identification number CHE-403.846.550, at c/o Calliopée Sàrl, Rue de Chantepoulet 10, 1201 Genève.
+* Massa Labs: refers to the lab that developed the Massa technology, a French company, registered under identification number 881 320 592 R.C.S., at 226 Boulevard Voltaire, 75011 Paris, France.
+* MAS tokens: means the native tokens of the Massa Blockchain protocol.
+* Member(s): means any individual, entity, or organization that participates in the Massa Network and is within the scope of application defined in section 1 of the present Massa Community Charter. By engaging with the Massa Network, Members acknowledge and agree to adhere to the principles, rules, and obligations outlined in this Charter.
