@@ -46,7 +46,7 @@ export async function getGlobalMetadata(
     address,
     globalMetadataKey(prefix)
   )
-  const metadata = await provider.readStorage(address, metadataKeys)
+  const metadata = await provider.readStorage(address, metadataKeys, false)
 
   return metadata.map((m, index) => {
     const metadataKeyBytes = metadataKeys[index].slice(
@@ -104,7 +104,11 @@ export async function getFileMetadata(
     return keyStr.includes(fileMetadataTagStr)
   })
 
-  const metadataValues = await provider.readStorage(address, filteredKeys)
+  const metadataValues = await provider.readStorage(
+    address,
+    filteredKeys,
+    false
+  )
 
   return metadataValues.reduce(
     (acc, valueBytes, index) => {
