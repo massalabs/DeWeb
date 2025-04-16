@@ -9,7 +9,6 @@ import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
 import { DEFAULT_CONFIG_FILE } from './commands/config'
 
-import { Metadata } from './lib/website/models/Metadata'
 import { handleDisclaimer } from './tasks/disclaimer'
 
 const version = process.env.VERSION || 'dev'
