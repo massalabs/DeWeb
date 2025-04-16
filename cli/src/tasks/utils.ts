@@ -17,7 +17,7 @@ export async function configDirPath(): Promise<string> {
     try {
       await fs.stat(dewebCliConfDir)
     } catch (err) {
-      const error = err as NodeJS.ErrnoException;
+      const error = err as NodeJS.ErrnoException
       if (error.code === 'ENOENT') {
         // Create the directory if it doesn't exist
         await fs.mkdir(dewebCliConfDir, { recursive: true })

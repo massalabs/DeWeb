@@ -57,7 +57,7 @@ async function disclaimer() {
 // execute before each command
 program.hook('preAction', async () => {
   await disclaimer()
-});
+})
 
 // execute when the cli is run without any command
 program.action(async () => {

@@ -161,18 +161,22 @@ export async function getDisclaimerStoredFilePath(): Promise<string> {
     try {
       await fs.stat(disclaimerConfPath)
     } catch (err) {
-      const error = err as NodeJS.ErrnoException;
+      const error = err as NodeJS.ErrnoException
       if (error.code === 'ENOENT') {
         // Create the disclaimer.yaml file if it doesn't exist
         await fs.writeFile(disclaimerConfPath, '', { mode: 0o777 })
       } else {
-        throw new Error(`Failed to check ${disclaimerConfPath}: ${error.message}`)
+        throw new Error(
+          `Failed to check ${disclaimerConfPath}: ${error.message}`
+        )
       }
     }
 
     return disclaimerConfPath
   } catch (err) {
-    throw new Error(`Failed to retrieve disclaimer file path: ${(err as Error).message}`)
+    throw new Error(
+      `Failed to retrieve disclaimer file path: ${(err as Error).message}`
+    )
   }
 }
 
@@ -196,7 +200,9 @@ export async function getLegalStoredHash(): Promise<Record<string, string>> {
 
     return hashMap
   } catch (err) {
-    throw new Error(`Failed to retrieve legal stored hash: ${(err as Error).message}`)
+    throw new Error(
+      `Failed to retrieve legal stored hash: ${(err as Error).message}`
+    )
   }
 }
 
@@ -229,7 +235,9 @@ export async function saveLegalStoredHash(
     // Write the YAML data to the file
     await fs.writeFile(disclaimerConfPath, data, { mode: 0o777 })
   } catch (err) {
-    throw new Error(`Failed to save legal stored hash: ${(err as Error).message}`)
+    throw new Error(
+      `Failed to save legal stored hash: ${(err as Error).message}`
+    )
   }
 }
 
