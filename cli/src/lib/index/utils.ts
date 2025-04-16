@@ -12,7 +12,7 @@ export async function getOwnerFromWebsiteSC(
   sc: SmartContract,
   address: string
 ): Promise<string> {
-  const ownerAddress = await sc.provider.readStorage(address, ['OWNER'], true)
+  const ownerAddress = await sc.provider.readStorage(address, ['OWNER'], false)
   if (ownerAddress.length === 0 || !ownerAddress[0]) {
     throw new Error(`Could not find owner for website ${address}`)
   }

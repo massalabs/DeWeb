@@ -21,7 +21,11 @@ export async function listFiles(
     scAddress,
     FILE_LOCATION_TAG
   )
-  const fileLocations = await provider.readStorage(scAddress, allStorageKeys)
+  const fileLocations = await provider.readStorage(
+    scAddress,
+    allStorageKeys,
+    false
+  )
 
   const files: string[] = []
   const notFoundKeys: Uint8Array[] = []
@@ -50,9 +54,11 @@ export async function getFileTotalChunks(
   filePath: string
 ): Promise<bigint> {
   const filePathHash = sha256.arrayBuffer(filePath)
-  const fileTotalChunksResp = await provider.readStorage(scAddress, [
-    fileChunkCountKey(new Uint8Array(filePathHash)),
-  ])
+  const fileTotalChunksResp = await provider.readStorage(
+    scAddress,
+    [fileChunkCountKey(new Uint8Array(filePathHash))],
+    false
+  )
 
   if (fileTotalChunksResp.length !== 1 || !fileTotalChunksResp[0]) {
     throw new Error('Invalid response from getDatastoreEntries')
@@ -93,7 +99,7 @@ export async function getFileFromAddress(
     chunksKeys.push(fileChunkKey(filePathHash, i))
   }
 
-  const fileChunks = await provider.readStorage(scAddress, chunksKeys)
+  const fileChunks = await provider.readStorage(scAddress, chunksKeys, false)
 
   return fileChunks
     .filter((chunk) => !!chunk)
