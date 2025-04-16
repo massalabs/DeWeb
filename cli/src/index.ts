@@ -32,19 +32,8 @@ program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
 program.addCommand(metadataCommand)
 
-interface OptionValues {
-  config: string
-  node_url: string
-  wallet: string
-  password: string
-  address: string
-  metadatas: Metadata[]
-  accept_disclaimer: boolean
-}
-
 async function disclaimer() {
-  const commandOptions: OptionValues = program.opts() as OptionValues
-  if (!commandOptions.accept_disclaimer) {
+  if (program.getOptionValue('accept_disclaimer') === undefined) {
     try {
       await handleDisclaimer()
     } catch (error) {
@@ -62,6 +51,7 @@ program.hook('preAction', async () => {
 // execute when the cli is run without any command
 program.action(async () => {
   await disclaimer()
+  program.help()
 })
 
 program.parse()
