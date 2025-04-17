@@ -41,6 +41,22 @@ function userConfigDir(): string {
   const platform = process.platform
   let dir: string
 
+  const unixLikeHandling = (): string => {
+    // Unix-like systems (Linux, BSD, etc.)
+    const xdg = process.env.XDG_CONFIG_HOME
+    if (xdg) {
+      if (!path.isAbsolute(xdg)) {
+        throw new Error('path in $XDG_CONFIG_HOME is relative')
+      }
+      return xdg
+    } else {
+      const home = process.env.HOME || ''
+      if (!home)
+        throw new Error('neither $XDG_CONFIG_HOME nor $HOME are defined')
+      return path.join(home, '.config')
+    }
+  }
+
   switch (platform) {
     case 'win32': {
       dir = process.env.APPDATA || ''
@@ -56,21 +72,19 @@ function userConfigDir(): string {
       break
     }
 
-    default: {
+    case 'linux':
+    case 'freebsd':
+    case 'openbsd': {
       // Unix-like systems (Linux, BSD, etc.)
-      const xdg = process.env.XDG_CONFIG_HOME
-      if (xdg) {
-        if (!path.isAbsolute(xdg)) {
-          throw new Error('path in $XDG_CONFIG_HOME is relative')
-        }
-        dir = xdg
-      } else {
-        const home = process.env.HOME || ''
-        if (!home)
-          throw new Error('neither $XDG_CONFIG_HOME nor $HOME are defined')
-        dir = path.join(home, '.config')
-      }
+      dir = unixLikeHandling()
       break
+    }
+
+    default: {
+      console.warn(
+        `Unsupported platform: ${platform}. Retrieving user config dir like in Unix-like systems. `
+      )
+      dir = unixLikeHandling()
     }
   }
 
