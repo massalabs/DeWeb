@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	"github.com/massalabs/deweb-server/int/api"
@@ -9,6 +10,18 @@ import (
 )
 
 func main() {
+	// If the --accept-disclaimer (or -a) flag is set, the disclaimer will not be displayed. This is for CI purposes.
+	acceptDisclaimer := flag.Bool("accept-disclaimer", false, "Automatically accept the disclaimer")
+	flag.BoolVar(acceptDisclaimer, "a", false, "Shortcut for --accept-disclaimer")
+	flag.Parse()
+
+	if !*acceptDisclaimer {
+		err := api.HandleDisclaimer()
+		if err != nil {
+			log.Fatalf("failed to handle disclaimer: %v", err)
+		}
+	}
+
 	err := logger.InitializeGlobal("./deweb-server.log")
 	if err != nil {
 		log.Fatalf("failed to initialize logger: %v", err)
