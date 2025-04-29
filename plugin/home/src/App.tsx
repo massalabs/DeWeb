@@ -1,61 +1,108 @@
-import { FiSearch, FiInfo } from "react-icons/fi";
+import { FiSearch, FiInfo, FiCheckCircle, FiAlertTriangle, FiXCircle, FiClock } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { UseGenerateTheme } from "deweb-pages/src/hooks/UseGenerateTheme";
+import { ServerStatusResponse, NetworkInfo } from "./types/server";
+import { QuickAccessItem } from "./QuickAccessItem";
 
-type QuickAccessItemProps = {
-  path: string;
-  title: string;
-  description: string;
-  href: string;
-};
-
-const QuickAccessItem = ({ path, title, description, href }: QuickAccessItemProps) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-secondary text-primary p-6 rounded-lg shadow-lg cursor-pointer hover:bg-opacity-90 transition-all no-underline block"
-  >
-    <div className="flex items-center justify-center mb-4">
-      <span className="paragraph-lg text-4xl">{path}</span>
-    </div>
-    <h3 className="paragraph-lg text-xl font-bold mb-2">{title}</h3>
-    <p className="paragraph-lg text-sm">{description}</p>
-  </a>
-);
+const POLLING_INTERVAL = 1000;
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [port, setPort] = useState("");
-  const [networkName, setNetworkName] = useState<string | null>(null);
-  const [networkVersion, setNetworkVersion] = useState<string | null>(null);
+  const [port, setPort] = useState<number | null>(null);
+  const [status, setStatus] = useState<"running" | "stopped" | "starting" | "stopping" | "error" | null>(null);
+  const [network, setNetwork] = useState<NetworkInfo | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // On mount, get the port from the API by hitting /port and network info from /info
-  useEffect(() => {
+  const fetchStatus = () => {
     const url = window.location.href.endsWith("/")
       ? window.location.href
       : `${window.location.href}/`;
 
-    fetch(`${url}port`)
-      .then((res) => res.text())
-      .then((port) => setPort(port))
-      .catch(err => console.error("Failed to fetch port:", err));
+    const urlWithoutWeb = url.endsWith("/web/index/") ? url.slice(0, -10) : url;
 
-    fetch(`${url}info`)
+    fetch(`${urlWithoutWeb}/api/server/status`)
       .then((res) => res.json())
-      .then((info) => {
-        setNetworkName(info.Network || "Unknown Network");
-        setNetworkVersion(info.Version || "Unknown Version");
+      .then((data: ServerStatusResponse) => {
+        setPort(data.serverPort);
+        setStatus(data.status);
+        setNetwork(data.network);
+        if (data.errorMessage) {
+          setErrorMessage(data.errorMessage);
+        } else {
+          setErrorMessage(null);
+        }
       })
-      .catch(err => {
-        console.error("Failed to fetch provider info:", err);
-        setNetworkName("Unknown Network");
-        setNetworkVersion("Unknown Version");
-      }).finally(() => {
+      .catch(err => console.error("Failed to fetch port:", err))
+      .finally(() => {
         setLoading(false);
       });
+  };
+
+  // On mount, fetch status and set up polling interval
+  useEffect(() => {
+    fetchStatus();
+
+    // Set up polling interval to fetch status every POLLING_INTERVAL
+    const intervalId = setInterval(fetchStatus, POLLING_INTERVAL);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
+
+  const getStatusIcon = () => {
+    if (loading) return <FiClock className="mr-1 animate-pulse" />;
+
+    switch (status) {
+      case "running":
+        return <FiCheckCircle className="mr-1 text-green-500" />;
+      case "stopped":
+        return <FiXCircle className="mr-1 text-gray-500" />;
+      case "starting":
+      case "stopping":
+        return <FiClock className="mr-1 text-yellow-500 animate-pulse" />;
+      case "error":
+        return <FiAlertTriangle className="mr-1 text-red-500" />;
+      default:
+        return <FiInfo className="mr-1" />;
+    }
+  };
+
+  const getStatusText = () => {
+    if (loading) return "Connecting...";
+
+    if (status === "error" && errorMessage) {
+      return `Error: ${errorMessage}`;
+    }
+
+    if (status === "running" && network) {
+      return `Connected to ${network.network} ${network.version || ''}`;
+    }
+
+    const statusMessages = {
+      running: "Server running",
+      stopped: "Server stopped",
+      starting: "Server starting...",
+      stopping: "Server stopping...",
+      error: "Server error"
+    };
+
+    return statusMessages[status || "stopped"];
+  };
+
+  const getStatusClass = () => {
+    if (loading) return "bg-blue-100 text-blue-800";
+
+    const statusClasses = {
+      running: "bg-green-100 text-green-800",
+      stopped: "bg-gray-100 text-gray-800",
+      starting: "bg-yellow-100 text-yellow-800",
+      stopping: "bg-yellow-100 text-yellow-800",
+      error: "bg-red-100 text-red-800"
+    };
+
+    return statusClasses[status || "stopped"];
+  };
 
   const generateUrl = (service: string, path: string = '') => {
     const { host } = new URL(window.location.href);
@@ -100,9 +147,9 @@ export default function App() {
       className={`${theme} bg-primary text-secondary flex flex-col items-center justify-center min-h-screen text-center gap-8 p-8 relative`}
     >
       {/* Network Status Indicator */}
-      <div className="absolute top-2 right-2 bg-secondary text-primary py-1 px-3 rounded-full text-xs font-medium shadow-md flex items-center">
-        <FiInfo className="mr-1" />
-        {loading ? "Connecting..." : `Connected to ${networkName} ${networkVersion}`}
+      <div className={`absolute top-2 right-2 py-1 px-3 rounded-full text-xs font-medium shadow-md flex items-center ${getStatusClass()}`}>
+        {getStatusIcon()}
+        <span className="truncate max-w-xs">{getStatusText()}</span>
       </div>
 
       <h1 className="paragraph-lg text-6xl max-w-2xl mb-4">Search on DeWeb</h1>

@@ -41,14 +41,9 @@ The development server will start at http://localhost:5173 (or another port if 5
 ```bash
 # Build the project
 npm run build
-
-# Build and package for plugin deployment
-npm run build:plugin
 ```
 
-The `build:plugin` command will:
-1. Build the project
-2. Create a zip file (`dist/home.zip`) for deployment
+The `build` command builds and output the project in the plugin `int/api/html` directory to be served by the plugin API.
 
 ## Dependencies
 

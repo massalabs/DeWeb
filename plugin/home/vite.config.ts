@@ -8,6 +8,9 @@ export default ({ mode }: any) => {
 
   return defineConfig({
     plugins: [react()],
-    base: process.env.BASE_URL,
+    base: process.env.VITE_BASE_APP,
+    build: {
+      outDir: '../int/api/html/dist',
+    },
   })
 }

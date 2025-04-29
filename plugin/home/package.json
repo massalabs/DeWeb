@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:plugin": "node ./build.mjs",
+    "build": "tsc -b && vite build --mode massastation",
     "lint": "eslint .",
     "preview": "vite preview"
   },
