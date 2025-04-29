@@ -8,6 +8,16 @@ tasks:
   generate:
     cmds:
       - cmd: go generate ./...
+      - task: build-server
+
+  build-server:
+    internal: true
+    dir: ../server
+    cmds:
+      - cmd: task build
+      - cmd: cp build/deweb-server{{.BIN_EXT}} ../plugin/build
+    vars:
+      BIN_EXT: '{{if eq .OS "windows"}}.exe{{end}}'
 
   run:
     cmds:
@@ -53,6 +63,8 @@ tasks:
         platforms: [linux, darwin]
       - cmd: cp build/deweb-plugin /usr/local/share/massastation/plugins/deweb-plugin
         platforms: [linux, darwin]
+      - cmd: cp build/deweb-server /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
       - cmd: cp favicon.png /usr/local/share/massastation/plugins/deweb-plugin
         platforms: [linux, darwin]
       - cmd: cp manifest.json /usr/local/share/massastation/plugins/deweb-plugin
@@ -60,6 +72,8 @@ tasks:
       - cmd: mkdir -p "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
         platforms: [windows]
       - cmd: cp build/deweb-plugin.exe "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+      - cmd: cp build/deweb-server.exe "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
         platforms: [windows]
       - cmd: cp favicon.png "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
         platforms: [windows]
