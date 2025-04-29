@@ -49,6 +49,7 @@ func TestGetSCAddress(t *testing.T) {
 				if err != nil {
 					t.Errorf("Did not expect an error but got: %v", err)
 				}
+
 				if addr != tc.expectedAddr {
 					t.Errorf("Expected address %s, but got %s", tc.expectedAddr, addr)
 				}
@@ -56,6 +57,7 @@ func TestGetSCAddress(t *testing.T) {
 		})
 	}
 }
+
 func TestDeserializeResult(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -95,6 +97,7 @@ func TestDeserializeResult(t *testing.T) {
 				if err != nil {
 					t.Errorf("Did not expect an error but got: %v", err)
 				}
+
 				if result != tc.expected {
 					t.Errorf("Expected result %s, but got %s", tc.expected, result)
 				}
