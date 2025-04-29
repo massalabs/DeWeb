@@ -15,6 +15,7 @@ import {
 } from '../lib/website/metadata'
 import { makeProviderFromNodeURLAndSecret } from './utils'
 import { loadConfig } from './config'
+import { isImmutable } from '../lib/website/immutable'
 
 export const uploadCommand = new Command('upload')
   .alias('u')
@@ -49,6 +50,18 @@ export const uploadCommand = new Command('upload')
     if (globalOptions.address) {
       const address = globalOptions.address
       console.log(`Editing website at address ${address}, no deploy needed`)
+
+      const isimmutable = await isImmutable(
+        address,
+        globalOptions.node_url,
+        true
+      )
+      if (isimmutable) {
+        console.error(
+          `The website at address ${address} is immutable. It cannot be edited anymore.`
+        )
+        process.exit(1)
+      }
 
       ctx.sc = new SmartContract(provider, address)
 
