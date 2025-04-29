@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
@@ -14,28 +16,22 @@ const (
 	BuildnetChainID = 77658366
 )
 
-func NewNetworkConfig(NodeURL string) msConfig.NetworkInfos {
+func NewNetworkConfig(NodeURL string) (msConfig.NetworkInfos, error) {
 	client := node.NewClient(NodeURL)
-
-	chainID := uint64(0)
-	networkName := "unknown"
-	nodeVersion := "unknown"
 
 	status, err := node.Status(client)
 	if err != nil {
-		logger.Errorf("unable to get node status: %v", err)
-		logger.Warnf("Using default values for minimal fees, chain ID, and network version")
-	} else {
-		chainID, networkName = getChainIDAndNetworkName(status)
-		nodeVersion = getNodeVersion(status)
+		return msConfig.NetworkInfos{}, fmt.Errorf("unable to get node status: %w", err)
 	}
+	chainID, networkName := getChainIDAndNetworkName(status)
+	nodeVersion := getNodeVersion(status)
 
 	return msConfig.NetworkInfos{
 		Network: networkName,
 		NodeURL: NodeURL,
 		Version: nodeVersion,
 		ChainID: chainID,
-	}
+	}, nil
 }
 
 // Returns node version from node status
