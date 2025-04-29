@@ -7,17 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	pluginConfig "github.com/massalabs/deweb-plugin/config"
-	"github.com/massalabs/deweb-server/int/api"
-	"github.com/massalabs/deweb-server/int/api/config"
-	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
+	"github.com/massalabs/deweb-plugin/int/api"
 	"github.com/massalabs/station/pkg/logger"
 )
-
-const directoryName = "station-deweb-plugin"
-
-//go:embed home/dist/home.zip
-var homeZip []byte
 
 func main() {
 	pluginDir, err := PluginDir()
@@ -32,28 +24,14 @@ func main() {
 		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
-	// Load configuration from YAML file with fallback to defaults
-	conf, err := pluginConfig.LoadConfig(pluginDir)
-	if err != nil {
-		logger.Warnf("%v", err)
-	}
+	// Create and start the API with the plugin directory
+	apiInstance := api.NewAPI(pluginDir)
+	apiInstance.Start()
 
-	// Convert PluginConfig to ServerConfig
-	serverConfig := config.ServerConfig{
-		APIPort:      conf.APIPort,
-		Domain:       "localhost",
-		NetworkInfos: pkgConfig.NewNetworkConfig(conf.NetworkURL),
-		CacheConfig:  conf.CacheConfig,
-	}
-
-	logger.Infof("Starting DeWeb plugin with configuration:")
-	logger.Infof("  API Port: %d", serverConfig.APIPort)
-	logger.Infof("  Network URL: %s", serverConfig.NetworkInfos.NodeURL)
-	logger.Infof("  Cache Directory: %s", serverConfig.CacheConfig.DiskCacheDir)
-
-	api := api.NewPluginAPI(&serverConfig, homeZip)
-	api.Start()
+	logger.Warnf("DeWeb plugin stopped")
 }
+
+const directoryName = "station-deweb-plugin"
 
 func PluginDir() (string, error) {
 	configDir, err := os.UserConfigDir()
