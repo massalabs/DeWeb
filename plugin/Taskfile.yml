@@ -7,6 +7,7 @@ tasks:
 
   generate:
     cmds:
+      - cmd: mkdir -p ./build
       - cmd: go generate ./...
       - task: build-server
 
