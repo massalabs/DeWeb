@@ -8,6 +8,8 @@ import {
   PublicProvider,
   Web3Provider,
 } from '@massalabs/massa-web3'
+import { isImmutable } from '../lib/website/immutable'
+
 import { OptionValues } from 'commander'
 import { readFileSync } from 'fs'
 import { parse as yamlParse } from 'yaml'
@@ -98,5 +100,20 @@ export function validateWebsiteAddress(address: string) {
     throw new Error(
       `Invalid address: ${address}. This is not a website address.`
     )
+  }
+}
+
+export async function exitIfImmutable(address: string, node_url: string, errMsg="") {
+  const isimmutable = await isImmutable(
+    address,
+    node_url,
+    true
+  )
+  if (isimmutable) {
+    console.error(
+      errMsg ||
+      `The website at address ${address} is immutable.`
+    )
+    process.exit(1)
   }
 }

@@ -11,8 +11,9 @@ import {
 } from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
 
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
+import { exit } from 'process'
 
 export const deleteCommand = new Command('delete')
   .alias('d')
@@ -26,6 +27,12 @@ export const deleteCommand = new Command('delete')
   )
   .action(async (address, options, command) => {
     const globalOptions = loadConfig(command.optsWithGlobals())
+
+    await exitIfImmutable(
+      address,
+      globalOptions.node_url,
+      `The website at address ${address} is immutable. It cannot be deleted anymore.`
+    )
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
