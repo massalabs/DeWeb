@@ -13,7 +13,6 @@ import { DeleteCtx } from '../tasks/tasks'
 
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
-import { exit } from 'process'
 
 export const deleteCommand = new Command('delete')
   .alias('d')

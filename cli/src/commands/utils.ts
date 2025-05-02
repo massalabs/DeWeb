@@ -103,17 +103,14 @@ export function validateWebsiteAddress(address: string) {
   }
 }
 
-export async function exitIfImmutable(address: string, node_url: string, errMsg="") {
-  const isimmutable = await isImmutable(
-    address,
-    node_url,
-    true
-  )
+export async function exitIfImmutable(
+  address: string,
+  node_url: string,
+  errMsg = ''
+) {
+  const isimmutable = await isImmutable(address, node_url, true)
   if (isimmutable) {
-    console.error(
-      errMsg ||
-      `The website at address ${address} is immutable.`
-    )
+    console.error(errMsg || `The website at address ${address} is immutable.`)
     process.exit(1)
   }
 }

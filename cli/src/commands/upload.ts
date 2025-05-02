@@ -15,7 +15,6 @@ import {
 } from '../lib/website/metadata'
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
-import { isImmutable } from '../lib/website/immutable'
 
 export const uploadCommand = new Command('upload')
   .alias('u')
