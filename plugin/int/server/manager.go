@@ -88,7 +88,7 @@ func (m *ServerManager) Start() error {
 
 	logPath := filepath.Join(m.configDir, DefaultLogPath)
 
-	cmd := exec.Command(m.serverBinPath, "--configPath", configPath, "--logPath", logPath)
+	cmd := exec.Command(m.serverBinPath, "--configPath", configPath, "--logPath", logPath, "--accept-disclaimer")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
