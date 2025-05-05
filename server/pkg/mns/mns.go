@@ -26,7 +26,11 @@ const (
 // ResolveDomain resolves a domain name to its corresponding address.
 func ResolveDomain(network *msConfig.NetworkInfos, domain string) (string, error) {
 	client := node.NewClient(network.NodeURL)
-	scAddress := GetSCAddress(network)
+
+	scAddress, err := GetSCAddress(network)
+	if err != nil {
+		return "", fmt.Errorf("could not get mns smart contract address: %w", err)
+	}
 
 	params := convert.U32ToBytes(len(domain))
 	params = append(params, []byte(domain)...)
@@ -63,10 +67,13 @@ func deserializeResult(result []interface{}) (string, error) {
 }
 
 // GetSCAddress returns the smart contract address based on the network chain ID.
-func GetSCAddress(network *msConfig.NetworkInfos) string {
-	if network.ChainID == buildnetChainID {
-		return BuildnetAddress
+func GetSCAddress(network *msConfig.NetworkInfos) (string, error) {
+	switch network.ChainID {
+	case mainnetChainID:
+		return MainnetAddress, nil
+	case buildnetChainID:
+		return BuildnetAddress, nil
+	default:
+		return "", fmt.Errorf("unsupported chain ID: %d", network.ChainID)
 	}
-
-	return MainnetAddress
 }

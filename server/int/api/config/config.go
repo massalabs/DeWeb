@@ -7,6 +7,7 @@ import (
 	"github.com/massalabs/deweb-server/int/utils"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
 	msConfig "github.com/massalabs/station/int/config"
+	"github.com/massalabs/station/pkg/logger"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -34,10 +35,14 @@ type yamlServerConfig struct {
 	BlockList          []string         `yaml:"block_list"`
 	MiscPublicInfoJson interface{}      `yaml:"misc_public_info"`
 	CacheConfig        *YamlCacheConfig `yaml:"cache"`
+	AllowOffline       bool             `yaml:"allow_offline"`
 }
 
-func DefaultConfig() *ServerConfig {
-	networkInfos := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
+func DefaultConfig() (*ServerConfig, error) {
+	networkInfos, err := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create network config: %w", err)
+	}
 
 	return &ServerConfig{
 		Domain:             DefaultDomain,
@@ -47,7 +52,7 @@ func DefaultConfig() *ServerConfig {
 		BlockList:          []string{},
 		MiscPublicInfoJson: map[string]interface{}{},
 		CacheConfig:        DefaultCacheConfig(),
-	}
+	}, nil
 }
 
 // LoadServerConfig loads the server configuration from the given path, or returns the default configuration
@@ -57,7 +62,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return DefaultConfig(), nil
+		return DefaultConfig()
 	}
 
 	filebytes, err := utils.ReadFileBytes(configPath)
@@ -85,11 +90,21 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		yamlConf.APIPort = DefaultAPIPort
 	}
 
+	networkInfos, err := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
+	if err != nil {
+		if yamlConf.AllowOffline {
+			logger.Errorf("unable retrieve network config: %v", err)
+			logger.Warnf("using default values for minimal fees, chain ID, and network version")
+		} else {
+			return nil, fmt.Errorf("failed to create network config: %w", err)
+		}
+	}
+
 	// Convert YAML config to ServerConfig
 	config := &ServerConfig{
 		Domain:             yamlConf.Domain,
 		APIPort:            yamlConf.APIPort,
-		NetworkInfos:       pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL),
+		NetworkInfos:       networkInfos,
 		AllowList:          yamlConf.AllowList,
 		BlockList:          yamlConf.BlockList,
 		MiscPublicInfoJson: convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
