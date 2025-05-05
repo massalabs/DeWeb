@@ -111,7 +111,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p build
-          mv server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} build/deweb-server${{ matrix.ext }}
+          mv ../server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} build/deweb-server${{ matrix.ext }}
+          chmod +x build/deweb-server${{ matrix.ext }}
 
       - name: Build Plugin
         shell: bash
