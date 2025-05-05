@@ -68,14 +68,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: ubuntu-24.04
             arch: amd64
             target: windows
             ext: .exe
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             arch: amd64
             target: linux
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             arch: arm64
             target: linux
           - os: macos-13

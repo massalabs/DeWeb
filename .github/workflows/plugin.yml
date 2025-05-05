@@ -54,14 +54,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: ubuntu-24.04
             arch: amd64
             target: windows
             ext: .exe
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             arch: amd64
             target: linux
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             arch: arm64
             target: linux
           - os: macos-13
@@ -144,5 +144,5 @@ jobs:
       - name: Upload Plugin zip package
         uses: actions/upload-artifact@v4
         with:
-          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}_zip
+          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}
           path: plugin/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}.zip
