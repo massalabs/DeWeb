@@ -9,10 +9,8 @@ tasks:
     cmds:
       - cmd: mkdir -p ./build
       - cmd: go generate ./...
-      - task: build-server
 
   build-server:
-    internal: true
     dir: ../server
     cmds:
       - cmd: task build

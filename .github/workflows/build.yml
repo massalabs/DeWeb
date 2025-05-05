@@ -1,0 +1,29 @@
+name: Build Server and Plugin
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  pull_request:
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+jobs:
+  build-server:
+    name: Build server
+    uses: ./.github/workflows/server.yml
+    secrets: inherit
+
+  build-plugin:
+    name: Build plugin
+    needs: build-server
+    uses: ./.github/workflows/plugin.yml
+    secrets: inherit

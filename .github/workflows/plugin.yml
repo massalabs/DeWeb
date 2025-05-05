@@ -1,17 +1,6 @@
 name: Plugin
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'plugin/**'
-      - 'server/**'
-      - '.github/workflows/plugin.yml'
-  pull_request:
-    paths:
-      - 'plugin/**'
-      - 'server/**'
-      - '.github/workflows/plugin.yml'
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -112,6 +101,18 @@ jobs:
             echo "PRODUCTION=true" >> $GITHUB_ENV
           fi
 
+      - name: Download server artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
+          path: server/build
+
+      - name: Rename server binary
+        shell: bash
+        run: |
+          mkdir -p build
+          mv server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} build/deweb-server${{ matrix.ext }}
+
       - name: Build Plugin
         shell: bash
         run: task build
@@ -122,16 +123,25 @@ jobs:
       - name: Rename Plugin artifact
         run: mv build/deweb-plugin${{ matrix.ext }} deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
 
-      - name: Copy shared files to platform directory
+      - name: Create platform directory with all required files
         shell: bash
         run: |
           mkdir -p platform_${{ matrix.target }}_${{ matrix.arch }}
           cp deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }} platform_${{ matrix.target }}_${{ matrix.arch }}/
+          cp build/deweb-server${{ matrix.ext }} platform_${{ matrix.target }}_${{ matrix.arch }}/
           cp favicon.png platform_${{ matrix.target }}_${{ matrix.arch }}/
           cp manifest.json platform_${{ matrix.target }}_${{ matrix.arch }}/
 
-      - name: Upload Plugin artifact
+      - name: Create zip package
+        shell: bash
+        run: |
+          cd platform_${{ matrix.target }}_${{ matrix.arch }}
+          zip -r ../deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}.zip *
+          cd ..
+          ls -la deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}.zip
+
+      - name: Upload Plugin zip package
         uses: actions/upload-artifact@v4
         with:
-          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}
-          path: plugin/platform_${{ matrix.target }}_${{ matrix.arch }}/
+          name: deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}_zip
+          path: plugin/deweb-plugin_${{ matrix.target }}_${{ matrix.arch }}.zip
