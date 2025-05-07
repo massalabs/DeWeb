@@ -8,6 +8,7 @@ import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
 import { DEFAULT_CONFIG_FILE } from './commands/config'
+import { immutableCommand } from './commands/immutable'
 
 import { handleDisclaimer } from './tasks/disclaimer'
 
@@ -30,6 +31,7 @@ program.addCommand(deleteCommand)
 program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
 program.addCommand(metadataCommand)
+program.addCommand(immutableCommand)
 
 async function disclaimer() {
   if (program.getOptionValue('accept_disclaimer') === undefined) {

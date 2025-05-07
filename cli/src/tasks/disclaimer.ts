@@ -1,9 +1,8 @@
 import { promises as fs, existsSync } from 'fs'
 import * as path from 'path'
 import { createHash } from 'crypto'
-import { configDirPath } from './utils'
+import { configDirPath, promptYesNo } from './utils'
 import yaml from 'yaml'
-import readline from 'readline'
 
 interface LegalFile {
   content: Buffer
@@ -71,44 +70,7 @@ async function displayDisclaimer(
   }
 
   // Ask the user to accept the terms of use
-  const maxAttempts = 3
-  for (let attempts = 0; attempts < maxAttempts; attempts++) {
-    const response = await promptUser(
-      'Do you accept all legal terms of use? (y/n): '
-    )
-
-    switch (response.toLowerCase()) {
-      case 'y':
-        return true
-      case 'n':
-        return false
-      default:
-        console.log("Invalid input. Please enter 'y' for yes or 'n' for no.")
-    }
-  }
-
-  // If the user fails to provide valid input after maxAttempts, assume "no"
-  console.log("Maximum attempts reached. Assuming 'no'.")
-  return false
-}
-
-/**
- * Prompts the user for input via the console.
- * @param question - The question to display to the user.
- * @returns A promise that resolves to the user's input.
- */
-function promptUser(question: string): Promise<string> {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
-
-    rl.question(question, (answer: string) => {
-      rl.close()
-      resolve(answer.trim())
-    })
-  })
+  return promptYesNo('Do you accept all legal terms of use ?')
 }
 
 /**

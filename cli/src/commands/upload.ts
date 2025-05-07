@@ -13,7 +13,7 @@ import {
   filterMetadataToUpdate,
   getGlobalMetadata,
 } from '../lib/website/metadata'
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
 
 export const uploadCommand = new Command('upload')
@@ -50,6 +50,11 @@ export const uploadCommand = new Command('upload')
       const address = globalOptions.address
       console.log(`Editing website at address ${address}, no deploy needed`)
 
+      await exitIfImmutable(
+        address,
+        provider,
+        `The website at address ${address} is immutable. It cannot be edited anymore.`
+      )
       ctx.sc = new SmartContract(provider, address)
 
       const currentGlobalMetadata = await getGlobalMetadata(provider, address)

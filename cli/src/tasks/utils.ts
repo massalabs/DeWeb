@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs'
 import * as path from 'path'
+import readline from 'readline'
 
 const dewebCliConfigDirName = 'deweb-cli'
 
@@ -89,4 +90,48 @@ function userConfigDir(): string {
   }
 
   return dir
+}
+
+/**
+ * Prompts the user for input via the console.
+ * @param question - The question to display to the user.
+ * @returns A promise that resolves to the user's input.
+ */
+export function promptUser(question: string): Promise<string> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    })
+
+    rl.question(question, (answer: string) => {
+      rl.close()
+      resolve(answer.trim())
+    })
+  })
+}
+
+/**
+ * Prompts the user for a yes/no response.
+ * @param question - The question to display to the user.
+ * @returns A promise that resolves to true if the user answers 'y', and false if the user answers 'n'.
+ */
+export async function promptYesNo(
+  question: string,
+  maxAttempts = 3
+): Promise<boolean> {
+  for (let attempts = 0; attempts < maxAttempts; attempts++) {
+    const answer = await promptUser(`${question} (y/n): `)
+    switch (answer.toLowerCase()) {
+      case 'y':
+        return true
+      case 'n':
+        return false
+      default:
+        console.log("Invalid input. Please enter 'y' for yes or 'n' for no.")
+    }
+  }
+  // If the user fails to provide valid input after maxAttempts, assume "no"
+  console.log("Maximum attempts reached. Assuming 'no'.")
+  return false
 }

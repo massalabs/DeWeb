@@ -11,7 +11,7 @@ import {
 } from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
 
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
 
 export const deleteCommand = new Command('delete')
@@ -28,6 +28,12 @@ export const deleteCommand = new Command('delete')
     const globalOptions = loadConfig(command.optsWithGlobals())
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+
+    await exitIfImmutable(
+      address,
+      provider,
+      `The website at address ${address} is immutable. It cannot be deleted anymore.`
+    )
 
     const sc = new SmartContract(provider, address)
 

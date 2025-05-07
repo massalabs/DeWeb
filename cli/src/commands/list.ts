@@ -1,7 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
 
 import { listFiles } from '../lib/website/read'
-
+import { isImmutable } from '@massalabs/massa-web3'
 import { initPublicProvider } from './utils'
 import {
   extractWebsiteMetadata,
@@ -29,6 +29,12 @@ export const listFilesCommand = new Command('list')
 
     const metadatas = await getGlobalMetadata(provider, webSiteAddress)
     const webSiteDefaultMetadata = extractWebsiteMetadata(metadatas)
+
+    const isimmutable = await isImmutable(
+      webSiteAddress,
+      provider,
+      true // wait final execution because it's a critical operation
+    )
 
     console.log('Targeting website at address', webSiteAddress)
     console.log('\nMetadatas:')
@@ -67,4 +73,6 @@ export const listFilesCommand = new Command('list')
         notFoundKeys
       )
     }
+
+    console.log(`\nIs immutable: ${isimmutable}`)
   })
