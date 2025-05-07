@@ -11,6 +11,7 @@ import { DEFAULT_CONFIG_FILE } from './commands/config'
 import { immutableCommand } from './commands/immutable'
 
 import { handleDisclaimer } from './tasks/disclaimer'
+import { fondaCommand } from './commands/fonda'
 
 const version = process.env.VERSION || 'dev'
 
@@ -32,6 +33,7 @@ program.addCommand(listFilesCommand)
 program.addCommand(showFileCommand)
 program.addCommand(metadataCommand)
 program.addCommand(immutableCommand)
+program.addCommand(fondaCommand)
 
 async function disclaimer() {
   if (program.getOptionValue('accept_disclaimer') === undefined) {
