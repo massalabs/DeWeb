@@ -27,13 +27,13 @@ export const deleteCommand = new Command('delete')
   .action(async (address, options, command) => {
     const globalOptions = loadConfig(command.optsWithGlobals())
 
+    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+
     await exitIfImmutable(
       address,
-      globalOptions.node_url,
+      provider,
       `The website at address ${address} is immutable. It cannot be deleted anymore.`
     )
-
-    const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
     const sc = new SmartContract(provider, address)
 

@@ -1,7 +1,7 @@
 import { Command } from '@commander-js/extra-typings'
 
 import { listFiles } from '../lib/website/read'
-import { isImmutable } from '../lib/website/immutable'
+import { isImmutable } from '@massalabs/massa-web3'
 import { initPublicProvider } from './utils'
 import {
   extractWebsiteMetadata,
@@ -32,7 +32,7 @@ export const listFilesCommand = new Command('list')
 
     const isimmutable = await isImmutable(
       webSiteAddress,
-      globalOptions.node_url,
+      provider,
       true // wait final execution because it's a critical operation
     )
 

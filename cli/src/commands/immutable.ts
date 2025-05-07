@@ -1,8 +1,8 @@
 import { Command } from '@commander-js/extra-typings'
-import { makeProviderFromNodeURLAndSecret } from './utils'
+import { makeImmutable } from '@massalabs/massa-web3'
+import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { promptYesNo } from '../tasks/utils'
 import { loadConfig } from './config'
-import { isImmutable, makeImmutable } from '../lib/website/immutable'
 
 /* Make a website immutable */
 export const immutableCommand = new Command('immutable')
@@ -19,12 +19,14 @@ export const immutableCommand = new Command('immutable')
       throw new Error('No address provided')
     }
 
-    if (await isImmutable(address, globalOptions.node_url)) {
-      console.error(`The website at address ${address} is already immutable.`)
-      process.exit(1)
-    }
-
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+
+    await exitIfImmutable(
+      address,
+      provider,
+      `The website at address ${address} is already immutable.`
+    )
+
     if (
       !command.opts().yes &&
       !(await promptYesNo(

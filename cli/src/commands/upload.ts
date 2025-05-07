@@ -52,7 +52,7 @@ export const uploadCommand = new Command('upload')
 
       await exitIfImmutable(
         address,
-        globalOptions.node_url,
+        provider,
         `The website at address ${address} is immutable. It cannot be edited anymore.`
       )
       ctx.sc = new SmartContract(provider, address)

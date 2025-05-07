@@ -7,8 +7,8 @@ import {
   Mas,
   PublicProvider,
   Web3Provider,
+  isImmutable,
 } from '@massalabs/massa-web3'
-import { isImmutable } from '../lib/website/immutable'
 
 import { OptionValues } from 'commander'
 import { readFileSync } from 'fs'
@@ -105,10 +105,10 @@ export function validateWebsiteAddress(address: string) {
 
 export async function exitIfImmutable(
   address: string,
-  node_url: string,
+  provider: PublicProvider,
   errMsg = ''
 ) {
-  const isimmutable = await isImmutable(address, node_url, true)
+  const isimmutable = await isImmutable(address, provider, true)
   if (isimmutable) {
     console.error(errMsg || `The website at address ${address} is immutable.`)
     process.exit(1)
