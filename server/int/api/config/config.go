@@ -27,15 +27,15 @@ type ServerConfig struct {
 	CacheConfig        CacheConfig
 }
 
-type yamlServerConfig struct {
-	Domain             string           `yaml:"domain"`
-	NetworkNodeURL     string           `yaml:"network_node_url"`
-	APIPort            int              `yaml:"api_port"`
-	AllowList          []string         `yaml:"allow_list"`
-	BlockList          []string         `yaml:"block_list"`
-	MiscPublicInfoJson interface{}      `yaml:"misc_public_info"`
-	CacheConfig        *YamlCacheConfig `yaml:"cache"`
-	AllowOffline       bool             `yaml:"allow_offline"`
+type YamlServerConfig struct {
+	Domain             *string          `yaml:"domain,omitempty"`
+	NetworkNodeURL     *string          `yaml:"network_node_url,omitempty"`
+	APIPort            *int             `yaml:"api_port,omitempty"`
+	AllowList          []string         `yaml:"allow_list,omitempty"`
+	BlockList          []string         `yaml:"block_list,omitempty"`
+	MiscPublicInfoJson interface{}      `yaml:"misc_public_info,omitempty"`
+	CacheConfig        *YamlCacheConfig `yaml:"cache,omitempty"`
+	AllowOffline       bool             `yaml:"allow_offline,omitempty"`
 }
 
 func DefaultConfig() (*ServerConfig, error) {
@@ -62,7 +62,14 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	}
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		return DefaultConfig()
+		defaultConfig, err := DefaultConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create default config: %w", err)
+		}
+		// Process cache config with empty configPath for defaults
+		defaultConfig.CacheConfig = ProcessCacheConfig(nil, "")
+
+		return defaultConfig, nil
 	}
 
 	filebytes, err := utils.ReadFileBytes(configPath)
@@ -70,27 +77,31 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		return nil, fmt.Errorf("failed to read file bytes: %w", err)
 	}
 
-	var yamlConf yamlServerConfig
+	var yamlConf YamlServerConfig
 
 	err = yaml.Unmarshal(filebytes, &yamlConf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal YAML data: %w", err)
 	}
 
+	domain := DefaultDomain
+	networkNodeURL := DefaultNetworkNodeURL
+	apiPort := DefaultAPIPort
+
 	// Set default values if not specified in the YAML file
-	if yamlConf.Domain == "" {
-		yamlConf.Domain = DefaultDomain
+	if yamlConf.Domain != nil {
+		domain = *yamlConf.Domain
 	}
 
-	if yamlConf.NetworkNodeURL == "" {
-		yamlConf.NetworkNodeURL = DefaultNetworkNodeURL
+	if yamlConf.NetworkNodeURL != nil {
+		networkNodeURL = *yamlConf.NetworkNodeURL
 	}
 
-	if yamlConf.APIPort == 0 {
-		yamlConf.APIPort = DefaultAPIPort
+	if yamlConf.APIPort != nil {
+		apiPort = *yamlConf.APIPort
 	}
 
-	networkInfos, err := pkgConfig.NewNetworkConfig(yamlConf.NetworkNodeURL)
+	networkInfos, err := pkgConfig.NewNetworkConfig(networkNodeURL)
 	if err != nil {
 		if yamlConf.AllowOffline {
 			logger.Errorf("unable retrieve network config: %v", err)
@@ -100,15 +111,17 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		}
 	}
 
-	// Convert YAML config to ServerConfig
+	// Process cache configuration
+	cacheConfig := ProcessCacheConfig(yamlConf.CacheConfig, configPath)
+
 	config := &ServerConfig{
-		Domain:             yamlConf.Domain,
-		APIPort:            yamlConf.APIPort,
+		Domain:             domain,
+		APIPort:            apiPort,
 		NetworkInfos:       networkInfos,
 		AllowList:          yamlConf.AllowList,
 		BlockList:          yamlConf.BlockList,
 		MiscPublicInfoJson: convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
-		CacheConfig:        ConvertYamlCacheConfig(yamlConf.CacheConfig),
+		CacheConfig:        cacheConfig,
 	}
 
 	return config, nil

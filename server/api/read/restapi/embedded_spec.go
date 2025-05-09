@@ -90,6 +90,21 @@ func init() {
           "type": "object",
           "additionalProperties": true
         },
+        "network": {
+          "type": "object",
+          "properties": {
+            "chainID": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "network": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
         "version": {
           "type": "string"
         }
@@ -177,6 +192,36 @@ func init() {
         "misc": {
           "type": "object",
           "additionalProperties": true
+        },
+        "network": {
+          "type": "object",
+          "properties": {
+            "chainID": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "network": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "DeWebInfoNetwork": {
+      "type": "object",
+      "properties": {
+        "chainID": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "network": {
+          "type": "string"
         },
         "version": {
           "type": "string"

@@ -10,10 +10,18 @@ import (
 )
 
 func main() {
+	// Add command-line flag for config file path
+	configPath := flag.String("configPath", "./deweb_server_config.yaml", "Path to server configuration file")
+	logPath := flag.String("logPath", "./deweb-server.log", "Path to server log file")
 	// If the --accept-disclaimer (or -a) flag is set, the disclaimer will not be displayed. This is for CI purposes.
 	acceptDisclaimer := flag.Bool("accept-disclaimer", false, "Automatically accept the disclaimer")
 	flag.BoolVar(acceptDisclaimer, "a", false, "Shortcut for --accept-disclaimer")
 	flag.Parse()
+
+	err := logger.InitializeGlobal(*logPath)
+	if err != nil {
+		log.Fatalf("failed to initialize logger: %v", err)
+	}
 
 	if !*acceptDisclaimer {
 		err := api.HandleDisclaimer()
@@ -22,12 +30,7 @@ func main() {
 		}
 	}
 
-	err := logger.InitializeGlobal("./deweb-server.log")
-	if err != nil {
-		log.Fatalf("failed to initialize logger: %v", err)
-	}
-
-	conf, err := config.LoadServerConfig("./deweb_server_config.yaml")
+	conf, err := config.LoadServerConfig(*configPath)
 	if err != nil {
 		log.Fatalf("failed to load server config: %v", err)
 	}

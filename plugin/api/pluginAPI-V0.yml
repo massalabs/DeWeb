@@ -1,0 +1,163 @@
+swagger: "2.0"
+info:
+  title: DeWeb Plugin API
+  description: API for the DeWeb Plugin in MassaStation
+  version: 0.0.1
+
+schemes:
+  - http
+
+paths:
+  /web/{resource}:
+    get:
+      description: Plugin Frontend router.
+      operationId: PluginWebApp
+      produces:
+        - application/json
+        - text/javascript
+        - text/html
+        - text/css
+        - text/webp
+        - image/png
+      parameters:
+        - in: path
+          name: resource
+          required: true
+          type: string
+          description: Website resource.
+      responses:
+        "200":
+          description: Page found
+        "404":
+          description: Resource not found.
+          schema:
+            $ref: "#/definitions/Error"
+
+  /:
+    get:
+      description: Handle the default page of the plugin
+      operationId: DefaultPage
+      responses:
+        "302":
+          description: Redirect to /web
+
+  /api/server/status:
+    get:
+      description: Get the current server status
+      operationId: GetServerStatus
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Current server status
+          schema:
+            $ref: "#/definitions/ServerStatus"
+
+  /api/settings:
+    get:
+      description: Get the current plugin settings
+      operationId: GetSettings
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Current settings
+          schema:
+            $ref: "#/definitions/Settings"
+    put:
+      description: Update plugin settings
+      operationId: UpdateSettings
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: settings
+          description: New settings
+          required: true
+          schema:
+            $ref: "#/definitions/Settings"
+      responses:
+        "200":
+          description: Settings updated successfully
+        "400":
+          description: Error updating settings
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+    required:
+      - code
+      - message
+
+  ServerStatus:
+    type: object
+    properties:
+      status:
+        type: string
+        enum: [running, stopped, starting, stopping, error]
+      serverPort:
+        type: integer
+        format: int32
+        description: The port the server is running on
+      errorMessage:
+        type: string
+        description: Error message if server failed to start or is in error state
+      network:
+        type: object
+        properties:
+          network:
+            type: string
+          version:
+            type: string
+          chainID:
+            type: integer
+            format: uint64
+
+  Settings:
+    type: object
+    properties:
+      networkUrl:
+        type: string
+        description: The network node URL to connect to
+      serverPort:
+        type: integer
+        format: int32
+        description: The port the server is running on
+      cache:
+        $ref: "#/definitions/CacheSettings"
+    required:
+      - networkUrl
+
+  CacheSettings:
+    type: object
+    properties:
+      enabled:
+        type: boolean
+        description: Whether caching is enabled
+      siteRamCacheMaxItems:
+        type: integer
+        format: int32
+        description: Maximum number of files stored in RAM cache
+      siteDiskCacheMaxItems:
+        type: integer
+        format: int32
+        description: Maximum number of files stored in disk cache
+      diskCacheDir:
+        type: string
+        description: Directory to store the disk cache
+      fileListCacheDurationSeconds:
+        type: integer
+        format: int32
+        description: Duration in seconds for file list cache
+    required:
+      - enabled

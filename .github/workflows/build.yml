@@ -1,78 +1,29 @@
-name: build and upload artifacts
+name: Build Server and Plugin
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/**'
+      - '.github/actions/**'
   pull_request:
+    paths:
+      - 'plugin/**'
+      - 'server/**'
+      - '.github/workflows/**'
+      - '.github/actions/**'
   workflow_dispatch:
-  workflow_call:
-    inputs:
-      tag_name:
-        type: string
-        description: "The tag name of the release without v prefix"
-
-env:
-  VERSION: ${{ inputs.tag_name }}
 
 jobs:
-  build:
-    name: build and upload artifacts
-    strategy:
-      matrix:
-        include:
-          - os: windows-2022
-            arch: amd64
-            target: windows
-            ext: .exe
-          - os: ubuntu-22.04
-            arch: amd64
-            target: linux
-          - os: ubuntu-22.04
-            arch: arm64
-            target: linux
-          - os: macos-13
-            arch: amd64
-            target: darwin
-          - os: macos-14
-            arch: arm64
-            target: darwin
+  build-server:
+    name: Build server
+    uses: ./.github/workflows/server.yml
+    secrets: inherit
 
-    runs-on: ${{ matrix.os }}
-
-    defaults:
-      run:
-        working-directory: ./server
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: installing dependencies
-        uses: ./.github/actions/install
-        with:
-          os: ${{ matrix.os }}
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if VERSION exists
-        shell: bash
-        id: check_version
-        run: |
-          if [ ! -z "${{ env.VERSION }}" ]; then
-            echo "PRODUCTION=true" >> $GITHUB_ENV
-          fi
-
-      - name: Build Server
-        shell: bash
-        run: task build
-        env:
-          OS: ${{ matrix.target }}
-          ARCH: ${{ matrix.arch }}
-
-      - name: Rename Server artifact
-        run: mv build/deweb-server${{ matrix.ext }} build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
-
-      - name: Upload Server artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deweb-server_${{ matrix.target }}_${{ matrix.arch }}
-          path: server/build/deweb-server_${{ matrix.target }}_${{ matrix.arch }}${{ matrix.ext }}
+  build-plugin:
+    name: Build plugin
+    needs: build-server
+    uses: ./.github/workflows/plugin.yml
+    secrets: inherit

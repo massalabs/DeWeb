@@ -56,3 +56,13 @@ definitions:
       misc:
         type: object
         additionalProperties: true
+      network:
+        type: object
+        properties:
+          network:
+            type: string
+          version:
+            type: string
+          chainID:
+            type: integer
+            format: int64
