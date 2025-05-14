@@ -71,11 +71,15 @@ func (m *ServerManager) Start() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Check if binary exists
-	if _, err := os.Stat(m.serverBinPath); os.IsNotExist(err) {
-		m.binaryExists = false
-		m.lastError = fmt.Sprintf("Server binary not found at %s", m.serverBinPath)
-		return fmt.Errorf(m.lastError)
+	_, err := os.Stat(m.serverBinPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			m.binaryExists = false
+			m.lastError = fmt.Sprintf("Server binary not found at %s", m.serverBinPath)
+			return fmt.Errorf(m.lastError)
+		}
+
+		return fmt.Errorf("failed to check server binary: %v", err)
 	}
 
 	if m.isRunning {
@@ -123,6 +127,25 @@ func (m *ServerManager) Start() error {
 	return nil
 }
 
+// kill forcefully terminates the server process and updates state
+// NOTE: This is an unsafe internal method that doesn't handle mutex locking.
+// It should only be called by methods that have already acquired the mutex lock.
+func (m *ServerManager) kill() error {
+	if !m.isRunning || m.serverProcess == nil {
+		return ErrServerNotRunning
+	}
+
+	err := m.serverProcess.Kill()
+	if err != nil {
+		return err
+	}
+
+	m.isRunning = false
+	m.serverProcess = nil
+
+	return nil
+}
+
 // Stop terminates the server process
 func (m *ServerManager) Stop() error {
 	m.mu.Lock()
@@ -140,7 +163,7 @@ func (m *ServerManager) Stop() error {
 		logger.Errorf("Failed to send SIGTERM: %v", err)
 
 		// Force kill as a fallback
-		if err = m.serverProcess.Kill(); err != nil {
+		if err = m.kill(); err != nil {
 			return err
 		}
 	}
@@ -153,9 +176,7 @@ func (m *ServerManager) Stop() error {
 
 	// If still running after timeout, force kill
 	if m.isRunning {
-		_ = m.serverProcess.Kill()
-		m.isRunning = false
-		m.serverProcess = nil
+		_ = m.kill()
 	}
 
 	logger.Infof("Server stopped")
