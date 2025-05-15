@@ -1,7 +1,7 @@
 {
     "author": "Massa Labs",
     "name": "Local DeWeb Provider",
-    "description": "Local DeWeb Provider is a plugin that allows you to access the DeWeb from your computer.",
+    "description": "Your private access to DeWeb.",
     "logo": "favicon.png",
     "home": "",
     "version": "0.1.0",
