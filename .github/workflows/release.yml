@@ -98,4 +98,8 @@ jobs:
         env:
           AWS3: ${{ vars.MS_S3_BUCKET }}
           TAG: v${{ inputs.version }}
-        run: aws s3 cp artifacts/plugin/deweb-plugin_*/deweb-plugin_*.zip s3://${AWS3}/plugins/deweb/${TAG}/
+        run: |
+          for file in artifacts/plugin/deweb-plugin_*/deweb-plugin_*.zip; do
+            echo "Uploading $file to s3://${AWS3}/plugins/deweb/${TAG}/"
+            aws s3 cp "$file" s3://${AWS3}/plugins/deweb/${TAG}/
+          done
