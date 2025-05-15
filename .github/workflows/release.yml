@@ -73,13 +73,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts/plugin
-          pattern: 'deweb-plugin_*_zip'
-
-      - name: ls -la artifacts/server
-        run: ls -la artifacts/server
-
-      - name: ls -la artifacts/plugin
-        run: ls -la artifacts/plugin
+          pattern: 'deweb-plugin_*'
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -91,7 +85,7 @@ jobs:
           generate_release_notes: ${{ inputs.generate-release-notes }}
           files: |
             artifacts/server/deweb-server_*/deweb-server_*
-            artifacts/plugin/deweb-plugin_*_zip/deweb-plugin_*.zip
+            artifacts/plugin/deweb-plugin_*/deweb-plugin_*.zip
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -104,4 +98,4 @@ jobs:
         env:
           AWS3: ${{ vars.MS_S3_BUCKET }}
           TAG: v${{ inputs.version }}
-        run: aws s3 cp artifacts/plugin/deweb-plugin_*_zip/deweb-plugin_*.zip s3://${AWS3}/plugins/deweb/${TAG}/
+        run: aws s3 cp artifacts/plugin/deweb-plugin_*/deweb-plugin_*.zip s3://${AWS3}/plugins/deweb/${TAG}/
