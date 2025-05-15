@@ -103,5 +103,5 @@ jobs:
       - name: s3 Upload
         env:
           AWS3: ${{ vars.MS_S3_BUCKET }}
-          TAG: ${{ inputs.version }}
+          TAG: v${{ inputs.version }}
         run: aws s3 cp artifacts/plugin/deweb-plugin_*_zip/deweb-plugin_*.zip s3://${AWS3}/plugins/deweb/${TAG}/
