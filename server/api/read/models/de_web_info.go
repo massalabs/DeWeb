@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -23,17 +24,78 @@ type DeWebInfo struct {
 	// misc
 	Misc interface{} `json:"misc,omitempty"`
 
+	// network
+	Network *DeWebInfoNetwork `json:"network,omitempty"`
+
 	// version
 	Version string `json:"version,omitempty"`
 }
 
 // Validate validates this de web info
 func (m *DeWebInfo) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateNetwork(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this de web info based on context it is used
+func (m *DeWebInfo) validateNetwork(formats strfmt.Registry) error {
+	if swag.IsZero(m.Network) { // not required
+		return nil
+	}
+
+	if m.Network != nil {
+		if err := m.Network.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("network")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("network")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this de web info based on the context it is used
 func (m *DeWebInfo) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateNetwork(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *DeWebInfo) contextValidateNetwork(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.Network != nil {
+
+		if swag.IsZero(m.Network) { // not required
+			return nil
+		}
+
+		if err := m.Network.ContextValidate(ctx, formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("network")
+			} else if ce, ok := err.(*errors.CompositeError); ok {
+				return ce.ValidateName("network")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -48,6 +110,49 @@ func (m *DeWebInfo) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *DeWebInfo) UnmarshalBinary(b []byte) error {
 	var res DeWebInfo
+	if err := swag.ReadJSON(b, &res); err != nil {
+		return err
+	}
+	*m = res
+	return nil
+}
+
+// DeWebInfoNetwork de web info network
+//
+// swagger:model DeWebInfoNetwork
+type DeWebInfoNetwork struct {
+
+	// chain ID
+	ChainID int64 `json:"chainID,omitempty"`
+
+	// network
+	Network string `json:"network,omitempty"`
+
+	// version
+	Version string `json:"version,omitempty"`
+}
+
+// Validate validates this de web info network
+func (m *DeWebInfoNetwork) Validate(formats strfmt.Registry) error {
+	return nil
+}
+
+// ContextValidate validates this de web info network based on context it is used
+func (m *DeWebInfoNetwork) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	return nil
+}
+
+// MarshalBinary interface implementation
+func (m *DeWebInfoNetwork) MarshalBinary() ([]byte, error) {
+	if m == nil {
+		return nil, nil
+	}
+	return swag.WriteJSON(m)
+}
+
+// UnmarshalBinary interface implementation
+func (m *DeWebInfoNetwork) UnmarshalBinary(b []byte) error {
+	var res DeWebInfoNetwork
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -1,0 +1,100 @@
+version: "3"
+
+tasks:
+  install:
+    cmds:
+      - cmd: go install github.com/go-swagger/go-swagger/cmd/swagger@latest
+
+  generate:
+    cmds:
+      - cmd: mkdir -p ./build
+      - cmd: go generate ./...
+
+  build-server:
+    dir: ../server
+    cmds:
+      - cmd: task build
+      - cmd: cp build/deweb-server{{.BIN_EXT}} ../plugin/build
+    vars:
+      BIN_EXT: '{{if eq .OS "windows"}}.exe{{end}}'
+
+  run:
+    cmds:
+      - cmd: ./build/deweb-plugin
+
+  build:
+    cmds:
+      - task: build:internal
+        vars:
+          APP_NAME: plugin
+          BIN_DIR: build
+
+  build:internal:
+    build:
+    desc: Internal build task
+    internal: true
+    cmds:
+      - cmd: echo Building DeWeb {{.APP_NAME}} for {{.OS | default OS}}/{{.ARCH | default ARCH}}
+        silent: true
+      - cmd: 'echo Mode: {{if eq .PRODUCTION "true"}}Production{{else}}Development{{end}}'
+        silent: true
+      - cmd: 'echo Version: {{.VERSION | default "Development"}}'
+        silent: true
+      - cmd: go build {{.BUILD_FLAGS}} -o {{.BIN_DIR}}/deweb-{{.APP_NAME}}{{.BIN_EXT}} ./main.go
+    vars:
+      # We need this check for nil and empty string because a simple check for empty string doesn't work as expected
+      VERSION_FLAG: '{{if ne .VERSION nil}}{{if ne .VERSION ""}}-X github.com/massalabs/deweb-plugin/int/config.Version=v{{.VERSION}}{{end}}{{end}}'
+      BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production {{end}}-ldflags="{{.VERSION_FLAG}}{{if eq .PRODUCTION "true"}} -w -s{{end}}"'
+      BIN_EXT: '{{if eq .OS "windows"}}.exe{{end}}'
+    env:
+      GOOS: "{{.OS | default OS}}"
+      GOARCH: "{{.ARCH | default ARCH}}"
+      PRODUCTION: '{{.PRODUCTION | default "false"}}'
+      VERSION: "{{.VERSION | default nil}}"
+
+  clean:
+    cmds:
+      - cmd: rm -rf build
+
+  install-plugin:
+    cmds:
+      - cmd: mkdir -p /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
+      - cmd: cp build/deweb-plugin /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
+      - cmd: cp build/deweb-server /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
+      - cmd: cp favicon.png /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
+      - cmd: cp manifest.json /usr/local/share/massastation/plugins/deweb-plugin
+        platforms: [linux, darwin]
+      - cmd: mkdir -p "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+      - cmd: cp build/deweb-plugin.exe "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+      - cmd: cp build/deweb-server.exe "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+      - cmd: cp favicon.png "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+      - cmd: cp manifest.json "C:/Program Files (x86)/MassaStation/plugins/deweb-plugin"
+        platforms: [windows]
+
+  test:
+    cmds:
+      - cmd: go test ./...
+
+  install:tools:
+    cmds:
+      - cmd: go install mvdan.cc/gofumpt@latest
+      - cmd: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+  lint:
+    cmds:
+      - cmd: golangci-lint run
+
+  fmt:
+    cmds:
+      - cmd: go mod tidy
+      - cmd: gofumpt -l -w .
+      - cmd: gci write . --skip-generated
+      - cmd: golangci-lint run --fix

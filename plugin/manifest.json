@@ -1,0 +1,9 @@
+{
+    "author": "Massa Labs",
+    "name": "Local DeWeb Provider",
+    "description": "Your private access to DeWeb.",
+    "logo": "favicon.png",
+    "home": "",
+    "version": "0.1.0",
+    "apispec": ""
+}

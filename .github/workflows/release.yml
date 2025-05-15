@@ -1,10 +1,10 @@
-name: Release workflow
+name: Release DeWeb
 
 on:
   workflow_dispatch:
     inputs:
-      tag_name:
-        description: "Version to produce"
+      version:
+        description: 'Version for this release (without v prefix)'
         required: true
         type: string
       release-as-draft:
@@ -24,37 +24,84 @@ on:
         default: true
 
 jobs:
-  validate-input:
-    name: if tag_name is provided it must not start with "v"
+  check-manifest:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if tag_name starts with "v"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check the manifest version
+        working-directory: ./plugin
         run: |
-          if [[ "${{ github.event.inputs.tag_name }}" == v* ]]; then
-            echo "tag_name starts with v"
+          sudo apt-get install -y jq
+          version=$(jq -r '.version' manifest.json)
+          input_version=${{ inputs.version }}
+          if [[ "$version" != "$input_version" ]]; then
+            echo "ERROR: The manifest version ($version) does not match the input version ($input_version)"
             exit 1
           fi
+          echo "Manifest version matches input version: $version"
 
-  build-release:
-    needs: validate-input
-    uses: ./.github/workflows/build.yml
-    secrets: inherit
+  build-server:
+    needs: check-manifest
+    uses: ./.github/workflows/server.yml
     with:
-      tag_name: ${{ github.event.inputs.tag_name }}
+      version: ${{ inputs.version }}
+    secrets: inherit
+
+  build-plugin:
+    needs: build-server
+    uses: ./.github/workflows/plugin.yml
+    with:
+      version: ${{ inputs.version }}
+    secrets: inherit
 
   create-release:
-    name: Release
-    needs: build-release
-
+    needs: [build-server, build-plugin]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     steps:
-      - uses: actions/download-artifact@v4
-      - name: Create release and upload binaries
+      - name: Download server artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/server
+          pattern: 'deweb-server_*'
+
+      - name: Download plugin zip packages
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/plugin
+          pattern: 'deweb-plugin_*_zip'
+
+      - name: ls -la artifacts/server
+        run: ls -la artifacts/server
+
+      - name: ls -la artifacts/plugin
+        run: ls -la artifacts/plugin
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.tag_name }}
+          tag_name: v${{ inputs.version }}
+          name: DeWeb v${{ inputs.version }}
           draft: ${{ inputs.release-as-draft }}
           prerelease: ${{ inputs.release-as-prerelease }}
           generate_release_notes: ${{ inputs.generate-release-notes }}
           files: |
-            ./deweb-*/deweb-*
+            artifacts/server/deweb-server_*/deweb-server_*
+            artifacts/plugin/deweb-plugin_*_zip/deweb-plugin_*.zip
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-west-3
+          aws-access-key-id: ${{ secrets.MS_S3_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.MS_S3_SECRET_ACCESS_KEY }}
+
+      - name: s3 Upload
+        env:
+          AWS3: ${{ vars.MS_S3_BUCKET }}
+          TAG: ${{ inputs.version }}
+        run: aws s3 cp artifacts/plugin/deweb-plugin_*_zip/deweb-plugin_*.zip s3://${AWS3}/plugins/deweb/${TAG}/

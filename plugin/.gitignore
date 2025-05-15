@@ -1,0 +1,8 @@
+# build directory
+build/
+
+# generated files
+int/api/html/dist/
+
+# log files
+*.log

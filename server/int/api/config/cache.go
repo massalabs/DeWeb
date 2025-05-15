@@ -1,6 +1,10 @@
 package config
 
-import "github.com/massalabs/station/pkg/logger"
+import (
+	"path/filepath"
+
+	"github.com/massalabs/station/pkg/logger"
+)
 
 const (
 	// Default cache size limits
@@ -26,6 +30,7 @@ type YamlCacheConfig struct {
 	FileListCacheDurationSeconds *int    `yaml:"file_list_cache_duration_seconds"`
 }
 
+// DefaultCacheConfig returns a cache configuration with default values
 func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
 		Enabled:                      true,
@@ -36,16 +41,42 @@ func DefaultCacheConfig() CacheConfig {
 	}
 }
 
-// ConvertYamlCacheConfig converts a yamlCacheConfig to a CacheConfig
-func ConvertYamlCacheConfig(yamlConf *YamlCacheConfig) CacheConfig {
-	config := DefaultCacheConfig()
-
-	if yamlConf == nil {
-		logger.Debugf("ConvertYamlCacheConfig: yamlConf is nil, returning default config")
-		return config
+// resolveCachePath resolves the cache path based on the configuration
+// - If path is absolute, it's used as-is
+// - If path is relative and from config file, it's resolved relative to the config file
+func resolveCachePath(cachePath string, configPath string) string {
+	if filepath.IsAbs(cachePath) {
+		return cachePath
 	}
 
-	// Only override values that are explicitly set in the YAML
+	if configPath != "" {
+		configDir := filepath.Dir(configPath)
+		return filepath.Join(configDir, cachePath)
+	}
+
+	return cachePath
+}
+
+// ProcessCacheConfig processes YAML config into a ready-to-use CacheConfig
+// It handles defaults, applies overrides from the YAML config, and resolves paths
+func ProcessCacheConfig(yamlConf *YamlCacheConfig, configPath string) CacheConfig {
+	config := DefaultCacheConfig()
+
+	// Apply YAML configuration if provided
+	if yamlConf != nil {
+		applyYamlOverrides(&config, yamlConf)
+	} else {
+		logger.Debugf("ProcessCacheConfig: using default cache configuration")
+	}
+
+	// Resolve cache directory path
+	config.DiskCacheDir = resolveCachePath(config.DiskCacheDir, configPath)
+
+	return config
+}
+
+// applyYamlOverrides applies non-nil YAML settings to the cache config
+func applyYamlOverrides(config *CacheConfig, yamlConf *YamlCacheConfig) {
 	if yamlConf.Enabled != nil {
 		config.Enabled = *yamlConf.Enabled
 	}
@@ -65,6 +96,4 @@ func ConvertYamlCacheConfig(yamlConf *YamlCacheConfig) CacheConfig {
 	if yamlConf.FileListCacheDurationSeconds != nil {
 		config.FileListCacheDurationSeconds = *yamlConf.FileListCacheDurationSeconds
 	}
-
-	return config
 }

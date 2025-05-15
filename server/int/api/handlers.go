@@ -32,11 +32,12 @@ func defaultPageHandler(params operations.DefaultPageParams) middleware.Responde
 
 /*Handle get deweb public infos*/
 type dewebInfo struct {
-	miscInfo interface{}
+	miscInfo    interface{}
+	networkInfo config.NetworkInfos
 }
 
-func NewDewebInfo(miscInfo interface{}) operations.GetDeWebInfoHandler {
-	return &dewebInfo{miscInfo: miscInfo}
+func NewDewebInfo(miscInfo interface{}, networkInfo config.NetworkInfos) operations.GetDeWebInfoHandler {
+	return &dewebInfo{miscInfo: miscInfo, networkInfo: networkInfo}
 }
 
 func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
@@ -49,6 +50,11 @@ func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Res
 			App:     "deweb",
 			Version: config.Version,
 			Misc:    dI.miscInfo,
+			Network: &models.DeWebInfoNetwork{
+				Network: dI.networkInfo.Network,
+				Version: dI.networkInfo.Version,
+				ChainID: int64(dI.networkInfo.ChainID),
+			},
 		}).WriteResponse(w, runtime)
 	})
 }
