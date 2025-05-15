@@ -1,9 +1,9 @@
 {
     "author": "Massa Labs",
-    "name": "DeWeb Plugin",
-    "description": "DeWeb is your gateway to the decentralized web, enabling seamless access to websites stored on-chain from any device, anywhere in the world.",
+    "name": "Local DeWeb Provider",
+    "description": "Local DeWeb Provider is a plugin that allows you to access the DeWeb from your computer.",
     "logo": "favicon.png",
     "home": "",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "apispec": ""
 }
