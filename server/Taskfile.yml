@@ -26,15 +26,13 @@ tasks:
           BIN_DIR: build
 
   build:internal:
-    build:
     desc: Internal build task
     internal: true
     cmds:
-      - cmd: echo Building DeWeb {{.APP_NAME}} for {{.OS | default OS}}/{{.ARCH | default ARCH}}
-        silent: true
-      - cmd: 'echo Mode: {{if eq .PRODUCTION "true"}}Production{{else}}Development{{end}}'
-        silent: true
-      - cmd: 'echo Version: {{.VERSION | default "Development"}}'
+      - cmd: |
+          echo Building DeWeb {{.APP_NAME}} for {{.OS | default OS}}/{{.ARCH | default ARCH}}
+          echo Mode: {{if eq .PRODUCTION "true"}}Production{{else}}Development{{end}}
+          echo "Version: {{.VERSION | default "dev"}}"
         silent: true
       - cmd: go build {{.BUILD_FLAGS}} -o {{.BIN_DIR}}/deweb-{{.APP_NAME}}{{.BIN_EXT}} ./cmd/{{.APP_NAME}}
     vars:

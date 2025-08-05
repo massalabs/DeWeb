@@ -113,6 +113,7 @@ jobs:
         env:
           OS: ${{ matrix.target }}
           ARCH: ${{ matrix.arch }}
+          VERSION: ${{ env.VERSION }}
 
       - name: Sign Macos binary
         uses: massalabs/massa/.github/actions/sign-macos@ccc3f02e34544f722634a6fb7732cc4bb515e90b
