@@ -18,8 +18,14 @@ import (
 // swagger:model DeWebInfo
 type DeWebInfo struct {
 
+	// allow list
+	AllowList []string `json:"allowList"`
+
 	// app
 	App string `json:"app,omitempty"`
+
+	// block list
+	BlockList []string `json:"blockList"`
 
 	// misc
 	Misc interface{} `json:"misc,omitempty"`
