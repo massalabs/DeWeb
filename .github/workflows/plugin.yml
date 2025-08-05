@@ -9,9 +9,6 @@ on:
         description: "Version for the build, without v prefix"
         required: false
 
-env:
-  VERSION: ${{ inputs.version }}
-
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -97,7 +94,7 @@ jobs:
         shell: bash
         id: check_version
         run: |
-          if [ ! -z "${{ env.VERSION }}" ]; then
+          if [ ! -z "${{ inputs.version }}" ]; then
             echo "PRODUCTION=true" >> $GITHUB_ENV
           fi
 
