@@ -82,7 +82,7 @@ func SubdomainMiddleware(handler http.Handler, conf *config.ServerConfig) http.H
 			return
 		}
 
-		if !isWebsiteAllowed(address, subdomain, conf.AllowList, conf.BlockList) {
+		if !isWebsiteAllowed(address, subdomain, conf) {
 			logger.Warnf("Subdomain %s or address %s is not allowed", subdomain, address)
 
 			localHandler(w, notAvailableZip, path)
@@ -232,13 +232,13 @@ func getWebsiteResource(config *config.ServerConfig, websiteAddress, resourceNam
 // isWebsiteAllowed checks the allow and block lists and returns false if the address or domain is not allowed.
 // If the allow list is empty, all addresses and domains are allowed, except those in the block list.
 // Otherwise, only addresses and domains in the allow list are allowed.
-func isWebsiteAllowed(address string, domain string, allowList, blockList []string) bool {
-	if slices.Contains(blockList, address) || slices.Contains(blockList, domain) {
+func isWebsiteAllowed(address string, domain string, config *config.ServerConfig) bool {
+	if slices.Contains(config.BlockList, address) || slices.Contains(config.BlockList, domain) {
 		logger.Debugf("Address %s or domain %s is in the block list", address, domain)
 		return false
 	}
 
-	if len(allowList) > 0 && !slices.Contains(allowList, address) && !slices.Contains(allowList, domain) {
+	if len(config.AllowList) > 0 && !slices.Contains(config.AllowList, address) && !slices.Contains(config.AllowList, domain) {
 		logger.Debugf("Address %s or domain %s is not in the allow list", address, domain)
 		return false
 	}

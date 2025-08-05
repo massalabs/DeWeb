@@ -83,8 +83,20 @@ func init() {
     "DeWebInfo": {
       "type": "object",
       "properties": {
+        "allowList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "app": {
           "type": "string"
+        },
+        "blockList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "misc": {
           "type": "object",
@@ -186,8 +198,20 @@ func init() {
     "DeWebInfo": {
       "type": "object",
       "properties": {
+        "allowList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "app": {
           "type": "string"
+        },
+        "blockList": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "misc": {
           "type": "object",

@@ -8,6 +8,7 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-server/api/read/models"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
+	userConfig "github.com/massalabs/deweb-server/int/api/config"
 	config "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
@@ -32,12 +33,11 @@ func defaultPageHandler(params operations.DefaultPageParams) middleware.Responde
 
 /*Handle get deweb public infos*/
 type dewebInfo struct {
-	miscInfo    interface{}
-	networkInfo config.NetworkInfos
+	conf *userConfig.ServerConfig
 }
 
-func NewDewebInfo(miscInfo interface{}, networkInfo config.NetworkInfos) operations.GetDeWebInfoHandler {
-	return &dewebInfo{miscInfo: miscInfo, networkInfo: networkInfo}
+func NewDewebInfo(conf *userConfig.ServerConfig) operations.GetDeWebInfoHandler {
+	return &dewebInfo{conf}
 }
 
 func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Responder {
@@ -49,12 +49,14 @@ func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Res
 		operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
 			App:     "deweb",
 			Version: config.Version,
-			Misc:    dI.miscInfo,
+			Misc:    dI.conf.MiscPublicInfoJson,
 			Network: &models.DeWebInfoNetwork{
-				Network: dI.networkInfo.Network,
-				Version: dI.networkInfo.Version,
-				ChainID: int64(dI.networkInfo.ChainID),
+				Network: dI.conf.NetworkInfos.Network,
+				Version: dI.conf.NetworkInfos.Version,
+				ChainID: int64(dI.conf.NetworkInfos.ChainID),
 			},
+			AllowList: dI.conf.AllowList,
+			BlockList: dI.conf.BlockList,
 		}).WriteResponse(w, runtime)
 	})
 }

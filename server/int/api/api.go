@@ -124,5 +124,5 @@ func (a *API) configureAPI() {
 
 	a.DewebAPI.GetResourceHandler = operations.GetResourceHandlerFunc(getResourceHandler)
 	a.DewebAPI.DefaultPageHandler = operations.DefaultPageHandlerFunc(defaultPageHandler)
-	a.DewebAPI.GetDeWebInfoHandler = NewDewebInfo(a.Conf.MiscPublicInfoJson, a.Conf.NetworkInfos)
+	a.DewebAPI.GetDeWebInfoHandler = NewDewebInfo(a.Conf)
 }

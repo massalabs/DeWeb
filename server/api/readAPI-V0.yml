@@ -66,3 +66,11 @@ definitions:
           chainID:
             type: integer
             format: int64
+      allowList:
+        type: array
+        items:
+          type: string
+      blockList:
+        type: array
+        items:
+          type: string
