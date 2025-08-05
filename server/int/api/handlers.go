@@ -9,7 +9,7 @@ import (
 	"github.com/massalabs/deweb-server/api/read/models"
 	"github.com/massalabs/deweb-server/api/read/restapi/operations"
 	userConfig "github.com/massalabs/deweb-server/int/api/config"
-	config "github.com/massalabs/station/int/config"
+	config "github.com/massalabs/deweb-server/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -46,6 +46,7 @@ func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Res
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 		operations.NewGetDeWebInfoOK().WithPayload(&models.DeWebInfo{
 			App:     "deweb",
 			Version: config.Version,
