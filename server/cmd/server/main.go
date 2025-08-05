@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/massalabs/deweb-server/int/api"
 	"github.com/massalabs/deweb-server/int/api/config"
+	dewebConfig "github.com/massalabs/deweb-server/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 
@@ -16,7 +18,16 @@ func main() {
 	// If the --accept-disclaimer (or -a) flag is set, the disclaimer will not be displayed. This is for CI purposes.
 	acceptDisclaimer := flag.Bool("accept-disclaimer", false, "Automatically accept the disclaimer")
 	flag.BoolVar(acceptDisclaimer, "a", false, "Shortcut for --accept-disclaimer")
+
+	// Add version flag
+	showVersion := flag.Bool("version", false, "Show version information")
 	flag.Parse()
+
+	// Handle version flag
+	if *showVersion {
+		fmt.Println(dewebConfig.Version)
+		return
+	}
 
 	err := logger.InitializeGlobal(*logPath)
 	if err != nil {
