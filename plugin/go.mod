@@ -1,8 +1,6 @@
 module github.com/massalabs/deweb-plugin
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.6
 
 replace github.com/massalabs/deweb-server => ../server
 
@@ -17,8 +15,8 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/massalabs/deweb-server v0.0.0-00010101000000-000000000000
 	github.com/massalabs/station v0.6.9
-	github.com/massalabs/station-massa-hello-world v0.0.11-0.20240503070604-6b14a27fcdff
 	github.com/massalabs/station-massa-wallet v0.4.5
+	github.com/massalabs/station/plugin-kit v0.1.1
 	github.com/shirou/gopsutil/v4 v4.25.3
 	golang.org/x/net v0.39.0
 	gopkg.in/yaml.v2 v2.4.0

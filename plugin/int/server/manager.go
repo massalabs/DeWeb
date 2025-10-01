@@ -76,7 +76,7 @@ func (m *ServerManager) Start() error {
 		if os.IsNotExist(err) {
 			m.binaryExists = false
 			m.lastError = fmt.Sprintf("Server binary not found at %s", m.serverBinPath)
-			return fmt.Errorf(m.lastError)
+			return fmt.Errorf("%s", m.lastError)
 		}
 
 		return fmt.Errorf("failed to check server binary: %v", err)
