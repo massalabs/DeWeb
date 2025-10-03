@@ -10,8 +10,8 @@ import (
 	"github.com/massalabs/deweb-plugin/int/api/html"
 	apiserver "github.com/massalabs/deweb-plugin/int/api/server"
 	"github.com/massalabs/deweb-plugin/int/server"
-	"github.com/massalabs/station-massa-hello-world/pkg/plugin"
 	"github.com/massalabs/station/pkg/logger"
+	pluginkit "github.com/massalabs/station/plugin-kit"
 )
 
 type API struct {
@@ -73,7 +73,7 @@ func (a *API) Start() {
 		logger.Fatalf("Failed to get HTTP listener: %v", err)
 	}
 
-	if err := plugin.RegisterPlugin(listener); err != nil {
+	if err := pluginkit.RegisterPlugin(listener); err != nil {
 		logger.Fatalf("Failed to register plugin: %v", err)
 	}
 
