@@ -25,6 +25,7 @@ type ServerConfig struct {
 	BlockList          []string
 	MiscPublicInfoJson interface{}
 	CacheConfig        CacheConfig
+	NoBanner           bool
 }
 
 type YamlServerConfig struct {
@@ -36,6 +37,7 @@ type YamlServerConfig struct {
 	MiscPublicInfoJson interface{}      `yaml:"misc_public_info,omitempty"`
 	CacheConfig        *YamlCacheConfig `yaml:"cache,omitempty"`
 	AllowOffline       bool             `yaml:"allow_offline,omitempty"`
+	NoBanner           bool             `yaml:"no_banner,omitempty"`
 }
 
 func DefaultConfig() (*ServerConfig, error) {
@@ -52,6 +54,7 @@ func DefaultConfig() (*ServerConfig, error) {
 		BlockList:          []string{},
 		MiscPublicInfoJson: map[string]interface{}{},
 		CacheConfig:        DefaultCacheConfig(),
+		NoBanner:           false,
 	}, nil
 }
 
@@ -122,6 +125,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		BlockList:          yamlConf.BlockList,
 		MiscPublicInfoJson: convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
 		CacheConfig:        cacheConfig,
+		NoBanner:           yamlConf.NoBanner,
 	}
 
 	return config, nil

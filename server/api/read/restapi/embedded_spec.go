@@ -117,6 +117,9 @@ func init() {
             }
           }
         },
+        "noBanner": {
+          "type": "boolean"
+        },
         "version": {
           "type": "string"
         }
@@ -231,6 +234,9 @@ func init() {
               "type": "string"
             }
           }
+        },
+        "noBanner": {
+          "type": "boolean"
         },
         "version": {
           "type": "string"

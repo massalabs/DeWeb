@@ -74,3 +74,5 @@ definitions:
         type: array
         items:
           type: string
+      noBanner:
+        type: boolean
