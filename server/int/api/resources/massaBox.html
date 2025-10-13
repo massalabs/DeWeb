@@ -31,7 +31,7 @@
       function checkIfClosed() {
         const isClosed = localStorage.getItem("massaBoxClosed");
         const massaBox = document.getElementById("massaBox");
-        if (isClosed == "true") {
+        if (isClosed === "true") {
           return;
         }
 
@@ -39,15 +39,16 @@
         fetch(window.location.origin + "/__deweb_info")
           .then(response => response.json())
           .then(data => {
-            if (data.noBanner !== true) {
-              massaBox.style.display = "flex";
-              return;
-            } else {
+            if (data.noBanner) {
               localStorage.setItem("massaBoxClosed", "true");
+            } else {
+              massaBox.style.display = "flex";
             }
           })
           .catch(error => {
             console.log("Could not fetch deweb info:", error);
+            // If we can't fetch the deweb info, show the banner by default
+            massaBox.style.display = "flex";
           });
       }
 
