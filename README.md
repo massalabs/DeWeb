@@ -8,3 +8,7 @@ DeWeb revolutionizes web accessibility by providing tools to upload, edit, and v
 
 - [`deweb-cli`](./cli/README.md): A command-line tool for deploying and managing on-chain websites.
 - [`deweb-server`](./server/README.md): A server application that allows users to access websites stored on-chain through a web browser.
+
+## MassaLabs internal documentation (access needed)
+
+https://www.notion.so/massa-innoteam/Whitelist-a-project-on-Massa-s-DeWeb-provider-4cf7011326814b27bbfd7c58640d7748
