@@ -58,6 +58,7 @@ func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Res
 			},
 			AllowList: dI.conf.AllowList,
 			BlockList: dI.conf.BlockList,
+			NoBanner:  dI.conf.NoBanner,
 		}).WriteResponse(w, runtime)
 	})
 }

@@ -33,6 +33,9 @@ type DeWebInfo struct {
 	// network
 	Network *DeWebInfoNetwork `json:"network,omitempty"`
 
+	// no banner
+	NoBanner bool `json:"noBanner,omitempty"`
+
 	// version
 	Version string `json:"version,omitempty"`
 }
