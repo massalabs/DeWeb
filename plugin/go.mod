@@ -14,9 +14,10 @@ require (
 	github.com/go-openapi/validate v0.24.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/massalabs/deweb-server v0.0.0-00010101000000-000000000000
-	github.com/massalabs/station v0.6.9
+	github.com/massalabs/station v0.8.3
 	github.com/massalabs/station-massa-wallet v0.4.5
 	github.com/massalabs/station/plugin-kit v0.1.1
+	github.com/rs/cors v1.8.3
 	github.com/shirou/gopsutil/v4 v4.25.3
 	golang.org/x/net v0.39.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -40,7 +41,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/ybbus/jsonrpc/v3 v3.1.4 // indirect
@@ -53,5 +53,4 @@ require (
 	golang.org/x/sys v0.32.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	howett.net/plist v1.0.0 // indirect
 )

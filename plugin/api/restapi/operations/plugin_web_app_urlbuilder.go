@@ -44,7 +44,7 @@ func (o *PluginWebAppURL) Build() (*url.URL, error) {
 
 	resource := o.Resource
 	if resource != "" {
-		_path = strings.Replace(_path, "{resource}", resource, -1)
+		_path = strings.ReplaceAll(_path, "{resource}", resource)
 	} else {
 		return nil, errors.New("resource is required on PluginWebAppURL")
 	}

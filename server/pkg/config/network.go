@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"
 )
@@ -16,18 +15,25 @@ const (
 	BuildnetChainID = 77658366
 )
 
-func NewNetworkConfig(NodeURL string) (msConfig.NetworkInfos, error) {
+type NetworkInfos struct {
+	Name    string
+	NodeURL string
+	Version string
+	ChainID uint64
+}
+
+func NewNetworkConfig(NodeURL string) (NetworkInfos, error) {
 	client := node.NewClient(NodeURL)
 
 	status, err := node.Status(client)
 	if err != nil {
-		return msConfig.NetworkInfos{}, fmt.Errorf("unable to get node status: %w", err)
+		return NetworkInfos{}, fmt.Errorf("unable to get node status: %w", err)
 	}
 	chainID, networkName := getChainIDAndNetworkName(status)
 	nodeVersion := getNodeVersion(status)
 
-	return msConfig.NetworkInfos{
-		Network: networkName,
+	return NetworkInfos{
+		Name:    networkName,
 		NodeURL: NodeURL,
 		Version: nodeVersion,
 		ChainID: chainID,

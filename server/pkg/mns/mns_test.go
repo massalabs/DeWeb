@@ -3,7 +3,7 @@ package mns
 import (
 	"testing"
 
-	msConfig "github.com/massalabs/station/int/config"
+	msConfig "github.com/massalabs/deweb-server/pkg/config"
 )
 
 func TestGetSCAddress(t *testing.T) {

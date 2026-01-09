@@ -25,7 +25,6 @@ func NewDefaultPageParams() DefaultPageParams {
 //
 // swagger:parameters DefaultPage
 type DefaultPageParams struct {
-
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 }

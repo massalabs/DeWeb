@@ -9,11 +9,11 @@ import (
 
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/deweb-server/pkg/cache"
+	msConfig "github.com/massalabs/deweb-server/pkg/config"
 	"github.com/massalabs/deweb-server/pkg/mns"
 	mnscache "github.com/massalabs/deweb-server/pkg/mns/cache"
 	"github.com/massalabs/deweb-server/pkg/webmanager"
 	mwUtils "github.com/massalabs/station-massa-wallet/pkg/utils"
-	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 

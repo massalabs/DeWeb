@@ -2,30 +2,24 @@ package server
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-plugin/api/models"
 	"github.com/massalabs/deweb-plugin/api/restapi/operations"
 	"github.com/massalabs/deweb-plugin/int/server"
-	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/station/pkg/logger"
-	"gopkg.in/yaml.v2"
 )
 
 // RegisterHandlers registers the server-related API handlers
-func RegisterHandlers(api *operations.DewebPluginAPI, manager *server.ServerManager, configDir string) {
-	configPath := filepath.Join(configDir, "deweb_server_config.yaml")
-
-	api.GetServerStatusHandler = operations.GetServerStatusHandlerFunc(handleGetServerStatus(manager))
-	api.GetSettingsHandler = operations.GetSettingsHandlerFunc(handleGetSettings(configPath))
-	api.UpdateSettingsHandler = operations.UpdateSettingsHandlerFunc(handleUpdateSettings(manager, configPath))
+func RegisterHandlers(api *operations.DewebPluginAPI, manager *server.ServerManager, configManager *server.ServerConfigManager) {
+	api.GetServerStatusHandler = operations.GetServerStatusHandlerFunc(handleGetServerStatus(manager, configManager))
+	api.GetSettingsHandler = operations.GetSettingsHandlerFunc(handleGetSettings(configManager))
+	api.UpdateSettingsHandler = operations.UpdateSettingsHandlerFunc(handleUpdateSettings(manager, configManager))
 }
 
 // handleGetServerStatus returns a handler function for the GET /api/server/status endpoint
-func handleGetServerStatus(manager *server.ServerManager) func(operations.GetServerStatusParams) middleware.Responder {
+func handleGetServerStatus(manager *server.ServerManager, configManager *server.ServerConfigManager) func(operations.GetServerStatusParams) middleware.Responder {
 	return func(params operations.GetServerStatusParams) middleware.Responder {
 		status := manager.GetStatus()
 
@@ -39,15 +33,17 @@ func handleGetServerStatus(manager *server.ServerManager) func(operations.GetSer
 		}
 
 		if status == server.StatusRunning {
-			serverConfig, err := manager.GetConfig()
+			serverConfig, err := configManager.GetServerConfig()
 			if err != nil {
 				return createErrorResponse(http.StatusInternalServerError, "Failed to get server config")
 			}
+			logger.Infof("Server config: %+v", serverConfig)
 
-			response.Network = &models.ServerStatusNetwork{
-				ChainID: serverConfig.NetworkInfos.ChainID,
-				Network: serverConfig.NetworkInfos.Network,
+			response.Network = &models.NetworkInfoItem{
+				URL:     serverConfig.NetworkInfos.NodeURL,
+				Name:    serverConfig.NetworkInfos.Name,
 				Version: serverConfig.NetworkInfos.Version,
+				ChainID: int64(serverConfig.NetworkInfos.ChainID),
 			}
 
 			apiPort, err := manager.GetServerPort()
@@ -63,9 +59,9 @@ func handleGetServerStatus(manager *server.ServerManager) func(operations.GetSer
 }
 
 // handleGetSettings returns a handler function for the GET /api/settings endpoint
-func handleGetSettings(configPath string) func(operations.GetSettingsParams) middleware.Responder {
+func handleGetSettings(configManager *server.ServerConfigManager) func(operations.GetSettingsParams) middleware.Responder {
 	return func(params operations.GetSettingsParams) middleware.Responder {
-		serverConfig, err := config.LoadServerConfig(configPath)
+		serverConfig, err := configManager.GetServerConfig()
 		if err != nil {
 			return createErrorResponse(http.StatusInternalServerError, "Failed to load server configuration")
 		}
@@ -92,14 +88,14 @@ func handleGetSettings(configPath string) func(operations.GetSettingsParams) mid
 }
 
 // handleUpdateSettings returns a handler function for the PUT /api/settings endpoint
-func handleUpdateSettings(manager *server.ServerManager, configPath string) func(operations.UpdateSettingsParams) middleware.Responder {
+func handleUpdateSettings(manager *server.ServerManager, configManager *server.ServerConfigManager) func(operations.UpdateSettingsParams) middleware.Responder {
 	return func(params operations.UpdateSettingsParams) middleware.Responder {
 		if params.Settings == nil {
 			return createErrorResponse(http.StatusBadRequest, "Settings data is required")
 		}
 
 		// Load current config
-		serverConfig, err := config.LoadServerConfig(configPath)
+		serverConfig, err := configManager.GetServerConfig()
 		if err != nil {
 			return createErrorResponse(http.StatusInternalServerError, "Failed to load server configuration")
 		}
@@ -136,26 +132,21 @@ func handleUpdateSettings(manager *server.ServerManager, configPath string) func
 			}
 		}
 
-		// Marshal config to YAML
-		yamlData, err := yaml.Marshal(serverConfig)
-		if err != nil {
-			return createErrorResponse(http.StatusInternalServerError, "Failed to marshal configuration")
-		}
-
 		// Stop the server
 		if err := manager.Stop(); err != nil && err != server.ErrServerNotRunning {
 			return createErrorResponse(http.StatusInternalServerError, "Failed to stop server")
 		}
 
-		// Write config file
-		if err := os.WriteFile(configPath, yamlData, 0o644); err != nil {
-			return createErrorResponse(http.StatusInternalServerError, "Failed to write configuration file")
+		// Save the new server config
+		// Stopping the server can take a few seconds so use this time to save the new server config.
+		if err := configManager.SaveServerConfig(serverConfig); err != nil {
+			return createErrorResponse(http.StatusInternalServerError, "Failed to save server configuration")
 		}
 
-		// Restart the server
+		// Start the server (it will read the new config on startup)
 		go func() {
 			if err := manager.Start(); err != nil {
-				logger.Errorf("Failed to restart server: %v", err)
+				logger.Errorf("Failed to start server: %v", err)
 			}
 		}()
 

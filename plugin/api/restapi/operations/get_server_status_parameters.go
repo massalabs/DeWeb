@@ -25,7 +25,6 @@ func NewGetServerStatusParams() GetServerStatusParams {
 //
 // swagger:parameters GetServerStatus
 type GetServerStatusParams struct {
-
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 }

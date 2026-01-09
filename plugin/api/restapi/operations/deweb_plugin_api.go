@@ -42,33 +42,59 @@ func NewDewebPluginAPI(spec *loads.Document) *DewebPluginAPI {
 		JSONConsumer: runtime.JSONConsumer(),
 
 		BinProducer: runtime.ByteStreamProducer(),
-		CSSProducer: runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+		CSSProducer: runtime.ProducerFunc(func(w io.Writer, data any) error {
+			_ = w
+			_ = data
+
 			return errors.NotImplemented("css producer has not yet been implemented")
 		}),
-		HTMLProducer: runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+		HTMLProducer: runtime.ProducerFunc(func(w io.Writer, data any) error {
+			_ = w
+			_ = data
+
 			return errors.NotImplemented("html producer has not yet been implemented")
 		}),
-		JsProducer: runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+		JsProducer: runtime.ProducerFunc(func(w io.Writer, data any) error {
+			_ = w
+			_ = data
+
 			return errors.NotImplemented("js producer has not yet been implemented")
 		}),
 		JSONProducer: runtime.JSONProducer(),
-		TextWebpProducer: runtime.ProducerFunc(func(w io.Writer, data interface{}) error {
+		TextWebpProducer: runtime.ProducerFunc(func(w io.Writer, data any) error {
+			_ = w
+			_ = data
+
 			return errors.NotImplemented("textWebp producer has not yet been implemented")
 		}),
 
 		DefaultPageHandler: DefaultPageHandlerFunc(func(params DefaultPageParams) middleware.Responder {
+			_ = params
+
 			return middleware.NotImplemented("operation DefaultPage has not yet been implemented")
 		}),
+
 		GetServerStatusHandler: GetServerStatusHandlerFunc(func(params GetServerStatusParams) middleware.Responder {
+			_ = params
+
 			return middleware.NotImplemented("operation GetServerStatus has not yet been implemented")
 		}),
+
 		GetSettingsHandler: GetSettingsHandlerFunc(func(params GetSettingsParams) middleware.Responder {
+			_ = params
+
 			return middleware.NotImplemented("operation GetSettings has not yet been implemented")
 		}),
+
 		PluginWebAppHandler: PluginWebAppHandlerFunc(func(params PluginWebAppParams) middleware.Responder {
+			_ = params
+
 			return middleware.NotImplemented("operation PluginWebApp has not yet been implemented")
 		}),
+
 		UpdateSettingsHandler: UpdateSettingsHandlerFunc(func(params UpdateSettingsParams) middleware.Responder {
+			_ = params
+
 			return middleware.NotImplemented("operation UpdateSettings has not yet been implemented")
 		}),
 	}
@@ -149,7 +175,7 @@ type DewebPluginAPI struct {
 	CommandLineOptionsGroups []swag.CommandLineOptionsGroup
 
 	// User defined logger function.
-	Logger func(string, ...interface{})
+	Logger func(string, ...any)
 }
 
 // UseRedoc for documentation at /docs
@@ -263,12 +289,12 @@ func (o *DewebPluginAPI) Authorizer() runtime.Authorizer {
 }
 
 // ConsumersFor gets the consumers for the specified media types.
+//
 // MIME type parameters are ignored here.
 func (o *DewebPluginAPI) ConsumersFor(mediaTypes []string) map[string]runtime.Consumer {
 	result := make(map[string]runtime.Consumer, len(mediaTypes))
 	for _, mt := range mediaTypes {
-		switch mt {
-		case "application/json":
+		if mt == "application/json" {
 			result["application/json"] = o.JSONConsumer
 		}
 
@@ -276,10 +302,12 @@ func (o *DewebPluginAPI) ConsumersFor(mediaTypes []string) map[string]runtime.Co
 			result[mt] = c
 		}
 	}
+
 	return result
 }
 
 // ProducersFor gets the producers for the specified media types.
+//
 // MIME type parameters are ignored here.
 func (o *DewebPluginAPI) ProducersFor(mediaTypes []string) map[string]runtime.Producer {
 	result := make(map[string]runtime.Producer, len(mediaTypes))
@@ -303,6 +331,7 @@ func (o *DewebPluginAPI) ProducersFor(mediaTypes []string) map[string]runtime.Pr
 			result[mt] = p
 		}
 	}
+
 	return result
 }
 

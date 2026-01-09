@@ -16,6 +16,51 @@ const (
 	DefaultConfigFileName = "deweb_server_config.yaml"
 )
 
+type ServerConfigManager struct {
+	serverConfig *config.ServerConfig
+	configDir    string
+}
+
+// NewServerConfigManager creates a new ServerConfigManager
+func NewServerConfigManager(configDir string) *ServerConfigManager {
+	return &ServerConfigManager{
+		configDir: configDir,
+	}
+}
+
+// SaveServerConfig saves a ServerConfig to the given path
+func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig) error {
+	if serverConfig == nil {
+		return fmt.Errorf("new server config is nil, cannot save it")
+	}
+
+	yamlConfig := convertToYamlConfig(serverConfig)
+	logger.Infof("Saving server config: %+v", yamlConfig)
+
+	if err := saveYamlConfig(yamlConfig, getConfigPath(c.configDir)); err != nil {
+		return fmt.Errorf("failed to save server config: %w", err)
+	}
+
+	// Update the cached server config
+	c.serverConfig = serverConfig
+
+	return nil
+}
+
+// GetServerConfig returns the cached server config
+func (c *ServerConfigManager) GetServerConfig() (*config.ServerConfig, error) {
+	if c.serverConfig == nil {
+		serverConfig, err := loadConfig(getConfigPath(c.configDir))
+		if err != nil {
+			return nil, fmt.Errorf("failed to load server config: %w", err)
+		}
+
+		c.serverConfig = serverConfig
+	}
+
+	return c.serverConfig, nil
+}
+
 // ensureConfigFileExists makes sure the config file exists, creating it with defaults if needed
 func ensureConfigFileExists(configDir string) error {
 	configPath := filepath.Join(configDir, DefaultConfigFileName)
@@ -67,13 +112,6 @@ func createDefaultYamlConfig(configDir string) config.YamlServerConfig {
 	}
 
 	return yamlConfig
-}
-
-// SaveServerConfig saves a ServerConfig to the given path
-func SaveServerConfig(serverConfig *config.ServerConfig, configPath string) error {
-	yamlConfig := convertToYamlConfig(serverConfig)
-
-	return saveYamlConfig(yamlConfig, configPath)
 }
 
 // convertToYamlConfig converts a ServerConfig to YamlServerConfig

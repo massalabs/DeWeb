@@ -1,7 +1,8 @@
 export type ServerStatus = 'running' | 'stopped' | 'starting' | 'stopping' | 'error';
 
 export interface NetworkInfo {
-  network: string;
+  name: string;
+  url: string;
   version: string;
   chainID: number;
 }

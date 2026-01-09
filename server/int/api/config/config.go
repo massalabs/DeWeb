@@ -6,7 +6,6 @@ import (
 
 	"github.com/massalabs/deweb-server/int/utils"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
-	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -20,7 +19,7 @@ const (
 type ServerConfig struct {
 	Domain             string
 	APIPort            int
-	NetworkInfos       msConfig.NetworkInfos
+	NetworkInfos       pkgConfig.NetworkInfos
 	AllowList          []string
 	BlockList          []string
 	MiscPublicInfoJson interface{}

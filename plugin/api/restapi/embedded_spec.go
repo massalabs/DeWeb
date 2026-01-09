@@ -188,6 +188,31 @@ func init() {
         }
       }
     },
+    "NetworkInfoItem": {
+      "description": "Detailed network information",
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
     "ServerStatus": {
       "type": "object",
       "properties": {
@@ -197,18 +222,7 @@ func init() {
         },
         "network": {
           "type": "object",
-          "properties": {
-            "chainID": {
-              "type": "integer",
-              "format": "uint64"
-            },
-            "network": {
-              "type": "string"
-            },
-            "version": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/NetworkInfoItem"
         },
         "serverPort": {
           "description": "The port the server is running on",
@@ -420,6 +434,31 @@ func init() {
         }
       }
     },
+    "NetworkInfoItem": {
+      "description": "Detailed network information",
+      "type": "object",
+      "properties": {
+        "chainId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        },
+        "url": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
     "ServerStatus": {
       "type": "object",
       "properties": {
@@ -429,18 +468,7 @@ func init() {
         },
         "network": {
           "type": "object",
-          "properties": {
-            "chainID": {
-              "type": "integer",
-              "format": "uint64"
-            },
-            "network": {
-              "type": "string"
-            },
-            "version": {
-              "type": "string"
-            }
-          }
+          "$ref": "#/definitions/NetworkInfoItem"
         },
         "serverPort": {
           "description": "The port the server is running on",
@@ -456,21 +484,6 @@ func init() {
             "stopping",
             "error"
           ]
-        }
-      }
-    },
-    "ServerStatusNetwork": {
-      "type": "object",
-      "properties": {
-        "chainID": {
-          "type": "integer",
-          "format": "uint64"
-        },
-        "network": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
         }
       }
     },

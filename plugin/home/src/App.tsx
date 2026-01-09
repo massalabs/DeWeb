@@ -1,15 +1,16 @@
-import { FiSearch, FiInfo, FiCheckCircle, FiAlertTriangle, FiXCircle, FiClock } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { UseGenerateTheme } from "deweb-pages/src/hooks/UseGenerateTheme";
-import { ServerStatusResponse, NetworkInfo } from "./types/server";
+import { ServerStatusResponse, NetworkInfo, ServerStatus } from "./types/server";
 import { QuickAccessItem } from "./QuickAccessItem";
+import { Status } from "./Status";
 
 const POLLING_INTERVAL = 1000;
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [port, setPort] = useState<number | null>(null);
-  const [status, setStatus] = useState<"running" | "stopped" | "starting" | "stopping" | "error" | null>(null);
+  const [status, setStatus] = useState<ServerStatus| null>(null);
   const [network, setNetwork] = useState<NetworkInfo | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -24,14 +25,32 @@ export default function App() {
     fetch(`${urlWithoutWeb}/api/server/status`)
       .then((res) => res.json())
       .then((data: ServerStatusResponse) => {
-        setPort(data.serverPort);
-        setStatus(data.status);
-        setNetwork(data.network);
-        if (data.errorMessage) {
-          setErrorMessage(data.errorMessage);
-        } else {
-          setErrorMessage(null);
-        }
+        // Only update state if values have changed to avoid unnecessary re-renders
+        setPort(prevPort => data.serverPort !== prevPort ? data.serverPort : prevPort);
+        setStatus(prevStatus => data.status !== prevStatus ? data.status : prevStatus);
+        
+        // Deep comparison for network object
+        setNetwork(prevNetwork => {
+          const newNetwork = data.network;
+          if (prevNetwork === newNetwork) return prevNetwork;
+          if (!prevNetwork && !newNetwork) return prevNetwork;
+          if (!prevNetwork || !newNetwork) return newNetwork;
+          if (
+            prevNetwork.name === newNetwork.name &&
+            prevNetwork.url === newNetwork.url &&
+            prevNetwork.version === newNetwork.version &&
+            prevNetwork.chainID === newNetwork.chainID
+          ) {
+            return prevNetwork;
+          }
+          return newNetwork;
+        });
+        
+        // Only update errorMessage if it changed
+        setErrorMessage(prevError => {
+          const newError = data.errorMessage || null;
+          return prevError !== newError ? newError : prevError;
+        });
       })
       .catch(err => console.error("Failed to fetch port:", err))
       .finally(() => {
@@ -50,45 +69,6 @@ export default function App() {
     return () => clearInterval(intervalId);
   }, []);
 
-  const getStatusIcon = () => {
-    if (loading) return <FiClock className="mr-1 animate-pulse" />;
-
-    switch (status) {
-      case "running":
-        return <FiCheckCircle className="mr-1 text-green-500" />;
-      case "stopped":
-        return <FiXCircle className="mr-1 text-gray-500" />;
-      case "starting":
-      case "stopping":
-        return <FiClock className="mr-1 text-yellow-500 animate-pulse" />;
-      case "error":
-        return <FiAlertTriangle className="mr-1 text-red-500" />;
-      default:
-        return <FiInfo className="mr-1" />;
-    }
-  };
-
-  const getStatusText = () => {
-    if (loading) return "Connecting...";
-
-    if (status === "error" && errorMessage) {
-      return `Error: ${errorMessage}`;
-    }
-
-    if (status === "running" && network) {
-      return `Connected to ${network.network} ${network.version || ''}`;
-    }
-
-    const statusMessages = {
-      running: "Server running",
-      stopped: "Server stopped",
-      starting: "Server starting...",
-      stopping: "Server stopping...",
-      error: "Server error"
-    };
-
-    return statusMessages[status || "stopped"];
-  };
 
   const getStatusClass = () => {
     if (loading) return "bg-blue-100 text-blue-800";
@@ -148,8 +128,7 @@ export default function App() {
     >
       {/* Network Status Indicator */}
       <div className={`absolute top-2 right-2 py-1 px-3 rounded-full text-xs font-medium shadow-md flex items-center ${getStatusClass()}`}>
-        {getStatusIcon()}
-        <span className="truncate max-w-xs">{getStatusText()}</span>
+        <Status network={network} loading={loading} status={status} errorMessage={errorMessage} />
       </div>
 
       <h1 className="paragraph-lg text-6xl max-w-2xl mb-4">Search on DeWeb</h1>

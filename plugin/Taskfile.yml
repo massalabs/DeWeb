@@ -22,12 +22,22 @@ tasks:
     cmds:
       - cmd: ./build/deweb-plugin
 
-  build:
+  build-frontend:
+    dir: home
+    cmds:
+      - cmd: npm run build
+
+  build-backend:
     cmds:
       - task: build:internal
         vars:
           APP_NAME: plugin
           BIN_DIR: build
+
+  build:
+    cmds:
+      - task: build-frontend
+      - task: build-backend
 
   build:internal:
     build:
