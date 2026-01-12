@@ -12,7 +12,6 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-plugin/api/restapi/operations"
 	dewebmiddleware "github.com/massalabs/deweb-plugin/int/api/middleware"
-	"github.com/rs/cors"
 )
 
 //go:generate swagger generate server --target ../../api --name DewebPlugin --spec ../pluginAPI-V0.yml --principal interface{} --exclude-main
@@ -106,11 +105,6 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	handleCORS := cors.New(cors.Options{
-		AllowedMethods: []string{http.MethodGet, http.MethodPut},
-		AllowedOrigins: dewebmiddleware.AllowedDomainsList(),
-	}).Handler
-
 	// Middleware chain: CORS → WebAppMiddleware → DomainRestrictionMiddleware → API handlers
-	return handleCORS(dewebmiddleware.WebAppMiddleware(dewebmiddleware.DomainRestrictionMiddleware(handler)))
+	return dewebmiddleware.WebAppMiddleware(dewebmiddleware.DomainRestrictionMiddleware(handler))
 }

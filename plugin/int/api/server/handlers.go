@@ -37,7 +37,6 @@ func handleGetServerStatus(manager *server.ServerManager, configManager *server.
 			if err != nil {
 				return createErrorResponse(http.StatusInternalServerError, "Failed to get server config")
 			}
-			logger.Infof("Server config: %+v", serverConfig)
 
 			response.Network = &models.NetworkInfoItem{
 				URL:     serverConfig.NetworkInfos.NodeURL,

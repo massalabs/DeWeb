@@ -44,7 +44,7 @@ export const Status = ({ network, loading, status, errorMessage }: StatusProps) 
         "(buildnet)";
 
     if (status === "running" && network) {
-      return `Connected to '${network.name}' node ${networkTypePrecision} ; version: ${network.version || ''}`;
+      return `Connected to '${network.name}' node ${networkTypePrecision}; version: ${network.version || ''}`;
     }
 
     const statusMessages = {

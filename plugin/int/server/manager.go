@@ -169,34 +169,18 @@ func (m *ServerManager) Stop() error {
 
 	// Wait for the process to exit
 	timeout := time.Now().Add(5 * time.Second)
-	logger.Infof("Waiting for server to stop isRunning: %v", m.isRunning)
 	for time.Now().Before(timeout) && m.isRunning {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	logger.Infof("Server stopped after timeout: %v", m.isRunning)
-
 	// If still running after timeout, force kill
 	if m.isRunning {
 		_ = m.kill()
-		logger.Infof("Server stopped after kill: %v", m.isRunning)
 	}
 
 	logger.Infof("Server stopped")
 
 	return nil
-}
-
-// Restart restarts the server
-func (m *ServerManager) Restart() error {
-	logger.Infof("Restarting DeWeb server")
-	if err := m.Stop(); err != nil && err != ErrServerNotRunning {
-		return err
-	}
-
-	time.Sleep(10 * time.Second)
-
-	return m.Start()
 }
 
 // GetStatus returns the current server status

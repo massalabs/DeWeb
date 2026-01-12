@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/station/pkg/logger"
@@ -18,6 +19,7 @@ const (
 
 type ServerConfigManager struct {
 	serverConfig *config.ServerConfig
+	mu           sync.Mutex
 	configDir    string
 }
 
@@ -30,12 +32,14 @@ func NewServerConfigManager(configDir string) *ServerConfigManager {
 
 // SaveServerConfig saves a ServerConfig to the given path
 func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if serverConfig == nil {
 		return fmt.Errorf("new server config is nil, cannot save it")
 	}
 
 	yamlConfig := convertToYamlConfig(serverConfig)
-	logger.Infof("Saving server config: %+v", yamlConfig)
 
 	if err := saveYamlConfig(yamlConfig, getConfigPath(c.configDir)); err != nil {
 		return fmt.Errorf("failed to save server config: %w", err)
@@ -49,6 +53,9 @@ func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig
 
 // GetServerConfig returns the cached server config
 func (c *ServerConfigManager) GetServerConfig() (*config.ServerConfig, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.serverConfig == nil {
 		serverConfig, err := loadConfig(getConfigPath(c.configDir))
 		if err != nil {

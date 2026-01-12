@@ -27,7 +27,7 @@ type StationNetworkResponse struct {
 	AvailableNetworkInfos []models.NetworkInfoItem `json:"availableNetworkInfos"`
 }
 
-// NetworkPoller periodically polls Station for network information
+// NetworkManager periodically polls Station for network information
 type NetworkManager struct {
 	mu            sync.RWMutex
 	configManager *server.ServerConfigManager
@@ -37,7 +37,7 @@ type NetworkManager struct {
 	isRunning     bool
 }
 
-// NewNetworkPoller creates a new network poller instance
+// NewNetworkManager creates a new network manager instance
 func NewNetworkManager(configManager *server.ServerConfigManager, serverManager *server.ServerManager) *NetworkManager {
 	return &NetworkManager{
 		stopChan:      make(chan struct{}),
