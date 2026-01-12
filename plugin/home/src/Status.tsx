@@ -35,7 +35,6 @@ export const Status = ({ network, loading, status, errorMessage }: StatusProps) 
       return `Error: ${errorMessage}`;
     }
 
-
     const networkTypePrecision = network?.name.toLowerCase().includes("mainnet") || network?.name.toLowerCase().includes("buildnet") ? 
       ""
       :

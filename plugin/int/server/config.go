@@ -46,7 +46,9 @@ func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig
 	}
 
 	// Update the cached server config
-	c.serverConfig = serverConfig
+	if err := c.refreshServerConfig(); err != nil {
+		return fmt.Errorf("saved new server config but failed to retrieve it from file for caching: %w", err)
+	}
 
 	return nil
 }
@@ -57,15 +59,22 @@ func (c *ServerConfigManager) GetServerConfig() (*config.ServerConfig, error) {
 	defer c.mu.Unlock()
 
 	if c.serverConfig == nil {
-		serverConfig, err := loadConfig(getConfigPath(c.configDir))
-		if err != nil {
-			return nil, fmt.Errorf("failed to load server config: %w", err)
+		if err := c.refreshServerConfig(); err != nil {
+			return nil, fmt.Errorf("failed to refresh server config: %w", err)
 		}
-
-		c.serverConfig = serverConfig
 	}
 
 	return c.serverConfig, nil
+}
+
+func (c *ServerConfigManager) refreshServerConfig() error {
+	serverConfig, err := loadConfig(getConfigPath(c.configDir))
+	if err != nil {
+		return fmt.Errorf("failed to load server config: %w", err)
+	}
+
+	c.serverConfig = serverConfig
+	return nil
 }
 
 // ensureConfigFileExists makes sure the config file exists, creating it with defaults if needed

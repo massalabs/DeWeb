@@ -94,6 +94,7 @@ func (a *API) Start() {
 		go func() {
 			if err := a.serverManager.Start(); err != nil && err != server.ErrServerAlreadyRunning {
 				logger.Errorf("Failed to start DeWeb server: %v", err)
+				return
 			}
 			a.networkManager.Start()
 		}()
