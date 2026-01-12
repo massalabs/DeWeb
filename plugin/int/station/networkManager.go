@@ -97,80 +97,56 @@ poll fetches the current network information from Station
 If the network used by station has changed, the deweb server is stopped and restarted with the new network url.
 */
 func (np *NetworkManager) pollNetwork() {
-	response, err := np.fetchStationNetwork()
-	if err != nil {
-		logger.Errorf("Failed to fetch station network: %v", err)
-		return
-	}
-
-	currentConfig, err := np.configManager.GetServerConfig()
-	if err != nil {
-		logger.Errorf("Failed to get server config: %v", err)
-		return
-	}
-
-	// if the network on station has changed, update the server config
-	if response.URL != currentConfig.NetworkInfos.NodeURL || response.Name != currentConfig.NetworkInfos.Name {
-		logger.Infof(
-			"Changing massa node configuration from '%s' (%s) to '%s' (%s, the node currently used by station)",
-			currentConfig.NetworkInfos.Name,
-			currentConfig.NetworkInfos.NodeURL,
-			response.Name,
-			response.URL,
-		)
-
-		// stop the deweb server
-		if err := np.serverManager.Stop(); err != nil && err != server.ErrServerNotRunning {
-			logger.Errorf("Failed to stop server: %v", err)
-			return
-		}
-
-		// update the server config with the new network url
-		// Stopping the server can take a few seconds so use this time to update the server config.
-		conf := *currentConfig
-		conf.NetworkInfos = msConfig.NetworkInfos{
-			NodeURL: response.URL,
-			Name:    response.Name,
-			Version: response.Version,
-			ChainID: uint64(response.ChainID),
-		}
-		if err := np.configManager.SaveServerConfig(&conf); err != nil {
-			logger.Errorf("Failed to save server config: %v", err)
-			return
-		}
-
-		// start the server with the new network url
-		if err := np.serverManager.Start(); err != nil {
-			logger.Errorf("Failed to start server: %v", err)
-			return
-		}
+	// sync the server config with station and restart the server if the network has changed
+	if err := np.SyncServerConfNetworkWithStation(true); err != nil {
+		logger.Errorf("failed to sync server config with station: %v", err)
 	}
 }
 
 /*
 Retrieve current network information from station and update the deweb
-server config file if the network is not the same.
+server config file if the node url is not the same.
+If the node name has changed, the node name will be updated in the cache (there is no node name in config).
+@param restartServer if true, the server will be restarted with the new network url. Else, only the server config will be updated.
 */
-func (np *NetworkManager) SyncServerConfNetworkWithStation() (bool, error) {
+func (np *NetworkManager) SyncServerConfNetworkWithStation(restartServer bool) error {
 	response, err := np.fetchStationNetwork()
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	currentConfig, err := np.configManager.GetServerConfig()
 	if err != nil {
-		return false, err
+		return err
 	}
 
+	currentNodeName := np.configManager.GetNodeName()
+
 	// if the network on station has changed, update the server config
-	if response.URL != currentConfig.NetworkInfos.NodeURL || response.Name != currentConfig.NetworkInfos.Name {
+	if response.URL != currentConfig.NetworkInfos.NodeURL || response.Name != currentNodeName {
 		logger.Infof(
 			"Changing massa node configuration from '%s' (%s) to '%s' (%s, the node currently used by station)",
-			currentConfig.NetworkInfos.Name,
+			currentNodeName,
 			currentConfig.NetworkInfos.NodeURL,
-			response.Name,
 			response.URL,
+			response.Name,
 		)
+	}
+
+	// update the node name in cache (there is no node name in config)
+	if currentNodeName != response.Name {
+		np.configManager.UpdateNodeName(response.Name)
+	}
+
+	// update the network url in config
+	if currentConfig.NetworkInfos.NodeURL != response.URL {
+		// if restartServer is true, stop the server
+		if restartServer {
+			// stop the deweb server
+			if err := np.serverManager.Stop(); err != nil && err != server.ErrServerNotRunning {
+				return fmt.Errorf("failed to stop server: %w", err)
+			}
+		}
 
 		// update the server config with the new network url
 		conf := *currentConfig
@@ -181,12 +157,19 @@ func (np *NetworkManager) SyncServerConfNetworkWithStation() (bool, error) {
 			ChainID: uint64(response.ChainID),
 		}
 		if err := np.configManager.SaveServerConfig(&conf); err != nil {
-			return false, err
+			return err
 		}
-		return true, nil
+
+		// start the server with the new network url if restartServer is true
+		if restartServer {
+			// start the server with the new network url
+			if err := np.serverManager.Start(); err != nil {
+				return fmt.Errorf("failed to start server: %w", err)
+			}
+		}
 	}
 
-	return false, nil
+	return nil
 }
 
 // fetchStationNetwork fetches network information from Station

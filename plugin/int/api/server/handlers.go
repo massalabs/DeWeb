@@ -40,7 +40,7 @@ func handleGetServerStatus(manager *server.ServerManager, configManager *server.
 
 			response.Network = &models.NetworkInfoItem{
 				URL:     serverConfig.NetworkInfos.NodeURL,
-				Name:    serverConfig.NetworkInfos.Name,
+				Name:    configManager.GetNodeName(),
 				Version: serverConfig.NetworkInfos.Version,
 				ChainID: int64(serverConfig.NetworkInfos.ChainID),
 			}

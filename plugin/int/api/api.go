@@ -85,7 +85,7 @@ func (a *API) Start() {
 	}
 
 	// Sync the server network config with the station network config
-	if _, err = a.networkManager.SyncServerConfNetworkWithStation(); err != nil {
+	if err = a.networkManager.SyncServerConfNetworkWithStation(false); err != nil {
 		logger.Errorf("Failed to sync server network config with station: %v", err)
 	}
 

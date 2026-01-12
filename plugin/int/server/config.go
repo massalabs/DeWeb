@@ -21,6 +21,7 @@ type ServerConfigManager struct {
 	serverConfig *config.ServerConfig
 	mu           sync.Mutex
 	configDir    string
+	nodeName     string
 }
 
 // NewServerConfigManager creates a new ServerConfigManager
@@ -51,6 +52,18 @@ func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig
 	}
 
 	return nil
+}
+
+func (c *ServerConfigManager) UpdateNodeName(nodeName string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.nodeName = nodeName
+}
+
+func (c *ServerConfigManager) GetNodeName() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.nodeName
 }
 
 // GetServerConfig returns the cached server config
