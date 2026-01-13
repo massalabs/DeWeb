@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/massalabs/deweb-plugin/int/utils"
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/station/pkg/logger"
 	"gopkg.in/yaml.v2"
@@ -15,6 +16,7 @@ const (
 	defaultAPIPort = 0
 
 	DefaultConfigFileName = "deweb_server_config.yaml"
+	connectionRefused     = "connection refused"
 )
 
 type ServerConfigManager struct {
@@ -41,16 +43,18 @@ func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig
 	}
 
 	yamlConfig := convertToYamlConfig(serverConfig)
+	logger.Infof("converted to yaml config: %+v", yamlConfig)
 
 	if err := saveYamlConfig(yamlConfig, getConfigPath(c.configDir)); err != nil {
 		return fmt.Errorf("failed to save server config: %w", err)
 	}
+	logger.Infof("saved server config to %s", getConfigPath(c.configDir))
 
 	// Update the cached server config
 	if err := c.refreshServerConfig(); err != nil {
 		return fmt.Errorf("saved new server config but failed to retrieve it from file for caching: %w", err)
 	}
-
+	logger.Infof("refreshed server config")
 	return nil
 }
 
@@ -83,7 +87,16 @@ func (c *ServerConfigManager) GetServerConfig() (*config.ServerConfig, error) {
 func (c *ServerConfigManager) refreshServerConfig() error {
 	serverConfig, err := loadConfig(getConfigPath(c.configDir))
 	if err != nil {
-		return fmt.Errorf("failed to load server config: %w", err)
+		// If the error is due to the fact that node configured in config is down, load conf without node retrieved data
+		if utils.Contains(err.Error(), connectionRefused) {
+			logger.Debug("the massa node used in deweb server conf is down, loading config without node retrieved data")
+			serverConfig, err = config.LoadConfigWhitoutNodeFetchedData(getConfigPath(c.configDir))
+			if err != nil {
+				return fmt.Errorf("failed to load config without node retrieved data, error: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to load server config, error: %w", err)
+		}
 	}
 
 	c.serverConfig = serverConfig
@@ -161,6 +174,7 @@ func convertToYamlConfig(serverConfig *config.ServerConfig) config.YamlServerCon
 		AllowList:          serverConfig.AllowList,
 		BlockList:          serverConfig.BlockList,
 		MiscPublicInfoJson: serverConfig.MiscPublicInfoJson,
+		AllowOffline:       serverConfig.AllowOffline,
 	}
 
 	// Convert cache config to YAML format

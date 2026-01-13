@@ -2,6 +2,7 @@ package station
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/massalabs/deweb-plugin/api/models"
 	"github.com/massalabs/deweb-plugin/int/server"
+	"github.com/massalabs/deweb-server/int/api/config"
 	msConfig "github.com/massalabs/deweb-server/pkg/config"
 	"github.com/massalabs/station/pkg/logger"
 )
@@ -20,6 +22,8 @@ const (
 	// PollingInterval is how often to poll Station for network information
 	PollingInterval = 3 * time.Second
 )
+
+var ErrStationNetworkDown = errors.New("station network fetched from station is down")
 
 // StationNetworkResponse represents the response from Station's network endpoint
 type StationNetworkResponse struct {
@@ -100,6 +104,9 @@ func (np *NetworkManager) pollNetwork() {
 	// sync the server config with station and restart the server if the network has changed
 	if err := np.SyncServerConfNetworkWithStation(true); err != nil {
 		logger.Errorf("failed to sync server config with station: %v", err)
+		if err == ErrStationNetworkDown {
+			np.serverManager.SetLastError(ErrStationNetworkDown.Error())
+		}
 	}
 }
 
@@ -113,6 +120,10 @@ func (np *NetworkManager) SyncServerConfNetworkWithStation(restartServer bool) e
 	response, err := np.fetchStationNetwork()
 	if err != nil {
 		return err
+	}
+
+	if response.Status == "down" {
+		return ErrStationNetworkDown
 	}
 
 	currentConfig, err := np.configManager.GetServerConfig()
@@ -149,15 +160,8 @@ func (np *NetworkManager) SyncServerConfNetworkWithStation(restartServer bool) e
 		}
 
 		// update the server config with the new network url
-		conf := *currentConfig
-		conf.NetworkInfos = msConfig.NetworkInfos{
-			NodeURL: response.URL,
-			Name:    response.Name,
-			Version: response.Version,
-			ChainID: uint64(response.ChainID),
-		}
-		if err := np.configManager.SaveServerConfig(&conf); err != nil {
-			return err
+		if err := np.updateNetworkConfig(currentConfig, response); err != nil {
+			return fmt.Errorf("failed to update server config with network from station: %w", err)
 		}
 
 		// start the server with the new network url if restartServer is true
@@ -170,6 +174,17 @@ func (np *NetworkManager) SyncServerConfNetworkWithStation(restartServer bool) e
 	}
 
 	return nil
+}
+
+func (np *NetworkManager) updateNetworkConfig(currentConfig *config.ServerConfig, response *models.NetworkInfoItem) error {
+	conf := *currentConfig
+	conf.NetworkInfos = msConfig.NetworkInfos{
+		NodeURL: response.URL,
+		Version: response.Version,
+		ChainID: uint64(response.ChainID),
+	}
+	logger.Infof("updating server config with network from station %s", response.URL)
+	return np.configManager.SaveServerConfig(&conf)
 }
 
 // fetchStationNetwork fetches network information from Station

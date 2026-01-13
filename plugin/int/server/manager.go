@@ -218,6 +218,14 @@ func (m *ServerManager) GetLastError() string {
 	return m.lastError
 }
 
+// SetLastError sets the last error message
+func (m *ServerManager) SetLastError(err string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.lastError = err
+}
+
 // GetServerPort retrieves the actual port the server is running on
 func (m *ServerManager) GetServerPort() (uint32, error) {
 	m.mu.Lock()

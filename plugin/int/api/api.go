@@ -89,6 +89,7 @@ func (a *API) Start() {
 		logger.Errorf("Failed to sync server network config with station: %v", err)
 	}
 
+	logger.Infof("API Server network config synced with station")
 	// Start the server if manager exists
 	if a.serverManager != nil {
 		go func() {

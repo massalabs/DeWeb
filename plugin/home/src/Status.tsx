@@ -60,7 +60,7 @@ export const Status = ({ network, loading, status, errorMessage }: StatusProps) 
   return (
     <div className="relative group flex items-center">
       {getStatusIcon()}
-      <span className="truncate max-w-xs">{getStatusText()}</span>
+      <span className="whitespace-nowrap">{getStatusText()}</span>
       {network?.url && (
         <div className="absolute right-0 top-full mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
           {network.url}

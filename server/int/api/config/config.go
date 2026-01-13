@@ -24,6 +24,7 @@ type ServerConfig struct {
 	BlockList          []string
 	MiscPublicInfoJson interface{}
 	CacheConfig        CacheConfig
+	AllowOffline       bool
 }
 
 type YamlServerConfig struct {
@@ -51,11 +52,40 @@ func DefaultConfig() (*ServerConfig, error) {
 		BlockList:          []string{},
 		MiscPublicInfoJson: map[string]interface{}{},
 		CacheConfig:        DefaultCacheConfig(),
+		AllowOffline:       false,
 	}, nil
 }
 
 // LoadServerConfig loads the server configuration from the given path, or returns the default configuration
 func LoadServerConfig(configPath string) (*ServerConfig, error) {
+	Conf, err := LoadConfigWhitoutNodeFetchedData(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load server config: %w", err)
+	}
+
+	networkInfos, err := pkgConfig.NewNetworkConfig(Conf.NetworkInfos.NodeURL)
+	// var networkInfosErr error
+	if err != nil {
+		if Conf.AllowOffline {
+			logger.Errorf("unable retrieve network config: %v", err)
+			logger.Warnf("using default values for minimal fees, chain ID, and network version")
+		} else {
+			// return error and servrConfig with empty networkInfos
+			// networkInfosErr = fmt.Errorf("failed to create network config: %w", err)
+			return nil, fmt.Errorf("failed to create network config: %w", err)
+		}
+	}
+	Conf.NetworkInfos = networkInfos
+
+	return Conf, nil
+}
+
+/*
+	LoadConfigWhitoutNodeFetchedData loads the server configuration from the file at the given path only.
+
+Don't try to retrieve the data from the massa node
+*/
+func LoadConfigWhitoutNodeFetchedData(configPath string) (*ServerConfig, error) {
 	if configPath == "" {
 		return nil, fmt.Errorf("config path is empty")
 	}
@@ -100,30 +130,21 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 		apiPort = *yamlConf.APIPort
 	}
 
-	networkInfos, err := pkgConfig.NewNetworkConfig(networkNodeURL)
-	if err != nil {
-		if yamlConf.AllowOffline {
-			logger.Errorf("unable retrieve network config: %v", err)
-			logger.Warnf("using default values for minimal fees, chain ID, and network version")
-		} else {
-			return nil, fmt.Errorf("failed to create network config: %w", err)
-		}
-	}
-
 	// Process cache configuration
 	cacheConfig := ProcessCacheConfig(yamlConf.CacheConfig, configPath)
 
-	config := &ServerConfig{
-		Domain:             domain,
-		APIPort:            apiPort,
-		NetworkInfos:       networkInfos,
+	return &ServerConfig{
+		Domain:  domain,
+		APIPort: apiPort,
+		NetworkInfos: pkgConfig.NetworkInfos{
+			NodeURL: networkNodeURL,
+		},
 		AllowList:          yamlConf.AllowList,
 		BlockList:          yamlConf.BlockList,
 		MiscPublicInfoJson: convertYamlMisc2Json(yamlConf.MiscPublicInfoJson),
 		CacheConfig:        cacheConfig,
-	}
-
-	return config, nil
+		AllowOffline:       yamlConf.AllowOffline,
+	}, nil
 }
 
 /*
