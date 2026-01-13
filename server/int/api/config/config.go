@@ -64,14 +64,12 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 	}
 
 	networkInfos, err := pkgConfig.NewNetworkConfig(Conf.NetworkInfos.NodeURL)
-	// var networkInfosErr error
 	if err != nil {
 		if Conf.AllowOffline {
 			logger.Errorf("unable retrieve network config: %v", err)
 			logger.Warnf("using default values for minimal fees, chain ID, and network version")
 		} else {
 			// return error and servrConfig with empty networkInfos
-			// networkInfosErr = fmt.Errorf("failed to create network config: %w", err)
 			return nil, fmt.Errorf("failed to create network config: %w", err)
 		}
 	}

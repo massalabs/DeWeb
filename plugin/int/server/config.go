@@ -43,18 +43,16 @@ func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig
 	}
 
 	yamlConfig := convertToYamlConfig(serverConfig)
-	logger.Infof("converted to yaml config: %+v", yamlConfig)
 
 	if err := saveYamlConfig(yamlConfig, getConfigPath(c.configDir)); err != nil {
 		return fmt.Errorf("failed to save server config: %w", err)
 	}
-	logger.Infof("saved server config to %s", getConfigPath(c.configDir))
 
 	// Update the cached server config
 	if err := c.refreshServerConfig(); err != nil {
 		return fmt.Errorf("saved new server config but failed to retrieve it from file for caching: %w", err)
 	}
-	logger.Infof("refreshed server config")
+
 	return nil
 }
 
