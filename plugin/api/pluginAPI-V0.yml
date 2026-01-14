@@ -98,6 +98,22 @@ definitions:
     required:
       - code
       - message
+  
+  NetworkInfoItem:
+    type: object
+    description: Detailed network information
+    properties:
+      name:
+        type: string
+      url:
+        type: string
+      chainId:
+        type: integer
+      version:
+        type: string
+      status:
+        type: string
+        enum: [up, down]
 
   ServerStatus:
     type: object
@@ -114,14 +130,7 @@ definitions:
         description: Error message if server failed to start or is in error state
       network:
         type: object
-        properties:
-          network:
-            type: string
-          version:
-            type: string
-          chainID:
-            type: integer
-            format: uint64
+        $ref: "#/definitions/NetworkInfoItem"
 
   Settings:
     type: object

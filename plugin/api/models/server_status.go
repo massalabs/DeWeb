@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -24,7 +25,7 @@ type ServerStatus struct {
 	ErrorMessage string `json:"errorMessage,omitempty"`
 
 	// network
-	Network *ServerStatusNetwork `json:"network,omitempty"`
+	Network *NetworkInfoItem `json:"network,omitempty"`
 
 	// The port the server is running on
 	ServerPort int32 `json:"serverPort,omitempty"`
@@ -59,11 +60,15 @@ func (m *ServerStatus) validateNetwork(formats strfmt.Registry) error {
 
 	if m.Network != nil {
 		if err := m.Network.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("network")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("network")
 			}
+
 			return err
 		}
 	}
@@ -71,7 +76,7 @@ func (m *ServerStatus) validateNetwork(formats strfmt.Registry) error {
 	return nil
 }
 
-var serverStatusTypeStatusPropEnum []interface{}
+var serverStatusTypeStatusPropEnum []any
 
 func init() {
 	var res []string
@@ -145,11 +150,15 @@ func (m *ServerStatus) contextValidateNetwork(ctx context.Context, formats strfm
 		}
 
 		if err := m.Network.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
 				return ve.ValidateName("network")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
 				return ce.ValidateName("network")
 			}
+
 			return err
 		}
 	}
@@ -168,49 +177,6 @@ func (m *ServerStatus) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary interface implementation
 func (m *ServerStatus) UnmarshalBinary(b []byte) error {
 	var res ServerStatus
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
-	return nil
-}
-
-// ServerStatusNetwork server status network
-//
-// swagger:model ServerStatusNetwork
-type ServerStatusNetwork struct {
-
-	// chain ID
-	ChainID uint64 `json:"chainID,omitempty"`
-
-	// network
-	Network string `json:"network,omitempty"`
-
-	// version
-	Version string `json:"version,omitempty"`
-}
-
-// Validate validates this server status network
-func (m *ServerStatusNetwork) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// ContextValidate validates this server status network based on context it is used
-func (m *ServerStatusNetwork) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *ServerStatusNetwork) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *ServerStatusNetwork) UnmarshalBinary(b []byte) error {
-	var res ServerStatusNetwork
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

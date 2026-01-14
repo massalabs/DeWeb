@@ -52,7 +52,7 @@ func (dI *dewebInfo) Handle(params operations.GetDeWebInfoParams) middleware.Res
 			Version: config.Version,
 			Misc:    dI.conf.MiscPublicInfoJson,
 			Network: &models.DeWebInfoNetwork{
-				Network: dI.conf.NetworkInfos.Network,
+				Network: dI.conf.NetworkInfos.Name,
 				Version: dI.conf.NetworkInfos.Version,
 				ChainID: int64(dI.conf.NetworkInfos.ChainID),
 			},

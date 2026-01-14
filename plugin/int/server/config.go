@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
+	"github.com/massalabs/deweb-plugin/int/utils"
 	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/station/pkg/logger"
 	"gopkg.in/yaml.v2"
@@ -14,7 +16,90 @@ const (
 	defaultAPIPort = 0
 
 	DefaultConfigFileName = "deweb_server_config.yaml"
+	connectionRefused     = "connection refused"
 )
+
+type ServerConfigManager struct {
+	serverConfig *config.ServerConfig
+	mu           sync.Mutex
+	configDir    string
+	nodeName     string
+}
+
+// NewServerConfigManager creates a new ServerConfigManager
+func NewServerConfigManager(configDir string) *ServerConfigManager {
+	return &ServerConfigManager{
+		configDir: configDir,
+	}
+}
+
+// SaveServerConfig saves a ServerConfig to the given path
+func (c *ServerConfigManager) SaveServerConfig(serverConfig *config.ServerConfig) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if serverConfig == nil {
+		return fmt.Errorf("new server config is nil, cannot save it")
+	}
+
+	yamlConfig := convertToYamlConfig(serverConfig)
+
+	if err := saveYamlConfig(yamlConfig, getConfigPath(c.configDir)); err != nil {
+		return fmt.Errorf("failed to save server config: %w", err)
+	}
+
+	// Update the cached server config
+	if err := c.refreshServerConfig(); err != nil {
+		return fmt.Errorf("saved new server config but failed to retrieve it from file for caching: %w", err)
+	}
+
+	return nil
+}
+
+func (c *ServerConfigManager) UpdateNodeName(nodeName string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.nodeName = nodeName
+}
+
+func (c *ServerConfigManager) GetNodeName() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.nodeName
+}
+
+// GetServerConfig returns the cached server config
+func (c *ServerConfigManager) GetServerConfig() (*config.ServerConfig, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.serverConfig == nil {
+		if err := c.refreshServerConfig(); err != nil {
+			return nil, fmt.Errorf("failed to refresh server config: %w", err)
+		}
+	}
+
+	return c.serverConfig, nil
+}
+
+func (c *ServerConfigManager) refreshServerConfig() error {
+	serverConfig, err := loadConfig(getConfigPath(c.configDir))
+	if err != nil {
+		// If the error is due to the fact that node configured in config is down, load conf without node retrieved data
+		if utils.Contains(err.Error(), connectionRefused) {
+			logger.Debug("the massa node used in deweb server conf is down, loading config without node retrieved data")
+			serverConfig, err = config.LoadConfigWhitoutNodeFetchedData(getConfigPath(c.configDir))
+			if err != nil {
+				return fmt.Errorf("failed to load config without node retrieved data, error: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to load server config, error: %w", err)
+		}
+	}
+
+	c.serverConfig = serverConfig
+	return nil
+}
 
 // ensureConfigFileExists makes sure the config file exists, creating it with defaults if needed
 func ensureConfigFileExists(configDir string) error {
@@ -69,13 +154,6 @@ func createDefaultYamlConfig(configDir string) config.YamlServerConfig {
 	return yamlConfig
 }
 
-// SaveServerConfig saves a ServerConfig to the given path
-func SaveServerConfig(serverConfig *config.ServerConfig, configPath string) error {
-	yamlConfig := convertToYamlConfig(serverConfig)
-
-	return saveYamlConfig(yamlConfig, configPath)
-}
-
 // convertToYamlConfig converts a ServerConfig to YamlServerConfig
 func convertToYamlConfig(serverConfig *config.ServerConfig) config.YamlServerConfig {
 	if serverConfig == nil {
@@ -94,6 +172,7 @@ func convertToYamlConfig(serverConfig *config.ServerConfig) config.YamlServerCon
 		AllowList:          serverConfig.AllowList,
 		BlockList:          serverConfig.BlockList,
 		MiscPublicInfoJson: serverConfig.MiscPublicInfoJson,
+		AllowOffline:       serverConfig.AllowOffline,
 	}
 
 	// Convert cache config to YAML format

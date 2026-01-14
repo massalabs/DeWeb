@@ -25,7 +25,6 @@ func NewGetSettingsParams() GetSettingsParams {
 //
 // swagger:parameters GetSettings
 type GetSettingsParams struct {
-
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 }

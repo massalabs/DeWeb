@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/massalabs/deweb-server/pkg/cache"
+	msConfig "github.com/massalabs/deweb-server/pkg/config"
 	"github.com/massalabs/deweb-server/pkg/website"
-	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/logger"
 )
 

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/massalabs/deweb-server/int/api/config"
+	msConfig "github.com/massalabs/deweb-server/pkg/config"
 	"github.com/massalabs/deweb-server/pkg/website/storagekeys"
-	msConfig "github.com/massalabs/station/int/config"
 	"github.com/massalabs/station/pkg/convert"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/massalabs/station/pkg/node"

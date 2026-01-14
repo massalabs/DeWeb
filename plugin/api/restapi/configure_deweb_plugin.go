@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/massalabs/deweb-plugin/api/restapi/operations"
+	dewebmiddleware "github.com/massalabs/deweb-plugin/int/api/middleware"
 )
 
 //go:generate swagger generate server --target ../../api --name DewebPlugin --spec ../pluginAPI-V0.yml --principal interface{} --exclude-main
@@ -104,5 +105,6 @@ func setupMiddlewares(handler http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	return handler
+	// Middleware chain: DomainRestrictionMiddleware → WebAppMiddleware → API handlers
+	return dewebmiddleware.DomainRestrictionMiddleware(dewebmiddleware.WebAppMiddleware(handler))
 }

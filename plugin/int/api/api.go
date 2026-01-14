@@ -10,15 +10,18 @@ import (
 	"github.com/massalabs/deweb-plugin/int/api/html"
 	apiserver "github.com/massalabs/deweb-plugin/int/api/server"
 	"github.com/massalabs/deweb-plugin/int/server"
+	"github.com/massalabs/deweb-plugin/int/station"
 	"github.com/massalabs/station/pkg/logger"
 	pluginkit "github.com/massalabs/station/plugin-kit"
 )
 
 type API struct {
-	apiServer     *restapi.Server
-	pluginAPI     *operations.DewebPluginAPI
-	serverManager *server.ServerManager
-	configDir     string
+	apiServer      *restapi.Server
+	pluginAPI      *operations.DewebPluginAPI
+	serverManager  *server.ServerManager
+	networkManager *station.NetworkManager
+	configDir      string
+	configManager  *server.ServerConfigManager
 }
 
 // NewAPI creates a new API with the provided plugin directory
@@ -36,11 +39,15 @@ func NewAPI(configDir string) *API {
 		logger.Errorf("Failed to create server manager: %v", err)
 	}
 
+	configManager := server.NewServerConfigManager(configDir)
+
 	return &API{
-		apiServer:     apiServer,
-		pluginAPI:     dewebAPI,
-		configDir:     configDir,
-		serverManager: manager,
+		apiServer:      apiServer,
+		pluginAPI:      dewebAPI,
+		configDir:      configDir,
+		serverManager:  manager,
+		configManager:  configManager,
+		networkManager: station.NewNetworkManager(configManager, manager),
 	}
 }
 
@@ -50,6 +57,8 @@ func (a *API) Start() {
 		if err := a.apiServer.Shutdown(); err != nil {
 			log.Fatalln(err)
 		}
+
+		a.networkManager.Stop()
 
 		// Shutdown the server manager if it is running
 		if a.serverManager != nil {
@@ -66,8 +75,6 @@ func (a *API) Start() {
 
 	a.apiServer.ConfigureAPI()
 
-	a.apiServer.SetHandler(webAppMiddleware(a.pluginAPI.Serve(nil)))
-
 	listener, err := a.apiServer.HTTPListener()
 	if err != nil {
 		logger.Fatalf("Failed to get HTTP listener: %v", err)
@@ -77,12 +84,20 @@ func (a *API) Start() {
 		logger.Fatalf("Failed to register plugin: %v", err)
 	}
 
+	// Sync the server network config with the station network config
+	if err = a.networkManager.SyncServerConfNetworkWithStation(false); err != nil {
+		logger.Errorf("Failed to sync server network config with station: %v", err)
+	}
+
+	logger.Infof("API Server network config synced with station")
 	// Start the server if manager exists
 	if a.serverManager != nil {
 		go func() {
 			if err := a.serverManager.Start(); err != nil && err != server.ErrServerAlreadyRunning {
 				logger.Errorf("Failed to start DeWeb server: %v", err)
+				return
 			}
+			a.networkManager.Start()
 		}()
 	}
 
@@ -101,7 +116,7 @@ func (a *API) configureAPI() {
 	html.AppendEndpoints(a.pluginAPI)
 
 	if a.serverManager != nil {
-		apiserver.RegisterHandlers(a.pluginAPI, a.serverManager, a.configDir)
+		apiserver.RegisterHandlers(a.pluginAPI, a.serverManager, a.configManager)
 	} else {
 		logger.Errorf("Server manager not available for registering handlers")
 	}

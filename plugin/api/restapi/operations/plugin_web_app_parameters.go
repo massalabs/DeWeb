@@ -26,7 +26,6 @@ func NewPluginWebAppParams() PluginWebAppParams {
 //
 // swagger:parameters PluginWebApp
 type PluginWebAppParams struct {
-
 	// HTTP Request Object
 	HTTPRequest *http.Request `json:"-"`
 

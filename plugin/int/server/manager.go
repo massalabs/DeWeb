@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/massalabs/deweb-server/int/api/config"
 	"github.com/massalabs/station/pkg/logger"
 	"github.com/shirou/gopsutil/v4/process"
 )
@@ -184,15 +183,6 @@ func (m *ServerManager) Stop() error {
 	return nil
 }
 
-// Restart restarts the server
-func (m *ServerManager) Restart() error {
-	if err := m.Stop(); err != nil && err != ErrServerNotRunning {
-		return err
-	}
-
-	return m.Start()
-}
-
 // GetStatus returns the current server status
 func (m *ServerManager) GetStatus() Status {
 	m.mu.Lock()
@@ -220,16 +210,20 @@ func (m *ServerManager) GetConfigPath() string {
 	return getConfigPath(m.configDir)
 }
 
-func (m *ServerManager) GetConfig() (*config.ServerConfig, error) {
-	return loadConfig(m.GetConfigPath())
-}
-
 // GetLastError returns the last error message
 func (m *ServerManager) GetLastError() string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	return m.lastError
+}
+
+// SetLastError sets the last error message
+func (m *ServerManager) SetLastError(err string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.lastError = err
 }
 
 // GetServerPort retrieves the actual port the server is running on
