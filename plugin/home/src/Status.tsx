@@ -1,5 +1,6 @@
 import { FiClock, FiCheckCircle, FiXCircle, FiAlertTriangle, FiInfo } from "react-icons/fi";
 import { NetworkInfo, ServerStatus } from "./types/server";
+import { getNetworkNameByChainId } from "@massalabs/massa-web3";
 
 type StatusProps = {
   network?: NetworkInfo;
@@ -34,27 +35,29 @@ export const Status = ({ network, loading, status, errorMessage }: StatusProps) 
     if (status === "error" && errorMessage) {
       return `Error: ${errorMessage}`;
     }
-
-    const networkTypePrecision = network?.name.toLowerCase().includes("mainnet") || network?.name.toLowerCase().includes("buildnet") ? 
-      ""
-      :
-      network?.chainID === 77658377 ? 
-        "(mainnet)" : 
-        "(buildnet)";
-
-    if (status === "running" && network) {
-      return `Connected to '${network.name}' node ${networkTypePrecision}; version: ${network.version || ''}`;
+    
+    if (!network) {
+      const statusMessages = {
+        running: "Server running",
+        stopped: "Server stopped",
+        starting: "Server starting...",
+        stopping: "Server stopping...",
+        error: "Server error"
+      };
+  
+      return statusMessages[status || "stopped"];
     }
 
-    const statusMessages = {
-      running: "Server running",
-      stopped: "Server stopped",
-      starting: "Server starting...",
-      stopping: "Server stopping...",
-      error: "Server error"
-    };
+    const { name, chainId, version } = network;
 
-    return statusMessages[status || "stopped"];
+    let networkTypePrecision: string | undefined = "";
+    if (!name.toLowerCase().includes("mainnet") && !name.toLowerCase().includes("buildnet")) {
+      networkTypePrecision = getNetworkNameByChainId(BigInt(chainId));
+      networkTypePrecision = networkTypePrecision ? ` (${networkTypePrecision})` : "";
+    }
+
+    return `Connected to '${name}' node${networkTypePrecision}. version: ${version}`;
+    
   };
 
   return (
