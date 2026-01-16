@@ -4,7 +4,7 @@ export interface NetworkInfo {
   name: string;
   url: string;
   version: string;
-  chainID: number;
+  chainId: number;
 }
 
 export interface ServerStatusResponse {

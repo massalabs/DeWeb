@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@massalabs/massa-web3": "^5.3.1-dev",
     "deweb-pages": "file:../../server/pages/",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

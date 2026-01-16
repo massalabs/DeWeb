@@ -16,13 +16,10 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchStatus = () => {
-    const url = window.location.href.endsWith("/")
-      ? window.location.href
-      : `${window.location.href}/`;
 
-    const urlWithoutWeb = url.endsWith("/web/index/") ? url.slice(0, -10) : url;
+    const apiURL = import.meta.env.VITE_BASE_API;
 
-    fetch(`${urlWithoutWeb}/api/server/status`)
+    fetch(`${apiURL}/server/status`)
       .then((res) => res.json())
       .then((data: ServerStatusResponse) => {
         // Only update state if values have changed to avoid unnecessary re-renders
@@ -39,7 +36,7 @@ export default function App() {
             prevNetwork.name === newNetwork.name &&
             prevNetwork.url === newNetwork.url &&
             prevNetwork.version === newNetwork.version &&
-            prevNetwork.chainID === newNetwork.chainID
+            prevNetwork.chainId === newNetwork.chainId
           ) {
             return prevNetwork;
           }
