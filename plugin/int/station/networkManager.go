@@ -107,7 +107,11 @@ func (np *NetworkManager) pollNetwork() {
 		if err == ErrStationNetworkDown {
 			np.serverManager.SetLastError(ErrStationNetworkDown.Error())
 		}
+		return
 	}
+
+	// if the last error is that the network retrieved from station is down, reset the last error to ""
+	np.serverManager.SetLastErrorIfEqual(ErrStationNetworkDown.Error(), "")
 }
 
 /*
@@ -139,8 +143,8 @@ func (np *NetworkManager) SyncServerConfNetworkWithStation(restartServer bool) e
 			"Changing massa node configuration from '%s' (%s) to '%s' (%s, the node currently used by station)",
 			currentNodeName,
 			currentConfig.NetworkInfos.NodeURL,
-			response.URL,
 			response.Name,
+			response.URL,
 		)
 	}
 

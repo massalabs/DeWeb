@@ -9,6 +9,7 @@ type StatusProps = {
   errorMessage: string | null;
 };
 
+
 export const Status = ({ network, loading, status, errorMessage }: StatusProps) => {
 
   const getStatusIcon = () => {

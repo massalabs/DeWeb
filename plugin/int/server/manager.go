@@ -226,6 +226,25 @@ func (m *ServerManager) SetLastError(err string) {
 	m.lastError = err
 }
 
+/*
+Change conditionaly and atomically the last error message.
+
+If the last error message is the same as the checkLastError, set the last error message to the newErr.
+@param checkLastError the last error message to check
+@param newErr the new error message to set
+@return true if the last error message was changed, false otherwise
+*/
+func (m *ServerManager) SetLastErrorIfEqual(checkLastError string, newErr string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.lastError == checkLastError {
+		m.lastError = newErr
+		return true
+	}
+	return false
+}
+
 // GetServerPort retrieves the actual port the server is running on
 func (m *ServerManager) GetServerPort() (uint32, error) {
 	m.mu.Lock()
