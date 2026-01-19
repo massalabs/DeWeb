@@ -227,7 +227,7 @@ func (m *ServerManager) SetLastError(err string) {
 }
 
 /*
-Change conditionaly and atomically the last error message.
+Change conditionally and atomically the last error message.
 
 If the last error message is the same as the checkLastError, set the last error message to the newErr.
 @param checkLastError the last error message to check

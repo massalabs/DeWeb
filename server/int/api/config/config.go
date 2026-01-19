@@ -42,7 +42,7 @@ type YamlServerConfig struct {
 func DefaultConfig() (*ServerConfig, error) {
 	networkInfos, err := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 	if err != nil {
-		return nil, pkgErrors.ErrNetworkConfig
+		return nil, pkgErrors.NewServerError(fmt.Sprintf("unable to create network config: %v", err), pkgErrors.ErrNetworkConfigCode)
 	}
 
 	return &ServerConfig{
@@ -71,7 +71,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 			logger.Warnf("using default values for minimal fees, chain ID, and network version")
 		} else {
 			// return error and servrConfig with empty networkInfos
-			return nil, pkgErrors.ErrNetworkConfig
+			return nil, pkgErrors.NewServerError(fmt.Sprintf("unable to retrieve network config from node: %v", err), pkgErrors.ErrNetworkConfigCode)
 		}
 	}
 	Conf.NetworkInfos = networkInfos
