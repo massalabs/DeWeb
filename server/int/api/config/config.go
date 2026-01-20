@@ -6,6 +6,7 @@ import (
 
 	"github.com/massalabs/deweb-server/int/utils"
 	pkgConfig "github.com/massalabs/deweb-server/pkg/config"
+	pkgErrors "github.com/massalabs/deweb-server/pkg/error"
 	"github.com/massalabs/station/pkg/logger"
 	yaml "gopkg.in/yaml.v2"
 )
@@ -41,7 +42,7 @@ type YamlServerConfig struct {
 func DefaultConfig() (*ServerConfig, error) {
 	networkInfos, err := pkgConfig.NewNetworkConfig(DefaultNetworkNodeURL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create network config: %w", err)
+		return nil, pkgErrors.NewServerError(fmt.Sprintf("unable to create network config: %v", err), pkgErrors.ErrNetworkConfigCode)
 	}
 
 	return &ServerConfig{
@@ -70,7 +71,7 @@ func LoadServerConfig(configPath string) (*ServerConfig, error) {
 			logger.Warnf("using default values for minimal fees, chain ID, and network version")
 		} else {
 			// return error and servrConfig with empty networkInfos
-			return nil, fmt.Errorf("failed to create network config: %w", err)
+			return nil, pkgErrors.NewServerError(fmt.Sprintf("unable to retrieve network config from node: %v", err), pkgErrors.ErrNetworkConfigCode)
 		}
 	}
 	Conf.NetworkInfos = networkInfos

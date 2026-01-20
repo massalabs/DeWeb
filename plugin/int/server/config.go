@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/massalabs/deweb-plugin/int/utils"
 	"github.com/massalabs/deweb-server/int/api/config"
+	serverErrors "github.com/massalabs/deweb-server/pkg/error"
 	"github.com/massalabs/station/pkg/logger"
 	"gopkg.in/yaml.v2"
 )
@@ -16,7 +16,6 @@ const (
 	defaultAPIPort = 0
 
 	DefaultConfigFileName = "deweb_server_config.yaml"
-	connectionRefused     = "connection refused"
 )
 
 type ServerConfigManager struct {
@@ -86,8 +85,8 @@ func (c *ServerConfigManager) refreshServerConfig() error {
 	serverConfig, err := loadConfig(getConfigPath(c.configDir))
 	if err != nil {
 		// If the error is due to the fact that node configured in config is down, load conf without node retrieved data
-		if utils.Contains(err.Error(), connectionRefused) {
-			logger.Debug("the massa node used in deweb server conf is down, loading config without node retrieved data")
+		if serverError, ok := err.(*serverErrors.ServerError); ok && serverError.ErrorCode == serverErrors.ErrNetworkConfigCode {
+			logger.Debug("the massa node used in deweb server config is down, loading config without node retrieved data")
 			serverConfig, err = config.LoadConfigWhitoutNodeFetchedData(getConfigPath(c.configDir))
 			if err != nil {
 				return fmt.Errorf("failed to load config without node retrieved data, error: %w", err)
