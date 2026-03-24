@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/massalabs/station/pkg/logger"
@@ -92,6 +91,7 @@ func (m *ServerManager) Start() error {
 	logPath := filepath.Join(m.configDir, DefaultLogPath)
 
 	cmd := exec.Command(m.serverBinPath, "--configPath", configPath, "--logPath", logPath, "--accept-disclaimer")
+	setProcessAttributes(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -139,9 +139,6 @@ func (m *ServerManager) kill() error {
 		return err
 	}
 
-	m.isRunning = false
-	m.serverProcess = nil
-
 	return nil
 }
 
@@ -157,14 +154,9 @@ func (m *ServerManager) Stop() error {
 
 	logger.Infof("Stopping DeWeb server")
 
-	// Send a SIGTERM signal to gracefully shut down
-	if err := m.serverProcess.Signal(syscall.SIGTERM); err != nil {
-		logger.Errorf("Failed to send SIGTERM: %v", err)
-
-		// Force kill as a fallback
-		if err = m.kill(); err != nil {
-			return err
-		}
+	// Try graceful shutdown first, then fallback to force kill.
+	if err := signalTermination(m.serverProcess, m.kill); err != nil {
+		return err
 	}
 
 	// Wait for the process to exit

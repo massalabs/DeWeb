@@ -1,6 +1,7 @@
 package server
 
 import (
+	errs "errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -85,7 +86,10 @@ func (c *ServerConfigManager) refreshServerConfig() error {
 	serverConfig, err := loadConfig(getConfigPath(c.configDir))
 	if err != nil {
 		// If the error is due to the fact that node configured in config is down, load conf without node retrieved data
-		if serverError, ok := err.(*serverErrors.ServerError); ok && serverError.ErrorCode == serverErrors.ErrNetworkConfigCode {
+		var serverError *serverErrors.ServerError
+		ok := errs.As(err, &serverError)
+		logger.Debugf("error: %+v, ok: %v, servererror: %+v, serverError.ErrorCode: %d", err, ok, serverError, serverError.ErrorCode)
+		if ok && serverError.ErrorCode == serverErrors.ErrNetworkConfigCode {
 			logger.Debug("the massa node used in deweb server config is down, loading config without node retrieved data")
 			serverConfig, err = config.LoadConfigWhitoutNodeFetchedData(getConfigPath(c.configDir))
 			if err != nil {
