@@ -230,7 +230,10 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
 
-    assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
+  assert(
+    hashLocation.length == 32,
+    'Invalid filpath sha256 hash. should be 32 bytes',
+  );
 
   const metadata = args
     .nextSerializableObjectArray<Metadata>()
@@ -262,7 +265,10 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
 
-  assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
+  assert(
+    hashLocation.length == 32,
+    'Invalid filpath sha256 hash. should be 32 bytes',
+  );
 
   const metadata = args.next<string[]>().expect('Invalid key');
 
@@ -311,11 +317,10 @@ export function receiveCoins(): void {
 export function upgradeSC(args: StaticArray<u8>): void {
   _onlyOwner();
   setBytecode(args);
-  
+
   // Send the freed coins back to the caller
   transferCoins(Context.caller(), balance());
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                                 PURGE   SC                                 */
@@ -324,10 +329,9 @@ export function upgradeSC(args: StaticArray<u8>): void {
 /**
  * Deletes all the contract storage and bytecode.
  * Sends back the freed coins to the caller.
- * @param args - Ignored.
  * @throws If the caller is not the owner.
  */
-export function purge(args: StaticArray<u8>): void {
+export function purge(_: StaticArray<u8>): void {
   _onlyOwner();
 
   // Delete all datastore entries
