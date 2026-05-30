@@ -85,7 +85,9 @@ func TestLastUpdateCacheSetUsesConfiguredTTL(t *testing.T) {
 
 	ts := time.Unix(1700000000, 0)
 	before := time.Now()
+
 	globalLastUpdateCache.set("AS_ttl", ts)
+
 	after := time.Now()
 
 	entry, ok := globalLastUpdateCache.cache["AS_ttl"]
@@ -100,6 +102,7 @@ func TestLastUpdateCacheSetUsesConfiguredTTL(t *testing.T) {
 	// Expiration should be roughly now + 30s.
 	minExp := before.Add(30 * time.Second)
 	maxExp := after.Add(30 * time.Second)
+
 	if entry.expiration.Before(minExp) || entry.expiration.After(maxExp) {
 		t.Fatalf("expiration %v not within expected window [%v, %v]", entry.expiration, minExp, maxExp)
 	}
@@ -161,9 +164,11 @@ func TestGetLastUpdateTimestampCachesButRefetchesAfterTTL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if !got.Equal(time.Unix(1700000000, 0)) {
 		t.Fatalf("expected timestamp %v, got %v", time.Unix(1700000000, 0), got)
 	}
+
 	if calls.Load() != 1 {
 		t.Fatalf("expected 1 node call, got %d", calls.Load())
 	}
@@ -171,15 +176,18 @@ func TestGetLastUpdateTimestampCachesButRefetchesAfterTTL(t *testing.T) {
 	// Simulate an on-chain update, then make several more calls within the TTL: they must
 	// all be served from cache (no extra node calls) and must NOT yet see the new value.
 	ts.Store(1700000500)
+
 	for i := 0; i < 5; i++ {
 		got, err = GetLastUpdateTimestamp(network, addr)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
+
 		if !got.Equal(time.Unix(1700000000, 0)) {
 			t.Fatalf("within TTL expected cached timestamp, got %v", got)
 		}
 	}
+
 	if calls.Load() != 1 {
 		t.Fatalf("expected node to be hit only once within TTL, got %d calls", calls.Load())
 	}
@@ -196,9 +204,11 @@ func TestGetLastUpdateTimestampCachesButRefetchesAfterTTL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if !got.Equal(time.Unix(1700000500, 0)) {
 		t.Fatalf("after TTL expected updated timestamp %v, got %v", time.Unix(1700000500, 0), got)
 	}
+
 	if calls.Load() != 2 {
 		t.Fatalf("expected a second node call after TTL, got %d", calls.Load())
 	}

@@ -3,7 +3,11 @@ version: "3"
 tasks:
   install:
     cmds:
-      - cmd: go install github.com/go-swagger/go-swagger/cmd/swagger@latest
+      # Pin the generator version: swagger >= v0.34.0 generates imports for the new
+      # split go-openapi/swag sub-packages (swag/jsonutils, swag/typeutils, ...), which
+      # are not provided by the go-openapi/swag version pinned in go.mod and break the
+      # build. v0.33.0 is the last release that emits the single-package swag import.
+      - cmd: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.33.0
 
   generate:
     cmds:
