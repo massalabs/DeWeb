@@ -41,10 +41,9 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 
 	if cache != nil {
 		lastModified, err := cache.GetLastModified(scAddress, resourceName)
-		switch {
-		case err != nil:
+		if err != nil {
 			logger.Debugf("Resource %s from %s not in cache", resourceName, scAddress)
-		case tsErr != nil || !lastModified.Before(*lastUpdated):
+		} else if tsErr != nil || !lastModified.Before(*lastUpdated) {
 			// Either we could not determine the on-chain update time (node issue) or the
 			// cached copy is up to date. In both cases, serve the cached content.
 			content, headers, err := cache.Read(scAddress, resourceName)
@@ -54,7 +53,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 				logger.Debugf("RequestFile: Cache hit for %s", resourceName)
 				return content, headers, nil
 			}
-		default:
+		} else {
 			if err = cache.Delete(scAddress, resourceName); err != nil {
 				logger.Warnf("Failed to delete outdated resource %s from %s: %v", resourceName, scAddress, err)
 			}
