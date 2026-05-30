@@ -8,36 +8,40 @@ import (
 
 const (
 	// Default cache size limits
-	DefaultMaxRAMItems         uint64 = 1000               // Maximum RAM items, Default is 1000
-	DefaultMaxDiskItems        uint64 = 10000              // Maximum disk items, Default is 10000
-	DefaultFileListCachePeriod        = 60                 // Default expiration of the file list cache in seconds
-	DefaultDiskCacheDir               = "./websitesCache/" // Default cache directory
+	DefaultMaxRAMItems           uint64 = 1000               // Maximum RAM items, Default is 1000
+	DefaultMaxDiskItems          uint64 = 10000              // Maximum disk items, Default is 10000
+	DefaultFileListCachePeriod          = 60                 // Default expiration of the file list cache in seconds
+	DefaultLastUpdateCachePeriod        = 10                 // Default expiration of the last-update timestamp cache in seconds
+	DefaultDiskCacheDir                 = "./websitesCache/" // Default cache directory
 )
 
 type CacheConfig struct {
-	Enabled                      bool
-	SiteRAMCacheMaxItems         uint64
-	SiteDiskCacheMaxItems        uint64
-	DiskCacheDir                 string
-	FileListCacheDurationSeconds int
+	Enabled                        bool
+	SiteRAMCacheMaxItems           uint64
+	SiteDiskCacheMaxItems          uint64
+	DiskCacheDir                   string
+	FileListCacheDurationSeconds   int
+	LastUpdateCacheDurationSeconds int
 }
 
 type YamlCacheConfig struct {
-	Enabled                      *bool   `yaml:"enabled"`
-	SiteRAMCacheMaxItems         *uint64 `yaml:"site_ram_cache_max_items"`
-	SiteDiskCacheMaxItems        *uint64 `yaml:"site_disk_cache_max_items"`
-	DiskCacheDir                 *string `yaml:"disk_cache_dir"`
-	FileListCacheDurationSeconds *int    `yaml:"file_list_cache_duration_seconds"`
+	Enabled                        *bool   `yaml:"enabled"`
+	SiteRAMCacheMaxItems           *uint64 `yaml:"site_ram_cache_max_items"`
+	SiteDiskCacheMaxItems          *uint64 `yaml:"site_disk_cache_max_items"`
+	DiskCacheDir                   *string `yaml:"disk_cache_dir"`
+	FileListCacheDurationSeconds   *int    `yaml:"file_list_cache_duration_seconds"`
+	LastUpdateCacheDurationSeconds *int    `yaml:"last_update_cache_duration_seconds"`
 }
 
 // DefaultCacheConfig returns a cache configuration with default values
 func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
-		Enabled:                      true,
-		SiteRAMCacheMaxItems:         DefaultMaxRAMItems,
-		SiteDiskCacheMaxItems:        DefaultMaxDiskItems,
-		DiskCacheDir:                 DefaultDiskCacheDir,
-		FileListCacheDurationSeconds: DefaultFileListCachePeriod,
+		Enabled:                        true,
+		SiteRAMCacheMaxItems:           DefaultMaxRAMItems,
+		SiteDiskCacheMaxItems:          DefaultMaxDiskItems,
+		DiskCacheDir:                   DefaultDiskCacheDir,
+		FileListCacheDurationSeconds:   DefaultFileListCachePeriod,
+		LastUpdateCacheDurationSeconds: DefaultLastUpdateCachePeriod,
 	}
 }
 
@@ -95,5 +99,9 @@ func applyYamlOverrides(config *CacheConfig, yamlConf *YamlCacheConfig) {
 
 	if yamlConf.FileListCacheDurationSeconds != nil {
 		config.FileListCacheDurationSeconds = *yamlConf.FileListCacheDurationSeconds
+	}
+
+	if yamlConf.LastUpdateCacheDurationSeconds != nil {
+		config.LastUpdateCacheDurationSeconds = *yamlConf.LastUpdateCacheDurationSeconds
 	}
 }

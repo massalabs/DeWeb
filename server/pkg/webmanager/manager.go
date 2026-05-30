@@ -2,6 +2,7 @@ package webmanager
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/massalabs/deweb-server/pkg/cache"
 	msConfig "github.com/massalabs/deweb-server/pkg/config"
@@ -28,14 +29,24 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 	// Get the last update timestamp from the website
 	// FIXME: We shouldn't fetch the last update timestamp for each resource. It should be cached and fetched once per period.
 	// https://github.com/massalabs/DeWeb/issues/280
-	lastUpdated, err := website.GetLastUpdateTimestamp(networkInfo, scAddress)
-	if err != nil {
-		logger.Warnf("Failed to get last update timestamp: %v", err)
-	} else if cache != nil {
+	lastUpdated, tsErr := website.GetLastUpdateTimestamp(networkInfo, scAddress)
+	if tsErr != nil {
+		// The node call to retrieve the last update timestamp failed (e.g. the public
+		// node is temporarily overloaded and answers 503). This is transient, so we must
+		// NOT bypass the cache: serving a stale-but-valid copy is far better than failing
+		// the request (which would serve the "broken website" page with the wrong MIME
+		// type, e.g. text/html instead of application/wasm).
+		logger.Warnf("Failed to get last update timestamp for %s: %v", scAddress, tsErr)
+	}
+
+	if cache != nil {
 		lastModified, err := cache.GetLastModified(scAddress, resourceName)
-		if err != nil {
+		switch {
+		case err != nil:
 			logger.Debugf("Resource %s from %s not in cache", resourceName, scAddress)
-		} else if !lastModified.Before(*lastUpdated) {
+		case tsErr != nil || !lastModified.Before(*lastUpdated):
+			// Either we could not determine the on-chain update time (node issue) or the
+			// cached copy is up to date. In both cases, serve the cached content.
 			content, headers, err := cache.Read(scAddress, resourceName)
 			if err != nil {
 				logger.Warnf("Failed to read cached resource %s from %s: %v", resourceName, scAddress, err)
@@ -43,7 +54,7 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 				logger.Debugf("RequestFile: Cache hit for %s", resourceName)
 				return content, headers, nil
 			}
-		} else {
+		default:
 			if err = cache.Delete(scAddress, resourceName); err != nil {
 				logger.Warnf("Failed to delete outdated resource %s from %s: %v", resourceName, scAddress, err)
 			}
@@ -72,7 +83,16 @@ func RequestFile(scAddress string, networkInfo *msConfig.NetworkInfos, resourceN
 
 	// Save to cache if available
 	if cache != nil {
-		err = cache.Save(scAddress, resourceName, websiteBytes, *lastUpdated, httpHeaders)
+		// If the last update timestamp could not be retrieved, store a zero time so the
+		// entry is treated as outdated and refreshed as soon as the node recovers, while
+		// still being available to serve during the outage. This also avoids
+		// dereferencing a nil lastUpdated pointer (which previously panicked).
+		modified := time.Time{}
+		if lastUpdated != nil {
+			modified = *lastUpdated
+		}
+
+		err = cache.Save(scAddress, resourceName, websiteBytes, modified, httpHeaders)
 		if err != nil {
 			logger.Warnf("Failed to save %s to %s cache: %v", resourceName, scAddress, err)
 		} else {
