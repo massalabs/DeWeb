@@ -35,12 +35,79 @@ type filePathListCache struct {
 	cache map[string]*filePathListCacheEntry
 }
 
+// lastUpdateCacheEntry represents a cached last-update timestamp with its expiration time
+type lastUpdateCacheEntry struct {
+	timestamp  time.Time
+	expiration time.Time
+}
+
+// lastUpdateCache is a thread-safe, short-lived cache for website last-update timestamps.
+// The last-update timestamp is otherwise fetched from the node on every single request,
+// which can overwhelm the node under load (e.g. a browser loading dozens of resources at
+// once). Caching it for a short period collapses those calls into roughly one per website
+// per period, while keeping the staleness window small enough that on-chain website
+// updates are still picked up quickly.
+type lastUpdateCache struct {
+	mu    sync.RWMutex
+	cache map[string]lastUpdateCacheEntry
+}
+
 var (
 	globalFilePathListCache = &filePathListCache{
 		cache: make(map[string]*filePathListCacheEntry),
 	}
+	globalLastUpdateCache = &lastUpdateCache{
+		cache: make(map[string]lastUpdateCacheEntry),
+	}
 	serverConfig *config.ServerConfig
 )
+
+// lastUpdateCacheDuration returns the configured TTL for the last-update timestamp cache.
+func lastUpdateCacheDuration() time.Duration {
+	if serverConfig != nil {
+		return time.Duration(serverConfig.CacheConfig.LastUpdateCacheDurationSeconds) * time.Second
+	}
+
+	return time.Duration(config.DefaultLastUpdateCachePeriod) * time.Second
+}
+
+// get retrieves the last-update timestamp from cache if it exists and is not expired
+func (c *lastUpdateCache) get(websiteAddress string) (time.Time, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entry, exists := c.cache[websiteAddress]
+	if !exists || time.Now().After(entry.expiration) {
+		return time.Time{}, false
+	}
+
+	return entry.timestamp, true
+}
+
+// set stores the last-update timestamp in the cache with an expiration based on config.
+// A non-positive TTL disables caching (the entry is not stored).
+func (c *lastUpdateCache) set(websiteAddress string, timestamp time.Time) {
+	cacheDuration := lastUpdateCacheDuration()
+	if cacheDuration <= 0 {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Clean up expired entries before adding new ones
+	now := time.Now()
+	for key, entry := range c.cache {
+		if now.After(entry.expiration) {
+			delete(c.cache, key)
+		}
+	}
+
+	c.cache[websiteAddress] = lastUpdateCacheEntry{
+		timestamp:  timestamp,
+		expiration: now.Add(cacheDuration),
+	}
+}
 
 // SetConfig sets the server configuration for the website package
 func SetConfig(config *config.ServerConfig) {
@@ -334,7 +401,18 @@ func GetOwner(network *msConfig.NetworkInfos, websiteAddress string) (string, er
 }
 
 // GetLastUpdateTimestamp retrieves the last update timestamp of the website.
+// The result is cached for a short, configurable period to avoid hitting the node on
+// every request. The TTL bounds how long an on-chain website update can take to become
+// visible, so it should be kept small.
 func GetLastUpdateTimestamp(network *msConfig.NetworkInfos, websiteAddress string) (*time.Time, error) {
+	if cached, ok := globalLastUpdateCache.get(websiteAddress); ok {
+		logger.Debugf("Last update timestamp for %s served from cache", websiteAddress)
+		// Return a copy so callers can't mutate the cached value through the pointer.
+		timestamp := cached
+
+		return &timestamp, nil
+	}
+
 	client := node.NewClient(network.NodeURL)
 
 	lastUpdateTimestampResponse, err := node.FetchDatastoreEntry(client, websiteAddress, storagekeys.GlobalMetadataKey(lastUpdateTimestampKey))
@@ -354,6 +432,8 @@ func GetLastUpdateTimestamp(network *msConfig.NetworkInfos, websiteAddress strin
 	}
 
 	timestamp := time.Unix(int64(castedLUTimestamp), 0)
+
+	globalLastUpdateCache.set(websiteAddress, timestamp)
 
 	return &timestamp, nil
 }

@@ -26,6 +26,7 @@ package cache
 import (
 	"time"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/massalabs/station/pkg/logger"
 )
@@ -43,6 +44,11 @@ const DefaultMNSCacheSize = 1000
 // Each instance is thread-safe and can be used independently.
 type MNSCache struct {
 	cache *expirable.LRU[string, string]
+	// fallback keeps the last known resolution for each domain without a TTL.
+	// It is only used when a fresh resolution fails (e.g. the node is temporarily
+	// unreachable), so that a previously resolved website keeps being served instead
+	// of returning a "domain not found" page on a transient node error.
+	fallback *lru.Cache[string, string]
 }
 
 // NewMNSCache creates a new mns resolution cache with given TTL and size.
@@ -58,9 +64,16 @@ func NewMNSCache(ttl time.Duration, size int) *MNSCache {
 	}
 
 	cache := expirable.NewLRU[string, string](size, nil, ttl)
+
+	fallback, err := lru.New[string, string](size)
+	if err != nil {
+		// lru.New only errors on a non-positive size, which cannot happen here.
+		logger.Warnf("Failed to create MNS fallback cache: %v", err)
+	}
+
 	logger.Infof("Created new mns resolution cache with TTL: %v, size: %d", ttl, size)
 
-	return &MNSCache{cache: cache}
+	return &MNSCache{cache: cache, fallback: fallback}
 }
 
 // Get retrieves a mns resolution from cache.
@@ -70,10 +83,25 @@ func (dc *MNSCache) Get(mns string) (string, bool) {
 	return dc.cache.Get(mns)
 }
 
+// GetFallback retrieves the last known resolution for a domain, ignoring the TTL.
+// It is meant to be used as a resilient fallback when a fresh resolution fails.
+func (dc *MNSCache) GetFallback(mns string) (string, bool) {
+	if dc.fallback == nil {
+		return "", false
+	}
+
+	return dc.fallback.Get(mns)
+}
+
 // Set stores a mns resolution in cache.
 // The entry will be automatically evicted after the cache's TTL
 // or when the cache reaches its size limit.
 func (dc *MNSCache) Set(mns string, address string) {
 	dc.cache.Add(mns, address)
+
+	if dc.fallback != nil {
+		dc.fallback.Add(mns, address)
+	}
+
 	logger.Debugf("Cached mns resolution for %s: %s", mns, address)
 }

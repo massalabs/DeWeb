@@ -148,6 +148,17 @@ func resolveAddress(subdomain string, network msConfig.NetworkInfos, mnsCache *m
 
 	domainTarget, err := mns.ResolveDomain(&network, subdomain)
 	if err != nil {
+		// MNS resolution relies on a read-only call to the node, which can fail
+		// transiently (e.g. the public node is overloaded and returns 503). In that case,
+		// fall back to the last known resolution so a previously resolved website keeps
+		// being served instead of returning a "domain not found" page.
+		if mnsCache != nil {
+			if staleTarget, ok := mnsCache.GetFallback(subdomain); ok {
+				logger.Warnf("Failed to resolve MNS domain %s (%v); using last known address %s", subdomain, err, staleTarget)
+				return staleTarget, nil
+			}
+		}
+
 		return "", fmt.Errorf("could not resolve MNS domain: %w", err)
 	}
 
@@ -164,9 +175,18 @@ func resolveAddress(subdomain string, network msConfig.NetworkInfos, mnsCache *m
 // It also handles the case where the resource name is not found and tries to find the closest match
 // by adding the .html extension or by using the index.html resource.
 func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourceName string) (string, error) {
+	originalName := resourceName
+
 	exists, err := webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 	if err != nil {
-		return "", fmt.Errorf("failed to check if resource exists: %w", err)
+		// The existence check relies on the node (and may fail transiently, e.g. a 503
+		// when the public node is overloaded). In that case we cannot reliably apply the
+		// .html / index.html fallbacks, so we return the originally requested resource
+		// unchanged. Downstream serving can still satisfy it from cache, and if not it
+		// will surface a clear error instead of silently serving index.html with the
+		// wrong MIME type.
+		logger.Warnf("Failed to check if resource %s exists in website %s, using it as-is: %v", resourceName, websiteAddress, err)
+		return originalName, nil
 	}
 
 	if !exists {
@@ -177,7 +197,8 @@ func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourc
 
 			exists, err = webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 			if err != nil {
-				return "", fmt.Errorf("failed to check if resource exists: %w", err)
+				logger.Warnf("Failed to check if resource %s exists in website %s, using original resource as-is: %v", resourceName, websiteAddress, err)
+				return originalName, nil
 			}
 
 			if exists {
@@ -191,7 +212,8 @@ func resolveResourceName(network *msConfig.NetworkInfos, websiteAddress, resourc
 
 			exists, err = webmanager.ResourceExistsOnChain(network, websiteAddress, resourceName)
 			if err != nil {
-				return "", fmt.Errorf("failed to check if resource exists: %w", err)
+				logger.Warnf("Failed to check if resource %s exists in website %s, using original resource as-is: %v", resourceName, websiteAddress, err)
+				return originalName, nil
 			}
 
 			if exists {
