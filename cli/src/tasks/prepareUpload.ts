@@ -5,6 +5,7 @@ import { ListrTask } from 'listr2'
 import {
   batchSize,
   prepareCost,
+  totalPreparationCost,
   sendFilesInits,
 } from '../lib/website/filesInit'
 import { LAST_UPDATE_KEY } from '../lib/website/metadata'
@@ -59,25 +60,21 @@ export function prepareUploadTask(): ListrTask {
                 ctx.metadatasToDelete.length
               const estimatedOperations = Math.ceil(totalChanges / batchSize)
               const minimalFees = ctx.minimalFees * BigInt(estimatedOperations)
+              const cost = await prepareCost(
+                ctx.fileInits,
+                ctx.filesToDelete,
+                ctx.metadatas,
+                ctx.metadatasToDelete
+              )
               const {
                 filePathListCost,
                 storageCost,
                 filesToDeleteCost,
                 metadatasCost,
                 metadatasToDeleteCost,
-              } = await prepareCost(
-                ctx.fileInits,
-                ctx.filesToDelete,
-                ctx.metadatas,
-                ctx.metadatasToDelete
-              )
+              } = cost
 
-              const totalCost =
-                filePathListCost +
-                storageCost -
-                filesToDeleteCost +
-                metadatasCost -
-                metadatasToDeleteCost
+              const totalCost = totalPreparationCost(cost)
 
               subTask.output = `Estimated cost of SC preparation:`
               subTask.output = `  + Files init: ${formatMas(filePathListCost)} MAS`

@@ -13,6 +13,7 @@ import {
   CallUpdate,
   FunctionCall,
 } from '../utils/callManager'
+import { chunkArray } from '../utils/utils'
 import { FileDelete } from './models/FileDelete'
 
 import { FileInit } from './models/FileInit'
@@ -57,56 +58,28 @@ export function createBatches(
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
 ): Batch[] {
-  const batches: Batch[] = []
-  let fileInitIndex = 0
-  let fileDeleteIndex = 0
-  let metadataIndex = 0
-  let metadataDeleteIndex = 0
+  const fileInitChunks = chunkArray(files, batchSize)
+  const fileDeleteChunks = chunkArray(filesToDelete, batchSize)
+  const metadataChunks = chunkArray(metadatas, batchSize)
+  const metadataDeleteChunks = chunkArray(metadatasToDelete, batchSize)
 
-  while (
-    fileInitIndex < files.length ||
-    fileDeleteIndex < filesToDelete.length ||
-    metadataIndex < metadatas.length ||
-    metadataDeleteIndex < metadatasToDelete.length
-  ) {
-    let currentBatch = new Batch([], [], [], [])
+  const batchCount = Math.max(
+    fileInitChunks.length,
+    fileDeleteChunks.length,
+    metadataChunks.length,
+    metadataDeleteChunks.length
+  )
 
-    while (
-      currentBatch.fileInits.length < batchSize &&
-      fileInitIndex < files.length
-    ) {
-      currentBatch.fileInits.push(files[fileInitIndex])
-      fileInitIndex++
-    }
-
-    while (
-      currentBatch.fileDeletes.length < batchSize &&
-      fileDeleteIndex < filesToDelete.length
-    ) {
-      currentBatch.fileDeletes.push(filesToDelete[fileDeleteIndex])
-      fileDeleteIndex++
-    }
-
-    while (
-      currentBatch.metadatas.length < batchSize &&
-      metadataIndex < metadatas.length
-    ) {
-      currentBatch.metadatas.push(metadatas[metadataIndex])
-      metadataIndex++
-    }
-
-    while (
-      currentBatch.metadataDeletes.length < batchSize &&
-      metadataDeleteIndex < metadatasToDelete.length
-    ) {
-      currentBatch.metadataDeletes.push(metadatasToDelete[metadataDeleteIndex])
-      metadataDeleteIndex++
-    }
-
-    batches.push(currentBatch)
-  }
-
-  return batches
+  return Array.from(
+    { length: batchCount },
+    (_, i) =>
+      new Batch(
+        fileInitChunks[i] ?? [],
+        fileDeleteChunks[i] ?? [],
+        metadataChunks[i] ?? [],
+        metadataDeleteChunks[i] ?? []
+      )
+  )
 }
 
 /**
@@ -167,6 +140,36 @@ export async function sendFilesInits(
   return operations
 }
 
+/**
+ * Breakdown of the storage cost of a `filesInit` call.
+ * Every field is a positive magnitude: the `*ToDeleteCost` entries are storage
+ * that the call frees, not a negative amount to add.
+ */
+export interface PreparationCost {
+  filePathListCost: bigint
+  storageCost: bigint
+  filesToDeleteCost: bigint
+  metadatasCost: bigint
+  metadatasToDeleteCost: bigint
+}
+
+/**
+ * Nets a cost breakdown into the coins a `filesInit` call needs: the storage it
+ * allocates minus the storage it frees. May be negative when the call frees more
+ * than it allocates; callers that send coins must floor it at zero.
+ * @param cost - the breakdown returned by `prepareCost`
+ * @returns the net storage cost, in the smallest unit
+ */
+export function totalPreparationCost(cost: PreparationCost): bigint {
+  return (
+    cost.filePathListCost +
+    cost.storageCost +
+    cost.metadatasCost -
+    cost.filesToDeleteCost -
+    cost.metadatasToDeleteCost
+  )
+}
+
 /* TODO: Improve estimation
 If a file is already stored, we don't need to send coins for its hash storage
 PrepareCost compute all storage cost related to fileInit operation.
@@ -177,13 +180,7 @@ export async function prepareCost(
   filesToDelete: FileDelete[],
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
-): Promise<{
-  filePathListCost: bigint
-  storageCost: bigint
-  filesToDeleteCost: bigint
-  metadatasCost: bigint
-  metadatasToDeleteCost: bigint
-}> {
+): Promise<PreparationCost> {
   const filePathListCost = files.reduce((acc, chunk) => {
     return (
       acc +
@@ -204,8 +201,10 @@ export async function prepareCost(
     )
   }, 0n)
 
+  // Storage freed by the deletions. Reported as a positive magnitude; callers
+  // subtract it from the storage they need to pay for.
   const filesToDeleteCost = filesToDelete.reduce((acc, chunk) => {
-    return acc - StorageCost.datastoreEntry(chunk.hashLocation, U32.toBytes(0n))
+    return acc + StorageCost.datastoreEntry(chunk.hashLocation, U32.toBytes(0n))
   }, 0n)
 
   const metadatasCost = metadatas.reduce((acc, metadata) => {
@@ -220,7 +219,7 @@ export async function prepareCost(
 
   const metadatasToDeleteCost = metadatasToDelete.reduce((acc, metadata) => {
     return (
-      acc -
+      acc +
       StorageCost.datastoreEntry(
         globalMetadataKey(strToBytes(metadata.key)),
         metadata.value
@@ -243,20 +242,8 @@ export async function filesInitCost(
   metadatas: Metadata[],
   metadatasToDelete: Metadata[]
 ): Promise<bigint> {
-  const {
-    filePathListCost,
-    storageCost,
-    filesToDeleteCost,
-    metadatasCost,
-    metadatasToDeleteCost,
-  } = await prepareCost(files, filesToDelete, metadatas, metadatasToDelete)
-
-  return BigInt(
-    filePathListCost +
-      storageCost +
-      metadatasCost -
-      filesToDeleteCost -
-      metadatasToDeleteCost
+  return totalPreparationCost(
+    await prepareCost(files, filesToDelete, metadatas, metadatasToDelete)
   )
 }
 

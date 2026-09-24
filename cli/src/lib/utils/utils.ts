@@ -10,3 +10,22 @@ export function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
+
+/**
+ * Splits an array into chunks of at most `size` elements.
+ * The last chunk holds the remainder and may be shorter.
+ * @param items - the array to split
+ * @param size - the maximum number of elements per chunk
+ * @returns an array of chunks, empty if `items` is empty
+ */
+export function chunkArray<T>(items: T[], size: number): T[][] {
+  if (size <= 0) {
+    throw new Error(`chunk size must be strictly positive, got ${size}`)
+  }
+
+  const chunks: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+  return chunks
+}
