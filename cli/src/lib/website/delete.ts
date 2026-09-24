@@ -6,6 +6,9 @@ import {
   CallUpdate,
   FunctionCall,
 } from '../utils/callManager'
+import { chunkArray } from '../utils/utils'
+
+import { batchSize } from './filesInit'
 
 import { listFiles } from './read'
 import { getGlobalMetadata } from './metadata'
@@ -16,9 +19,9 @@ import { Metadata } from './models/Metadata'
 
 /**
  * Maximum number of files (or metadata keys) handled by a single operation.
- * Mirrors the batch size used by the upload path (`filesInit.ts`).
+ * Shared with the upload path so both stay in step.
  */
-export const deleteBatchSize = 32
+export const deleteBatchSize = batchSize
 
 /**
  * Number of delete operations sent concurrently. Mirrors the upload path.
@@ -56,17 +59,6 @@ export async function prepareDeleteWebsite(sc: SmartContract): Promise<{
   const fileDeletes = filePaths.map((filePath) => new FileDelete(filePath))
 
   return { fileDeletes, globalMetadatas }
-}
-
-/**
- * Splits an array into chunks of at most `size` elements.
- */
-function chunkArray<T>(items: T[], size: number): T[][] {
-  const batches: T[][] = []
-  for (let i = 0; i < items.length; i += size) {
-    batches.push(items.slice(i, i + size))
-  }
-  return batches
 }
 
 /**
