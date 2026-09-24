@@ -2,7 +2,11 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { OperationStatus } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import { deleteWebsite, prepareDeleteWebsite } from '../lib/website/delete'
+import {
+  buildDeleteCalls,
+  deleteWebsite,
+  prepareDeleteWebsite,
+} from '../lib/website/delete'
 
 import { DeleteCtx } from './tasks'
 
@@ -33,8 +37,16 @@ export function confirmDeleteWebsiteTask(): ListrTask {
         return
       }
 
-      task.output = `${ctx.fileDeletes.length} files to delete\n
-          ${ctx.globalMetadatas.length} global metadatas to delete`
+      const opCount = buildDeleteCalls(
+        ctx.sc,
+        ctx.fileDeletes,
+        ctx.globalMetadatas
+      ).length
+
+      task.output =
+        `${ctx.fileDeletes.length} files to delete\n` +
+        `          ${ctx.globalMetadatas.length} global metadatas to delete\n` +
+        `          ${opCount} operations will be sent`
       if (ctx.skipConfirm) {
         task.skip('Skipping confirmation')
         return
@@ -66,7 +78,16 @@ export function deleteWebsiteTask(): ListrTask {
         return
       }
 
-      await deleteWebsite(ctx.sc, ctx.fileDeletes, ctx.globalMetadatas)
+      await deleteWebsite(
+        ctx.sc,
+        ctx.fileDeletes,
+        ctx.globalMetadatas,
+        (progress) => {
+          task.output =
+            `Deleting: ${progress.succeeded}/${progress.total} operations confirmed` +
+            (progress.failed > 0 ? ` (${progress.failed} failed)` : '')
+        }
+      )
         .then(() => {
           task.output = 'Website deleted successfully'
         })

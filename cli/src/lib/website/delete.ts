@@ -1,15 +1,36 @@
+import { Args, ArrayTypes, SmartContract } from '@massalabs/massa-web3'
+
 import {
-  Args,
-  ArrayTypes,
-  OperationStatus,
-  SmartContract,
-} from '@massalabs/massa-web3'
+  CallManager,
+  CallStatus,
+  CallUpdate,
+  FunctionCall,
+} from '../utils/callManager'
 
 import { listFiles } from './read'
 import { getGlobalMetadata } from './metadata'
 
 import { FileDelete } from './models/FileDelete'
+import { FileInit } from './models/FileInit'
 import { Metadata } from './models/Metadata'
+
+/**
+ * Maximum number of files (or metadata keys) handled by a single operation.
+ * Mirrors the batch size used by the upload path (`filesInit.ts`).
+ */
+export const deleteBatchSize = 32
+
+/**
+ * Number of delete operations sent concurrently. Mirrors the upload path.
+ */
+const maxConcurrentOps = 4
+
+export interface DeleteProgress {
+  sent: number
+  succeeded: number
+  failed: number
+  total: number
+}
 
 /**
  * Prepares the data required to delete a website.
@@ -38,67 +59,114 @@ export async function prepareDeleteWebsite(sc: SmartContract): Promise<{
 }
 
 /**
- * Deletes the website by removing files and global metadata.
+ * Splits an array into chunks of at most `size` elements.
+ */
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size))
+  }
+  return batches
+}
+
+/**
+ * Builds the batched calls needed to delete the given files and global metadata.
+ *
+ * File deletions go through `filesInit` rather than `deleteFiles`: `deleteFiles`
+ * asserts `_getTotalChunk(hashLocation) > 0` for every entry, so re-running it
+ * over a batch that was already partially applied reverts the whole operation.
+ * The `filesInit` delete path has no such assert and is idempotent, which makes
+ * a failed batch safe to retry.
+ */
+export function buildDeleteCalls(
+  sc: SmartContract,
+  fileDeletes: FileDelete[],
+  globalMetadatas: Metadata[]
+): FunctionCall[] {
+  const calls: FunctionCall[] = []
+
+  for (const batch of chunkArray(fileDeletes, deleteBatchSize)) {
+    calls.push({
+      sc,
+      functionName: 'filesInit',
+      args: new Args()
+        .addSerializableObjectArray<FileInit>([]) // files to initialize
+        .addSerializableObjectArray<FileDelete>(batch) // files to delete
+        .addSerializableObjectArray<Metadata>([]) // global metadata to set
+        .addSerializableObjectArray<Metadata>([]), // global metadata to delete
+      // Deleting only frees storage, so no coins are required.
+      options: { coins: 0n },
+    })
+  }
+
+  for (const batch of chunkArray(globalMetadatas, deleteBatchSize)) {
+    calls.push({
+      sc,
+      functionName: 'removeMetadataGlobal',
+      args: new Args().addArray(
+        batch.map((m) => m.key),
+        ArrayTypes.STRING
+      ),
+      options: { coins: 0n },
+    })
+  }
+
+  return calls
+}
+
+/**
+ * Deletes the website by removing files and global metadata, spreading the work
+ * over several operations.
+ *
+ * A single operation cannot enumerate an arbitrarily large datastore: the
+ * `get_keys` ABI refuses more than `max_datastore_entry_count` (100_000) entries
+ * and materializes the whole key set in the module's memory. Sending every file
+ * in one call therefore fails outright on a large website.
+ *
  * @param sc - The smart contract instance.
  * @param fileDeletes - The files to delete.
  * @param globalMetadatas - The global metadata to delete.
+ * @param onProgress - Optional callback reporting batch progress.
  */
 export async function deleteWebsite(
   sc: SmartContract,
   fileDeletes: FileDelete[],
-  globalMetadatas: Metadata[]
+  globalMetadatas: Metadata[],
+  onProgress?: (progress: DeleteProgress) => void
 ): Promise<void> {
-  try {
-    if (fileDeletes.length !== 0) {
-      await executeDeleteOperation(
-        sc,
-        'deleteFiles',
-        new Args().addSerializableObjectArray(fileDeletes),
-        true
-      )
-    }
+  const calls = buildDeleteCalls(sc, fileDeletes, globalMetadatas)
 
-    if (globalMetadatas.length !== 0) {
-      await executeDeleteOperation(
-        sc,
-        'removeMetadataGlobal',
-        new Args().addArray(
-          globalMetadatas.map((m) => m.key),
-          ArrayTypes.STRING
-        ),
-        false
-      )
-    }
-  } catch (error) {
-    console.error('Error deleting website:', error)
-    throw error
+  if (calls.length === 0) {
+    return
   }
-}
 
-/**
- * Executes a delete operation and checks the status.
- * @param sc - The smart contract instance.
- * @param methodName - The method name to call.
- * @param args - The arguments to pass to the method.
- * @param speculative - Whether to wait for speculative execution or final execution.
- */
-async function executeDeleteOperation(
-  sc: SmartContract,
-  methodName: string,
-  args: Args,
-  speculative: boolean
-): Promise<void> {
-  const operation = await sc.call(methodName, args)
-  const status = speculative
-    ? await operation.waitSpeculativeExecution()
-    : await operation.waitFinalExecution()
+  const progress: DeleteProgress = {
+    sent: 0,
+    succeeded: 0,
+    failed: 0,
+    total: calls.length,
+  }
 
-  if (
-    status !== OperationStatus.SpeculativeSuccess &&
-    status !== OperationStatus.Success
-  ) {
+  const callManager = new CallManager(calls, maxConcurrentOps)
+  const failedCalls = await callManager.performCalls((update: CallUpdate) => {
+    switch (update.status) {
+      case CallStatus.Sent:
+        progress.sent++
+        break
+      case CallStatus.Success:
+        progress.succeeded++
+        break
+      case CallStatus.Error:
+        progress.failed++
+        break
+    }
+    onProgress?.(progress)
+  })
+
+  if (failedCalls.length > 0) {
     throw new Error(
-      `Failed to execute ${methodName} (status: ${status.toString()})`
+      `${failedCalls.length} of ${calls.length} delete operations failed. ` +
+        'Re-run the command to retry the remaining entries.'
     )
   }
 }
