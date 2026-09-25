@@ -10,8 +10,8 @@ export const DEFAULT_NODE_URL = PublicApiUrl.Buildnet
 export const DEFAULT_CONFIG_FILE = 'deweb_cli_config.json'
 
 interface Config {
-  wallet_password?: string
-  wallet_path?: string
+  password?: string
+  wallet?: string
   node_url: string
   chunk_size: number
   secret_key?: string
