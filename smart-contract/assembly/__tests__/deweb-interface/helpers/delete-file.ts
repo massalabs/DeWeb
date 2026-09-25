@@ -85,4 +85,3 @@ export function _assertHasNoChunk(locationHash: StaticArray<u8>): void {
 export function _assertHasNoCoins(): void {
   assert(balance() === 0, 'Balance should be zero');
 }
-
