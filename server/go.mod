@@ -1,6 +1,6 @@
 module github.com/massalabs/deweb-server
 
-go 1.24.0
+go 1.25.10
 
 require (
 	github.com/dgraph-io/badger/v4 v4.7.0

@@ -28,9 +28,9 @@ jobs:
         run: task generate
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64
+          version: v2.14
           args: --timeout=3m
           working-directory: ./plugin
 

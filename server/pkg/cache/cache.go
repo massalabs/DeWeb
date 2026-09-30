@@ -34,6 +34,7 @@ type cacheEntry struct {
 // NewCache initializes the cache with configurable maximum sizes for RAM and disk storage
 func NewCache(cacheDir string, maxRAMEntries, maxDiskEntries uint64) (*Cache, error) {
 	var initErr error
+
 	once.Do(func() {
 		// Initialize disk cache
 		diskCache, err := NewDiskCache(cacheDir, maxDiskEntries)

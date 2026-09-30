@@ -1,6 +1,6 @@
 module github.com/massalabs/deweb-plugin
 
-go 1.24.6
+go 1.25.10
 
 replace github.com/massalabs/deweb-server => ../server
 
