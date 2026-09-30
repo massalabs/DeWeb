@@ -208,35 +208,34 @@ func GetHttpHeaders(network *msConfig.NetworkInfos, websiteAddress string, fileP
 
 	fileMetadataKeyFilter := storagekeys.FileMetadataKey(fileHash, httpHeaderPrefix)
 
-	addressInfo, err := node.Addresses(client, []string{websiteAddress})
+	fileHeaderKeys, err := finalDatastoreKeys(client, websiteAddress, fileMetadataKeyFilter)
 	if err != nil {
-		return nil, fmt.Errorf("calling get_addresses '%+v': %w", []string{websiteAddress}, err)
+		return nil, fmt.Errorf("fetching file http header keys: %w", err)
 	}
 
-	datastoreKeys := addressInfo[0].FinalDatastoreKeys
+	globalHeaderKeys, err := finalDatastoreKeys(client, websiteAddress, globalMetadataKeyFilter)
+	if err != nil {
+		return nil, fmt.Errorf("fetching global http header keys: %w", err)
+	}
 
 	headersRecord := make(map[string]string)
 
 	var httpHeaderKeys [][]byte
 
-	for _, key := range datastoreKeys {
-		var parsedKey string
-		if bytes.HasPrefix(key, globalMetadataKeyFilter) {
-			parsedKey = string(key[len(globalMetadataKeyFilter):])
+	// file headers should override global ones
+	for _, key := range fileHeaderKeys {
+		httpHeaderKeys = append(httpHeaderKeys, key)
+		headersRecord[string(key[len(fileMetadataKeyFilter):])] = ""
+	}
 
-			// to avoid duplicate http headers append global one only if not present
-			if _, exists := headersRecord[parsedKey]; !exists {
-				headersRecord[parsedKey] = ""
+	for _, key := range globalHeaderKeys {
+		parsedKey := string(key[len(globalMetadataKeyFilter):])
 
-				httpHeaderKeys = append(httpHeaderKeys, key)
-			}
-		}
-
-		// file headers should override global ones
-		if bytes.HasPrefix(key, fileMetadataKeyFilter) {
-			httpHeaderKeys = append(httpHeaderKeys, key)
-			parsedKey = string(key[len(fileMetadataKeyFilter):])
+		// to avoid duplicate http headers append global one only if not present
+		if _, exists := headersRecord[parsedKey]; !exists {
 			headersRecord[parsedKey] = ""
+
+			httpHeaderKeys = append(httpHeaderKeys, key)
 		}
 	}
 
@@ -324,18 +323,15 @@ func GetFilesPathList(
 
 // getFileLocationKeys fetches and returns the keys for the file locations.
 func getFileLocationKeys(client *node.Client, websiteAddress string) ([][]byte, error) {
-	addressesInfo, err := node.Addresses(client, []string{websiteAddress})
+	keys, err := finalDatastoreKeys(client, websiteAddress, storagekeys.FileLocationTag())
 	if err != nil {
-		return nil, fmt.Errorf("converting website address: %w", err)
+		return nil, fmt.Errorf("fetching website file location keys: %w", err)
 	}
-
-	addressInfo := addressesInfo[0]
-	keys := addressInfo.FinalDatastoreKeys
 
 	var filteredKeys [][]byte
 
 	for _, key := range keys {
-		if len(key) > len(storagekeys.FileLocationTag()) && bytes.Equal(key[:len(storagekeys.FileLocationTag())], storagekeys.FileLocationTag()) {
+		if len(key) > len(storagekeys.FileLocationTag()) {
 			filteredKeys = append(filteredKeys, key)
 		}
 	}
