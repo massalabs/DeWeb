@@ -153,6 +153,7 @@ func TestGetLastUpdateTimestampCachesButRefetchesAfterTTL(t *testing.T) {
 
 	var ts atomic.Int64
 	var calls atomic.Int64
+
 	ts.Store(1700000000)
 
 	srv := fakeNode(t, &ts, &calls)

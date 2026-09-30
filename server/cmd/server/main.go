@@ -21,6 +21,7 @@ func main() {
 
 	// Add version flag
 	showVersion := flag.Bool("version", false, "Show version information")
+
 	flag.Parse()
 
 	// Handle version flag
