@@ -6,6 +6,7 @@ import { fileChunkCountKey } from './storageKeys/chunksKeys';
 import { _removeFileLocation } from './location';
 import { FILE_TAG } from './storageKeys/tags';
 import { fileLocationKey } from './storageKeys/metadataKeys';
+import { _deleteKeysWithPrefix } from './datastore';
 /* -------------------------------------------------------------------------- */
 /*                                     SET                                    */
 /* -------------------------------------------------------------------------- */
@@ -85,11 +86,8 @@ export function _removeChunksRange(
  * @param hashLocation - The hash of the file location.
  */
 export function _deleteFile(hashLocation: StaticArray<u8>): void {
-  // Get all entries associated with the file
-  const fileKeys = Storage.getKeys(FILE_TAG.concat(hashLocation));
-  for (let i: u32 = 0; i < u32(fileKeys.length); i++) {
-    Storage.del(fileKeys[i]);
-  }
+  // Delete all entries associated with the file
+  _deleteKeysWithPrefix(FILE_TAG.concat(hashLocation));
 
   if (Storage.has(fileLocationKey(hashLocation))) {
     _removeFileLocation(hashLocation);
