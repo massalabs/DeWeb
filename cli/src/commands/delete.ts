@@ -8,11 +8,13 @@ import {
   deleteWebsiteTask,
   prepareDeleteWebsiteTask,
   purgeWebsiteTask,
+  updateIndexAfterPurgeTask,
 } from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
 
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 export const deleteCommand = new Command('delete')
   .alias('d')
@@ -24,8 +26,9 @@ export const deleteCommand = new Command('delete')
     'Also delete the Smart Contract from the blockchain',
     false
   )
+  .option('--noIndex', 'Skip DeWeb index update after a purge', false)
   .action(async (address, options, command) => {
-    const globalOptions = loadConfig(command.optsWithGlobals())
+    const globalOptions = loadConfig(commandOptions(command))
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
@@ -38,6 +41,7 @@ export const deleteCommand = new Command('delete')
     const sc = new SmartContract(provider, address)
 
     const ctx: DeleteCtx = {
+      provider,
       sc: sc,
 
       fileDeletes: [],
@@ -45,6 +49,7 @@ export const deleteCommand = new Command('delete')
 
       skipConfirm: options.yes,
       purge: options.purge,
+      noIndex: options.noIndex,
     }
 
     const tasksArray = [
@@ -54,7 +59,11 @@ export const deleteCommand = new Command('delete')
     ]
 
     if (options.purge) {
-      tasksArray.push(confirmPurgeWebsiteTask(), purgeWebsiteTask())
+      tasksArray.push(
+        confirmPurgeWebsiteTask(),
+        purgeWebsiteTask(),
+        updateIndexAfterPurgeTask()
+      )
     }
 
     const tasks = new Listr(tasksArray, {

@@ -8,6 +8,8 @@ import {
   prepareDeleteWebsite,
 } from '../lib/website/delete'
 
+import { updateIndexScWebsite } from '../lib/index/index'
+
 import { DeleteCtx } from './tasks'
 
 export function prepareDeleteWebsiteTask(): ListrTask {
@@ -154,6 +156,38 @@ export function purgeWebsiteTask(): ListrTask {
       }
 
       task.output = 'Website purged successfully'
+    },
+    rendererOptions: {
+      outputBar: Infinity,
+      persistentOutput: true,
+    },
+  }
+}
+
+export function updateIndexAfterPurgeTask(): ListrTask {
+  return {
+    title: 'Update DeWeb Index',
+    task: async (ctx: DeleteCtx, task) => {
+      if (ctx.noIndex) {
+        task.skip('Skipping DeWeb Index update')
+        return
+      }
+
+      // A purged website has no version entry anymore: the index removes it.
+      task.output = 'Removing the website from the DeWeb Index'
+      const op = await updateIndexScWebsite(ctx.provider, ctx.sc.address)
+      const status = await op.waitSpeculativeExecution()
+
+      if (
+        status !== OperationStatus.SpeculativeSuccess &&
+        status !== OperationStatus.Success
+      ) {
+        throw new Error(
+          `Failed to update the DeWeb Index (status: ${status.toString()})`
+        )
+      }
+
+      task.output = 'Website removed from the DeWeb Index'
     },
     rendererOptions: {
       outputBar: Infinity,

@@ -3,6 +3,7 @@ import { makeImmutable } from '@massalabs/massa-web3'
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { promptYesNo } from '../tasks/utils'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 /* Make a website immutable */
 export const immutableCommand = new Command('immutable')
@@ -13,7 +14,7 @@ export const immutableCommand = new Command('immutable')
   )
   .option('-y, --yes', 'Skip confirmation prompt')
   .action(async (address, _, command) => {
-    const globalOptions = loadConfig({ ...command.optsWithGlobals() })
+    const globalOptions = loadConfig(commandOptions(command))
 
     if (!address) {
       throw new Error('No address provided')

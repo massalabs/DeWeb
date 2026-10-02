@@ -7,8 +7,8 @@ import { listFilesCommand } from './commands/list'
 import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
-import { DEFAULT_CONFIG_FILE } from './commands/config'
 import { immutableCommand } from './commands/immutable'
+import { addProgramOptions, addSharedOptions } from './commands/options'
 
 import { handleDisclaimer } from './tasks/disclaimer'
 
@@ -20,21 +20,21 @@ program
   .name('deweb-cli')
   .description('CLI app for deploying websites')
   .version(version)
-  .option('-c, --config <path>', 'Path to the config file', DEFAULT_CONFIG_FILE)
-  .option('-n, --node_url <url>', 'Node URL')
-  .option('-w, --wallet <path>', 'Path to the wallet file')
-  .option('-p, --password <password>', 'Password for the wallet file')
-  .option('-a, --accept_disclaimer', 'Accept the legal disclaimer')
+addProgramOptions(program)
 
-program.addCommand(uploadCommand)
-program.addCommand(deleteCommand)
-program.addCommand(listFilesCommand)
-program.addCommand(showFileCommand)
-program.addCommand(metadataCommand)
-program.addCommand(immutableCommand)
+for (const command of [
+  uploadCommand,
+  deleteCommand,
+  listFilesCommand,
+  showFileCommand,
+  metadataCommand,
+  immutableCommand,
+]) {
+  program.addCommand(addSharedOptions(command))
+}
 
-async function disclaimer() {
-  if (program.getOptionValue('accept_disclaimer') === undefined) {
+async function disclaimer(accepted = false) {
+  if (!accepted && program.getOptionValue('accept_disclaimer') === undefined) {
     try {
       await handleDisclaimer()
     } catch (error) {
@@ -45,8 +45,8 @@ async function disclaimer() {
 }
 
 // execute before each command
-program.hook('preAction', async () => {
-  await disclaimer()
+program.hook('preAction', async (_, actionCommand) => {
+  await disclaimer(actionCommand.getOptionValue('accept_disclaimer') === true)
 })
 
 // execute when the cli is run without any command
