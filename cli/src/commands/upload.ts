@@ -14,7 +14,7 @@ import {
   getGlobalMetadata,
 } from '../lib/website/metadata'
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
-import { loadConfig } from './config'
+import { loadConfig, parseChunkSize } from './config'
 import { commandOptions } from './options'
 
 export const uploadCommand = new Command('upload')
@@ -35,9 +35,15 @@ export const uploadCommand = new Command('upload')
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
+    // --chunkSize overrides chunk_size from the config file
+    const chunkSize =
+      options.chunkSize !== undefined
+        ? parseChunkSize(options.chunkSize)
+        : globalOptions.chunk_size
+
     const ctx: UploadCtx = await createUploadCtx(
       provider,
-      globalOptions.chunk_size,
+      chunkSize,
       websiteDirPath,
       options.yes,
       options.noIndex,

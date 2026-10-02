@@ -12,6 +12,9 @@ export const DEFAULT_CONFIG_FILE = 'deweb_cli_config.json'
 interface Config {
   wallet_password?: string
   wallet_path?: string
+  // resolved wallet credentials: the --wallet/--password options, else wallet_path/wallet_password
+  wallet?: string
+  password?: string
   node_url: string
   chunk_size: number
   secret_key?: string
@@ -69,11 +72,32 @@ export function loadConfig(options: OptionValues): Config {
   const definedOptions = Object.fromEntries(
     Object.entries(options).filter(([, value]) => value !== undefined)
   )
-  const conf = {
+  const conf: Config = {
     ...DEFAULT_CONFIG,
     ...config,
     ...definedOptions,
   }
+  // The config file names the wallet credentials wallet_path and wallet_password, the command line
+  // --wallet and --password. The command line takes precedence.
+  conf.wallet = conf.wallet ?? conf.wallet_path
+  conf.password = conf.password ?? conf.wallet_password
+
   validateConfig(conf)
   return conf
+}
+
+/**
+ * Parses the --chunkSize option.
+ * @param value - The option value
+ * @returns The chunk size in bytes
+ * @throws If the value is not a positive integer
+ */
+export function parseChunkSize(value: string): number {
+  const chunkSize = Number(value)
+  if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) {
+    throw new Error(
+      `Invalid chunk size: ${value}. Expected a positive integer.`
+    )
+  }
+  return chunkSize
 }
