@@ -32,7 +32,7 @@ export const metadataCommand = new Command('metadata')
     '-a, --add <metadata_key,metadata_value>',
     `Add metadata with the specified keys and values.
      If several entries are provided, separate them with a semicolon. ex: -a "key1,value1;key2,value2"
-     For global metadata this option is only used if no metadata is provided in the config file.
+     For global metadata, the entries are added to the metadata of the config file; for a key present in both, this option wins.
      For file metadata this option is mandatory.`
   )
   .action(async (address, options, command) => {
