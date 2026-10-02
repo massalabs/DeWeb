@@ -10,6 +10,7 @@ import {
   getGlobalMetadata,
 } from '../lib/website/metadata'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 export const listFilesCommand = new Command('list')
   .alias('ls')
@@ -18,7 +19,7 @@ export const listFilesCommand = new Command('list')
   )
   .argument('[address]', 'Address of the website to add metadata to')
   .action(async (address, _, command) => {
-    const globalOptions = loadConfig({ ...command.optsWithGlobals(), address })
+    const globalOptions = loadConfig({ ...commandOptions(command), address })
 
     const webSiteAddress = globalOptions.address
     if (!webSiteAddress) {

@@ -64,11 +64,15 @@ function validateConfig(config: Config): void {
 export function loadConfig(options: OptionValues): Config {
   const config = parseConfigFile(options.config as string)
 
-  // commandOptions get priority over configOptions
+  // commandOptions get priority over configOptions. An option left unset (undefined) does not override
+  // the config file: `list` without an address argument uses the config address.
+  const definedOptions = Object.fromEntries(
+    Object.entries(options).filter(([, value]) => value !== undefined)
+  )
   const conf = {
     ...DEFAULT_CONFIG,
     ...config,
-    ...options,
+    ...definedOptions,
   }
   validateConfig(conf)
   return conf

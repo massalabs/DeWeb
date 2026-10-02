@@ -5,6 +5,7 @@ import { getFileFromAddress } from '../lib/website/read'
 
 import { initPublicProvider } from './utils'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 export const showFileCommand = new Command('show')
   .description('Show a file from the given website on Massa blockchain')
@@ -12,7 +13,7 @@ export const showFileCommand = new Command('show')
   .option('-a, --address <address>', 'Address of the website to edit')
   .action(async (filePath, options, command) => {
     const globalOptions = loadConfig({
-      ...command.optsWithGlobals(),
+      ...commandOptions(command),
       address: options.address,
     })
 

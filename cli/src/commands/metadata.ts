@@ -14,6 +14,7 @@ import {
 import { Metadata } from '../lib/website/models/Metadata'
 import { listFiles } from '../lib/website/read'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 export const metadataCommand = new Command('metadata')
   .alias('m')
@@ -35,7 +36,7 @@ export const metadataCommand = new Command('metadata')
      For file metadata this option is mandatory.`
   )
   .action(async (address, options, command) => {
-    const globalOptions = loadConfig({ ...command.optsWithGlobals(), address })
+    const globalOptions = loadConfig({ ...commandOptions(command), address })
 
     const webSiteAddress = globalOptions.address
     if (!webSiteAddress) {

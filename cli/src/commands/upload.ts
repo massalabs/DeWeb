@@ -15,6 +15,7 @@ import {
 } from '../lib/website/metadata'
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
+import { commandOptions } from './options'
 
 export const uploadCommand = new Command('upload')
   .alias('u')
@@ -30,7 +31,7 @@ export const uploadCommand = new Command('upload')
     false
   )
   .action(async (websiteDirPath, options, command) => {
-    const globalOptions = loadConfig(command.optsWithGlobals())
+    const globalOptions = loadConfig(commandOptions(command))
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
 
