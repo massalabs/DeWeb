@@ -1,6 +1,5 @@
-import { bytesToString, stringToBytes } from '@massalabs/as-types';
+import { stringToBytes } from '@massalabs/as-types';
 import { Storage } from '@massalabs/massa-as-sdk';
-import { FILE_LOCATION_TAG } from './storageKeys/tags';
 import { fileLocationKey } from './storageKeys/metadataKeys';
 
 /**
@@ -25,17 +24,4 @@ export function _removeFileLocation(hashLocation: StaticArray<u8>): void {
   const key = fileLocationKey(hashLocation);
   assert(Storage.has(key), 'File not found');
   Storage.del(key);
-}
-
-/**
- * Retrieves the list of file locations.
- * @returns An array of file locations as strings.
- */
-export function _getFileLocations(): string[] {
-  const keys = Storage.getKeys(FILE_LOCATION_TAG);
-  const locations: string[] = [];
-  for (let i = 0; i < keys.length; i++) {
-    locations.push(bytesToString(Storage.get(keys[i])));
-  }
-  return locations;
 }

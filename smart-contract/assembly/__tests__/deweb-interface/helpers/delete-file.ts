@@ -1,5 +1,5 @@
-import { stringToBytes, Args } from '@massalabs/as-types';
-import { sha256, Storage, balance } from '@massalabs/massa-as-sdk';
+import { bytesToString, stringToBytes, Args } from '@massalabs/as-types';
+import { balance, getKeysPage, sha256, Storage } from '@massalabs/massa-as-sdk';
 import { FileDelete } from '../../../contracts/serializable/FileDelete';
 import { deleteFiles, purge } from '../../../contracts/deweb-interface';
 import {
@@ -10,8 +10,23 @@ import { fileChunkCountKey } from '../../../contracts/internals/storageKeys/chun
 import {
   FILE_TAG,
   CHUNK_TAG,
+  FILE_LOCATION_TAG,
 } from '../../../contracts/internals/storageKeys/tags';
-import { _getFileLocations } from '../../../contracts/internals/location';
+
+/**
+ * Lists the locations of the stored files, one page of keys at a time.
+ */
+export function _getFileLocations(): string[] {
+  const locations: string[] = [];
+  let keys = getKeysPage(FILE_LOCATION_TAG);
+  while (keys.length > 0) {
+    for (let i = 0; i < keys.length; i++) {
+      locations.push(bytesToString(Storage.get(keys[i])));
+    }
+    keys = getKeysPage(FILE_LOCATION_TAG, keys[keys.length - 1]);
+  }
+  return locations;
+}
 
 export function _purge(): void {
   purge([]);
@@ -85,4 +100,3 @@ export function _assertHasNoChunk(locationHash: StaticArray<u8>): void {
 export function _assertHasNoCoins(): void {
   assert(balance() === 0, 'Balance should be zero');
 }
-

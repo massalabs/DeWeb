@@ -27,11 +27,16 @@ import {
   _removeChunksRange,
 } from './internals/chunks';
 import { _fileInit } from './internals/fileInit';
+import { _deleteKeysWithPrefix } from './internals/datastore';
 import { FileInit } from './serializable/FileInit';
 import { DEWEB_VERSION_TAG } from './internals/storageKeys/tags';
 export { setOwner } from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
-const DEWEB_VERSION = '2';
+/**
+ * Version of this contract. The constructor stores it when the contract is deployed; upgradeSC runs
+ * the code being replaced, so an upgrade calls syncVersion right after, in the same operation.
+ */
+const DEWEB_VERSION = '3';
 
 /**
  * Initializes the smart contract.
@@ -230,7 +235,10 @@ export function setMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
 
-    assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
+  assert(
+    hashLocation.length == 32,
+    'Invalid filpath sha256 hash. should be 32 bytes',
+  );
 
   const metadata = args
     .nextSerializableObjectArray<Metadata>()
@@ -262,7 +270,10 @@ export function removeMetadataFile(_binaryArgs: StaticArray<u8>): void {
     .next<StaticArray<u8>>()
     .expect('Invalid hashLocation');
 
-  assert(hashLocation.length == 32, 'Invalid filpath sha256 hash. should be 32 bytes');
+  assert(
+    hashLocation.length == 32,
+    'Invalid filpath sha256 hash. should be 32 bytes',
+  );
 
   const metadata = args.next<string[]>().expect('Invalid key');
 
@@ -311,11 +322,26 @@ export function receiveCoins(): void {
 export function upgradeSC(args: StaticArray<u8>): void {
   _onlyOwner();
   setBytecode(args);
-  
+
   // Send the freed coins back to the caller
   transferCoins(Context.caller(), balance());
 }
 
+/**
+ * Stores the version of this contract in the datastore.
+ * The constructor only runs when the contract is deployed: call this right after upgradeSC, in the
+ * same operation, so that an upgraded website records the version of the contract it now runs.
+ * Sends the contract balance back to the caller, like upgradeSC.
+ * @param _ - Ignored.
+ * @throws If the caller is not the owner.
+ */
+export function syncVersion(_: StaticArray<u8>): void {
+  _onlyOwner();
+
+  Storage.set(DEWEB_VERSION_TAG, stringToBytes(DEWEB_VERSION));
+
+  transferCoins(Context.caller(), balance());
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                 PURGE   SC                                 */
@@ -331,10 +357,7 @@ export function purge(args: StaticArray<u8>): void {
   _onlyOwner();
 
   // Delete all datastore entries
-  const keys = Storage.getKeys([]);
-  for (let i: u32 = 0; i < u32(keys.length); i++) {
-    Storage.del(keys[i]);
-  }
+  _deleteKeysWithPrefix([]);
 
   // Empty the bytecode
   setBytecode([]);
