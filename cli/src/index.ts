@@ -8,6 +8,7 @@ import { showFileCommand } from './commands/showFile'
 import { uploadCommand } from './commands/upload'
 import { metadataCommand } from './commands/metadata'
 import { immutableCommand } from './commands/immutable'
+import { upgradeCommand } from './commands/upgrade'
 import { addProgramOptions, addSharedOptions } from './commands/options'
 
 import { handleDisclaimer } from './tasks/disclaimer'
@@ -29,6 +30,7 @@ for (const command of [
   showFileCommand,
   metadataCommand,
   immutableCommand,
+  upgradeCommand,
 ]) {
   program.addCommand(addSharedOptions(command))
 }
