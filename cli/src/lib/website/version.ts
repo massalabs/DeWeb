@@ -1,7 +1,8 @@
-import { bytesToStr, isImmutable, PublicProvider } from '@massalabs/massa-web3'
+import { bytesToStr, PublicProvider } from '@massalabs/massa-web3'
 
 import { DEWEB_VERSION_TAG } from './storageKeys'
 import { DEWEB_SC_VERSION } from './sc/deweb-sc-bytecode'
+import { getWebsitesUpgradeInfo, UpgradeStatus } from './upgrade'
 
 /**
  * Reads the version of the contract of a website, as its constructor (or `syncVersion`) stored it.
@@ -24,18 +25,8 @@ export async function getWebsiteVersion(
 }
 
 /**
- * Tells whether the bytecode shipped with this CLI is newer than the contract of a website.
- * @param websiteVersion - Version of the website contract, undefined if it stores none
- */
-export function isUpgradeAvailable(
-  websiteVersion: number | undefined
-): boolean {
-  return (websiteVersion ?? 0) < Number(DEWEB_SC_VERSION)
-}
-
-/**
- * Prints a warning when the website runs an older contract than the one shipped with this CLI.
- * Immutable websites cannot be upgraded: nothing is printed for them.
+ * Prints a warning when the website runs another contract than the one shipped with this CLI.
+ * Immutable and up-to-date websites print nothing.
  * @param provider - Provider instance
  * @param address - Address of the website smart contract
  */
@@ -44,17 +35,23 @@ export async function warnIfUpgradeAvailable(
   address: string
 ): Promise<void> {
   try {
-    const version = await getWebsiteVersion(provider, address)
-    if (!isUpgradeAvailable(version)) return
-    if (await isImmutable(address, provider, true)) return
+    const [{ status }] = await getWebsitesUpgradeInfo(provider, [address])
+    if (
+      status !== UpgradeStatus.AVAILABLE &&
+      status !== UpgradeStatus.AWAITING_MIP
+    ) {
+      return
+    }
 
+    const version = await getWebsiteVersion(provider, address)
+    const versions = `The website at address ${address} runs contract version ${version ?? 'unknown'}, this CLI ships version ${DEWEB_SC_VERSION}.`
     console.warn(
-      `\nThe website at address ${address} runs contract version ${version ?? 'unknown'}, ` +
-        `this CLI ships version ${DEWEB_SC_VERSION}.\n` +
-        `Upgrade it with: deweb-cli upgrade ${address}\n`
+      status === UpgradeStatus.AVAILABLE
+        ? `\n${versions}\nUpgrade it with: deweb-cli upgrade ${address}\n`
+        : `\n${versions}\nIt can be upgraded once MIP-0002 is active on this network.\n`
     )
   } catch (error) {
     // The check is informative only: never block the command on it
-    console.warn(`Could not check the contract version of ${address}: ${error}`)
+    console.warn(`Could not check the contract of ${address}: ${error}`)
   }
 }
