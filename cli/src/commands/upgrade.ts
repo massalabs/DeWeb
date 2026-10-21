@@ -9,18 +9,25 @@ import {
 import { promptYesNo } from '../tasks/utils'
 import { loadConfig } from './config'
 import { commandOptions } from './options'
-import { DEWEB_SC_VERSION } from '../lib/website/sc/deweb-sc-bytecode'
-import { upgradeCoins, upgradeWebsite } from '../lib/website/upgrade'
-import { getWebsiteVersion, isUpgradeAvailable } from '../lib/website/version'
+import {
+  DEWEB_SC_BYTECODE,
+  DEWEB_SC_VERSION,
+} from '../lib/website/sc/deweb-sc-bytecode'
+import {
+  getWebsitesUpgradeInfo,
+  upgradeCost,
+  upgradeWebsite,
+  UpgradeStatus,
+} from '../lib/website/upgrade'
+import { getWebsiteVersion } from '../lib/website/version'
 
-/* Upgrade the contract of a website to the version shipped with this CLI */
+/* Upgrade the contract of a website to the one shipped with this CLI */
 export const upgradeCommand = new Command('upgrade')
   .description(
-    'Upgrade the smart contract of a website to the version shipped with this CLI'
+    'Upgrade the smart contract of a website to the one shipped with this CLI'
   )
   .argument('<address>', 'Address of the smart contract of the website')
   .option('-y, --yes', 'Skip confirmation prompt')
-  .option('--force', 'Upgrade even if the website already runs this version')
   .action(async (address, options, command) => {
     const globalOptions = loadConfig(commandOptions(command))
 
@@ -46,25 +53,35 @@ export const upgradeCommand = new Command('upgrade')
       process.exit(1)
     }
 
+    const [{ status, bytecodeLength }] = await getWebsitesUpgradeInfo(
+      provider,
+      [address]
+    )
     const version = await getWebsiteVersion(provider, address)
-    if (!isUpgradeAvailable(version) && !options.force) {
-      console.log(
-        `The website at address ${address} already runs contract version ${version}, the version of this CLI.`
-      )
-      return
+    switch (status) {
+      case UpgradeStatus.UP_TO_DATE:
+        console.log(
+          `The website at address ${address} already runs the contract of this CLI (version ${DEWEB_SC_VERSION}).`
+        )
+        return
+      case UpgradeStatus.AWAITING_MIP:
+        console.error(
+          `The contract of this CLI (version ${DEWEB_SC_VERSION}) needs MIP-0002, which is not active on this network yet.`
+        )
+        process.exit(1)
+        break
+      case UpgradeStatus.IMMUTABLE:
+        console.error(`The website at address ${address} is immutable.`)
+        process.exit(1)
     }
 
-    const currentBytecode = await provider.client.getAddressesBytecode({
-      address,
-      is_final: true,
-    })
-    const coins = upgradeCoins(currentBytecode.length)
-
+    const coins = upgradeCost(bytecodeLength)
     if (
       !options.yes &&
       !(await promptYesNo(
         `\nUpgrade the contract of the website at address ${address} from version ${version ?? 'unknown'} to ${DEWEB_SC_VERSION}?\n` +
-          `It sends ${Mas.toString(coins)} MAS for the bytecode storage, plus the operation fees. The website files are kept.`
+          `Bytecode: ${bytecodeLength} -> ${DEWEB_SC_BYTECODE.length} bytes. ` +
+          `Cost: ${Mas.toString(coins)} MAS + fees. The website files, metadata and MNS domains are kept.`
       ))
     ) {
       console.error('upgrade command aborted by user')
@@ -73,10 +90,14 @@ export const upgradeCommand = new Command('upgrade')
 
     console.log(`Upgrading the website at address ${address}...`)
     try {
-      const operations = await upgradeWebsite(provider, address, coins)
+      const operation = await upgradeWebsite(
+        provider,
+        address,
+        bytecodeLength,
+        true // Wait final execution because it's a critical operation
+      )
       console.log(
-        `Operations finalized: ${operations.join(', ')}.\n` +
-          `The website at address ${address} now runs contract version ${await getWebsiteVersion(provider, address)}.`
+        `Operation ${operation.id} finalized. The website at address ${address} now runs contract version ${await getWebsiteVersion(provider, address)}.`
       )
     } catch (err) {
       throw new Error(`Failed to upgrade the website: ${err}`)
