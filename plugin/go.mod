@@ -16,7 +16,7 @@ require (
 	github.com/massalabs/deweb-server v0.0.0-00010101000000-000000000000
 	github.com/massalabs/station v0.8.3
 	github.com/massalabs/station-massa-wallet v0.4.5
-	github.com/massalabs/station/plugin-kit v0.1.1
+	github.com/massalabs/station/plugin-kit v0.1.2
 	github.com/shirou/gopsutil/v4 v4.25.3
 	golang.org/x/net v0.39.0
 	gopkg.in/yaml.v2 v2.4.0
