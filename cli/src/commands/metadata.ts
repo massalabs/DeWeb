@@ -14,6 +14,7 @@ import {
 import { Metadata } from '../lib/website/models/Metadata'
 import { listFiles } from '../lib/website/read'
 import { loadConfig } from './config'
+import { warnIfUpgradeAvailable } from '../lib/website/version'
 import { commandOptions } from './options'
 
 export const metadataCommand = new Command('metadata')
@@ -44,6 +45,8 @@ export const metadataCommand = new Command('metadata')
     }
 
     const provider = await makeProviderFromNodeURLAndSecret(globalOptions)
+
+    await warnIfUpgradeAvailable(provider, webSiteAddress)
 
     let metadatas: Metadata[] = []
     if (options.delete) {

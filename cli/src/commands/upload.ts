@@ -15,6 +15,7 @@ import {
 } from '../lib/website/metadata'
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig, parseChunkSize } from './config'
+import { warnIfUpgradeAvailable } from '../lib/website/version'
 import { commandOptions } from './options'
 
 export const uploadCommand = new Command('upload')
@@ -62,6 +63,7 @@ export const uploadCommand = new Command('upload')
         provider,
         `The website at address ${address} is immutable. It cannot be edited anymore.`
       )
+      await warnIfUpgradeAvailable(provider, address)
       ctx.sc = new SmartContract(provider, address)
 
       const currentGlobalMetadata = await getGlobalMetadata(provider, address)

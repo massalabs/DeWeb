@@ -14,6 +14,7 @@ import { DeleteCtx } from '../tasks/tasks'
 
 import { makeProviderFromNodeURLAndSecret, exitIfImmutable } from './utils'
 import { loadConfig } from './config'
+import { warnIfUpgradeAvailable } from '../lib/website/version'
 import { commandOptions } from './options'
 
 export const deleteCommand = new Command('delete')
@@ -37,6 +38,8 @@ export const deleteCommand = new Command('delete')
       provider,
       `The website at address ${address} is immutable. It cannot be deleted anymore.`
     )
+
+    await warnIfUpgradeAvailable(provider, address)
 
     const sc = new SmartContract(provider, address)
 
