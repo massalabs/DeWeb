@@ -12,6 +12,20 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
+ * Renders a text progress bar, e.g. `[██████░░░░░░░░░░░░░░]  30%`
+ * @param done - the number of completed units
+ * @param total - the total number of units
+ * @param width - the number of characters of the bar itself
+ * @returns the progress bar string
+ */
+export function progressBar(done: number, total: number, width = 30): string {
+  const ratio = total > 0 ? Math.min(done / total, 1) : 1
+  const filled = Math.round(ratio * width)
+  const percent = `${Math.floor(ratio * 100)}%`.padStart(4)
+  return `[${'█'.repeat(filled)}${'░'.repeat(width - filled)}] ${percent}`
+}
+
+/**
  * Splits an array into chunks of at most `size` elements.
  * The last chunk holds the remainder and may be shorter.
  * @param items - the array to split

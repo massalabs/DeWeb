@@ -2,6 +2,7 @@ import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
 import { ListrTask } from 'listr2'
 
 import { BatchStatus, UploadManager } from '../lib/uploadManager'
+import { progressBar } from '../lib/utils/utils'
 
 import { UploadCtx } from './tasks'
 
@@ -45,6 +46,8 @@ export function uploadBatchesTask(): ListrTask {
         maxConcurrentOps: ctx.maxConcurrentOps,
       })
 
+      let lastOutput = ''
+
       await uploadManager.startUpload(ctx.sc, () => {
         const batches = uploadManager.getBatches()
         const sentBatches = batches.filter(
@@ -60,16 +63,18 @@ export function uploadBatchesTask(): ListrTask {
           (batch) => batch.status === BatchStatus.WaitingUpload
         )
 
-        task.output = ''
+        const bar = progressBar(successBatches.length, batches.length)
+        const failed =
+          errorBatches.length > 0 ? `, ${errorBatches.length} failed` : ''
 
-        sentBatches.forEach((batch) => {
-          task.output += `Batch ${batch.id}: chunks sent to the node.\n`
-        })
-        errorBatches.forEach((batch) => {
-          task.output += `Batch ${batch.id}: failed to upload. Check the logs for more information.\n`
-        })
-
-        task.title = `Uploading: ${waitingBatches.length} waiting, ${sentBatches.length} sent, ${successBatches.length} completed, ${errorBatches.length} failed`
+        const output = `${successBatches.length}/${batches.length} batches confirmed (${sentBatches.length} in flight, ${waitingBatches.length} waiting${failed})`
+        // listr2 re-prints the output on every change with some renderers,
+        // so only update it when the content actually changed.
+        if (output !== lastOutput) {
+          lastOutput = output
+          task.title = `Uploading batches ${bar}`
+          task.output = output
+        }
       })
 
       const batches = uploadManager.getBatches()
