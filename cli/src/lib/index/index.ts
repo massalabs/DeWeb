@@ -68,18 +68,27 @@ export async function estimateIndexerCost(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
     // The website does not exist in the index, we have to create it
-    const addressToOwnerKeyCost = StorageCost.datastoreEntry(
-      addressToOwnerKey(address, owner),
-      ''
-    )
-    // The owner enumeration entry is only created for a non-empty owner
-    const indexByOwnerKeyCost = owner
-      ? StorageCost.datastoreEntry(indexByOwnerKey(owner, address), '')
-      : 0n
-
-    return addressToOwnerKeyCost + indexByOwnerKeyCost
+    return newWebsiteIndexCost(address, owner)
   }
 
   // can be negative !!
   return StorageCost.bytes(owner.length - registeredOwner.length)
+}
+
+/**
+ * Storage cost of registering a website that is not in the index yet.
+ * @param address - The address of the website
+ * @param owner - The owner of the website (may be empty)
+ */
+export function newWebsiteIndexCost(address: string, owner: string): bigint {
+  const addressToOwnerKeyCost = StorageCost.datastoreEntry(
+    addressToOwnerKey(address, owner),
+    ''
+  )
+  // The owner enumeration entry is only created for a non-empty owner
+  const indexByOwnerKeyCost = owner
+    ? StorageCost.datastoreEntry(indexByOwnerKey(owner, address), '')
+    : 0n
+
+  return addressToOwnerKeyCost + indexByOwnerKeyCost
 }

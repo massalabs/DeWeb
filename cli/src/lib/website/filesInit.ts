@@ -248,6 +248,32 @@ export async function filesInitCost(
 }
 
 /**
+ * Compute the coins sent by `sendFilesInits`: the net storage cost of each batch,
+ * floored at zero since a batch that frees storage cannot send negative coins.
+ * @returns the total coins to send, in the smallest unit
+ */
+export async function filesInitCoins(
+  files: FileInit[],
+  filesToDelete: FileDelete[],
+  metadatas: Metadata[],
+  metadatasToDelete: Metadata[]
+): Promise<bigint> {
+  const batches = createBatches(
+    files,
+    filesToDelete,
+    metadatas,
+    metadatasToDelete
+  )
+
+  let total = 0n
+  for (const batch of batches) {
+    const coins = await batch.batchCost()
+    total += coins > 0n ? coins : 0n
+  }
+  return total
+}
+
+/**
  * Represents parameters for the filesInit function
  */
 class Batch {
