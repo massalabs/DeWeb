@@ -2,8 +2,7 @@ import { sha256 } from 'js-sha256'
 
 import { fileChunkKey } from './storageKeys'
 import { FileChunkPost } from './models/FileChunkPost'
-import { getFileFromAddress } from './read'
-import { Provider, StorageCost } from '@massalabs/massa-web3'
+import { StorageCost } from '@massalabs/massa-web3'
 import { fileHash } from './metadata'
 
 /**
@@ -41,9 +40,8 @@ export function divideIntoChunks(
  * @param chunkSize - the size of the chunk
  * @returns the cost of storing the chunk
  *
- * @remarks This function should be updated to avoid sending coins for chunks that do not require it:
- * - chunk X in storage has the same size or less, we do not need to send coins for it.
- * - if the chunk ID is already in storage, we do not need to pay new ledger entry cost.
+ * @remarks The chunk is always a new entry: the SC deletes the previous data of
+ * a file when initializing it, and refunds the freed storage at that point.
  */
 export function computeChunkCost(
   filePath: string,
@@ -76,31 +74,19 @@ export function toChunkPosts(
 
 /**
  * Check if the file requires update
- * @param provider - the web3 provider
- * @param location - the file path
  * @param localFileContent - the local file content
- * @param sc - the smart contract
+ * @param onChainFileContent - the content stored on chain, if any
  * @returns true if the file requires update, false otherwise
  */
-export async function requiresUpdate(
-  provider: Provider,
-  location: string,
+export function requiresUpdate(
   localFileContent: Uint8Array,
-  scAddress?: string
-): Promise<boolean> {
+  onChainFileContent?: Uint8Array
+): boolean {
   if (localFileContent.length === 0) {
     return false
   }
 
-  if (!scAddress || !scAddress.length) {
-    return true
-  }
-
-  var onChainFileContent: Uint8Array
-  try {
-    onChainFileContent = await getFileFromAddress(provider, scAddress, location)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_) {
+  if (!onChainFileContent) {
     return true
   }
 

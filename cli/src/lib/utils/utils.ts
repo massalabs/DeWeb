@@ -1,3 +1,5 @@
+import { formatMas } from '@massalabs/massa-web3'
+
 /**
  * Formats a number of bytes into a human-readable string
  * @param bytes - the number of bytes to format
@@ -42,4 +44,23 @@ export function chunkArray<T>(items: T[], size: number): T[][] {
     chunks.push(items.slice(i, i + size))
   }
   return chunks
+}
+
+/**
+ * Names a net amount: a cost when positive, a refund when negative.
+ * @param amount - the net amount, in the smallest unit
+ * @returns 'cost' or 'refund'
+ */
+export function costOrRefund(amount: bigint): 'cost' | 'refund' {
+  return amount < 0n ? 'refund' : 'cost'
+}
+
+/**
+ * Formats the magnitude of a net amount in MAS, its sign being carried by
+ * the wording (see `costOrRefund`).
+ * @param amount - the net amount, in the smallest unit
+ * @returns the absolute amount in MAS
+ */
+export function formatAbsMas(amount: bigint): string {
+  return formatMas(amount < 0n ? -amount : amount)
 }

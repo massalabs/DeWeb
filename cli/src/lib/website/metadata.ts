@@ -6,6 +6,7 @@ import {
   Provider,
   PublicProvider,
   StorageCost,
+  strToBytes,
 } from '@massalabs/massa-web3'
 import { Metadata } from './models/Metadata'
 import {
@@ -211,6 +212,58 @@ function setMetadataStorageCost(
       StorageCost.datastoreEntry(metadata.key, metadata.value),
     0n
   )
+}
+
+/**
+ * Compute the net storage cost of editing the global metadata of a website.
+ * Setting an existing key only costs the change in its value size; a new key
+ * costs a whole entry. Removing a key frees its entry.
+ * @param onChain - the global metadata currently stored on chain
+ * @param toSet - the metadata to set
+ * @param toDelete - the metadata to remove
+ * @returns the net storage cost, negative if storage is freed
+ */
+export function globalMetadataStorageDelta(
+  onChain: Metadata[],
+  toSet: Metadata[],
+  toDelete: Metadata[]
+): bigint {
+  const current = new Map(onChain.map((m) => [m.key, m.value]))
+
+  const deleted = toDelete.reduce((sum, metadata) => {
+    const value = current.get(metadata.key)
+    if (value === undefined) return sum
+    current.delete(metadata.key)
+    return (
+      sum +
+      StorageCost.datastoreEntry(
+        globalMetadataKey(strToBytes(metadata.key)),
+        value
+      )
+    )
+  }, 0n)
+
+  const set = toSet.reduce((sum, metadata) => {
+    const value = current.get(metadata.key)
+    current.set(metadata.key, metadata.value)
+    if (value === undefined) {
+      return (
+        sum +
+        StorageCost.datastoreEntry(
+          globalMetadataKey(strToBytes(metadata.key)),
+          metadata.value
+        )
+      )
+    }
+    return (
+      sum +
+      StorageCost.bytes(
+        strToBytes(metadata.value).length - strToBytes(value).length
+      )
+    )
+  }, 0n)
+
+  return set - deleted
 }
 
 /**

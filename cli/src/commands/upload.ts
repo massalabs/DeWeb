@@ -67,6 +67,7 @@ export const uploadCommand = new Command('upload')
       ctx.sc = new SmartContract(provider, address)
 
       const currentGlobalMetadata = await getGlobalMetadata(provider, address)
+      ctx.onChainMetadatas = currentGlobalMetadata
 
       const updateRequired = await filterMetadataToUpdate(
         currentGlobalMetadata,
@@ -122,7 +123,8 @@ async function createUploadCtx(
     skipConfirm: skipConfirm,
     noIndex: noIndex,
     skipIndexHtmlCheck: skipIndexHtmlCheck,
-    currentTotalEstimation: 0n,
+    onChainMetadatas: [],
+    freedStorageCost: 0n,
     maxConcurrentOps: 4,
     minimalFees: await provider.client.getMinimalFee(),
   }

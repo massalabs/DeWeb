@@ -1,4 +1,10 @@
+import { Provider, StorageCost } from '@massalabs/massa-web3'
+
+import { deployCost } from '../src/lib/website/deploySC'
+import { DEWEB_SC_BYTECODE } from '../src/lib/website/sc/deweb-sc-bytecode'
 import {
+  batchSize,
+  filesInitCoins,
   filesInitCost,
   prepareCost,
   totalPreparationCost,
@@ -116,5 +122,49 @@ describe('filesInitCost', () => {
     const cost = await filesInitCost([], [new FileDelete('old.html')], [], [])
 
     expect(cost).toBeLessThan(0n)
+  })
+})
+
+describe('filesInitCoins', () => {
+  it('should floor each batch at zero instead of netting across batches', async () => {
+    // First batch only deletes (negative), second batch only allocates.
+    const deletes = Array.from(
+      { length: batchSize },
+      (_, i) => new FileDelete(`old${i}.html`)
+    )
+    const metadatas = Array.from(
+      { length: batchSize + 1 },
+      (_, i) => new Metadata(`KEY${i}`, 'value')
+    )
+    const files = [new FileInit('index.html')]
+
+    const coins = await filesInitCoins(files, deletes, metadatas, [])
+    const lastBatch = await filesInitCost([], [], [metadatas[batchSize]], [])
+    const firstBatch = await filesInitCost(
+      files,
+      deletes,
+      metadatas.slice(0, batchSize),
+      []
+    )
+
+    expect(coins).toBe((firstBatch > 0n ? firstBatch : 0n) + lastBatch)
+  })
+
+  it('should be zero for a delete-only call', async () => {
+    expect(await filesInitCoins([], [new FileDelete('old.html')], [], [])).toBe(
+      0n
+    )
+  })
+})
+
+describe('deployCost', () => {
+  it('should account for the SC bytecode storage', () => {
+    const provider = {
+      address: 'AU12UBnqTHDQALpocVBnkPNy7y5CndUJQTLutaVDDFgMJcq5kQiKq',
+    } as Provider
+
+    expect(deployCost(provider, 0n)).toBeGreaterThan(
+      StorageCost.smartContractDeploy(DEWEB_SC_BYTECODE.length)
+    )
   })
 })

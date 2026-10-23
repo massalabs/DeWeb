@@ -8,6 +8,7 @@ import {
   deleteWebsiteTask,
   prepareDeleteWebsiteTask,
   purgeWebsiteTask,
+  showDeleteEstimationTask,
   updateIndexAfterPurgeTask,
 } from '../tasks/delete'
 import { DeleteCtx } from '../tasks/tasks'
@@ -53,10 +54,21 @@ export const deleteCommand = new Command('delete')
       skipConfirm: options.yes,
       purge: options.purge,
       noIndex: options.noIndex,
+
+      minimalFees: await provider.client.getMinimalFee(),
+      scBytecodeSize: options.purge
+        ? (
+            await provider.client.getAddressesBytecode({
+              address,
+              is_final: true,
+            })
+          ).length
+        : 0,
     }
 
     const tasksArray = [
       prepareDeleteWebsiteTask(),
+      showDeleteEstimationTask(),
       confirmDeleteWebsiteTask(),
       deleteWebsiteTask(),
     ]

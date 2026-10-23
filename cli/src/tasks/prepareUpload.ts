@@ -1,17 +1,13 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { formatMas, OperationStatus, U64 } from '@massalabs/massa-web3'
+import { formatMas, OperationStatus } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
-import {
-  batchSize,
-  prepareCost,
-  totalPreparationCost,
-  sendFilesInits,
-} from '../lib/website/filesInit'
-import { LAST_UPDATE_KEY } from '../lib/website/metadata'
-import { Metadata } from '../lib/website/models/Metadata'
+import { getFileInitBatchLen, sendFilesInits } from '../lib/website/filesInit'
 
-import { UploadCtx } from './tasks'
+import { costOrRefund, formatAbsMas } from '../lib/utils/utils'
+
+import { estimateUploadCost } from './estimations'
+import { CostEstimation, UploadCtx } from './tasks'
 
 /**
  * Create a task to upload batches
@@ -31,10 +27,6 @@ export function prepareUploadTask(): ListrTask {
         return
       }
 
-      const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
-
-      ctx.metadatas.push(new Metadata(LAST_UPDATE_KEY, utcNowDate.toString()))
-
       return task.newListr(
         [
           {
@@ -53,36 +45,30 @@ export function prepareUploadTask(): ListrTask {
                 subTask.output = 'Metadata changes detected'
               }
 
-              const totalChanges =
-                ctx.fileInits.length +
-                ctx.filesToDelete.length +
-                ctx.metadatas.length +
-                ctx.metadatasToDelete.length
-              const estimatedOperations = Math.ceil(totalChanges / batchSize)
-              const minimalFees = ctx.minimalFees * BigInt(estimatedOperations)
-              const cost = await prepareCost(
+              const operationCount = getFileInitBatchLen(
                 ctx.fileInits,
                 ctx.filesToDelete,
                 ctx.metadatas,
                 ctx.metadatasToDelete
               )
-              const {
-                filePathListCost,
-                storageCost,
-                filesToDeleteCost,
-                metadatasCost,
-                metadatasToDeleteCost,
-              } = cost
+              const minimalFees = ctx.minimalFees * BigInt(operationCount)
 
-              const totalCost = totalPreparationCost(cost)
+              const estimation: CostEstimation =
+                ctx.estimation ?? (await estimateUploadCost(ctx))
+              const { filesInit, metadatas, freed, preparationCoins } =
+                estimation
+              const netCost = filesInit + metadatas - freed
 
-              subTask.output = `Estimated cost of SC preparation:`
-              subTask.output = `  + Files init: ${formatMas(filePathListCost)} MAS`
-              subTask.output = `  + Storage: ${formatMas(storageCost)} MAS`
-              subTask.output = `  - Files to delete: ${formatMas(filesToDeleteCost)} MAS`
-              subTask.output = `  + Metadatas: ${formatMas(metadatasCost)} MAS`
-              subTask.output = `  - Metadatas to delete: ${formatMas(metadatasToDeleteCost)} MAS`
-              subTask.output = `SC preparation costs ${formatMas(totalCost + minimalFees)} MAS (including ${formatMas(minimalFees)} MAS of minimal fees)`
+              subTask.output = `Estimated SC preparation:`
+              subTask.output = `  + Files init: ${formatMas(filesInit)} MAS`
+              subTask.output = `  ${metadatas < 0n ? '-' : '+'} Metadatas: ${formatAbsMas(metadatas)} MAS`
+              subTask.output = `  - Freed by replaced and deleted files: ${formatMas(freed)} MAS`
+              const preparationTotal = netCost + minimalFees
+              const feesNote = preparationTotal < 0n ? 'after' : 'including'
+              subTask.output = `SC preparation ${costOrRefund(preparationTotal)}: ${formatAbsMas(preparationTotal)} MAS (${feesNote} ${formatMas(minimalFees)} MAS of minimal fees)`
+              if (preparationCoins > netCost) {
+                subTask.output = `${formatMas(preparationCoins)} MAS are sent with the operations, the excess is refunded`
+              }
 
               if (!ctx.skipConfirm) {
                 const answer = await subTask

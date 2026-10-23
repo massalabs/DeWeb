@@ -1,5 +1,5 @@
 import { ListrEnquirerPromptAdapter } from '@listr2/prompt-adapter-enquirer'
-import { OperationStatus } from '@massalabs/massa-web3'
+import { formatMas, OperationStatus } from '@massalabs/massa-web3'
 import { ListrTask } from 'listr2'
 
 import {
@@ -10,6 +10,9 @@ import {
 
 import { updateIndexScWebsite } from '../lib/index/index'
 
+import { costOrRefund, formatAbsMas } from '../lib/utils/utils'
+
+import { estimateDeleteCost } from './estimations'
 import { DeleteCtx } from './tasks'
 
 export function prepareDeleteWebsiteTask(): ListrTask {
@@ -22,6 +25,43 @@ export function prepareDeleteWebsiteTask(): ListrTask {
 
       ctx.fileDeletes = fileDeletes
       ctx.globalMetadatas = globalMetadatas
+    },
+    rendererOptions: {
+      outputBar: Infinity,
+      persistentOutput: true,
+    },
+  }
+}
+
+/**
+ * Create a task to estimate the cost of the deletion, usually a refund.
+ * Fails if the balance cannot cover the operation fees.
+ * @returns a Listr task
+ */
+export function showDeleteEstimationTask(): ListrTask {
+  return {
+    title: 'Estimated delete cost',
+    task: async (ctx: DeleteCtx, task) => {
+      const estimation = await estimateDeleteCost(ctx)
+      ctx.estimation = estimation
+
+      task.output = `  - Freed by deleted files: ${formatMas(estimation.files)} MAS`
+      task.output = `  - Freed by deleted metadatas: ${formatMas(estimation.metadatas)} MAS`
+      if (ctx.purge) {
+        task.output = `  - Freed by purging the SC: ${formatMas(estimation.purge)} MAS`
+      }
+      if (estimation.scBalance > 0n) {
+        task.output = `  - SC balance: ${formatMas(estimation.scBalance)} MAS`
+      }
+      task.output = `  + Operation fees: ${formatMas(estimation.fees)} MAS`
+      task.output = `Total estimated ${costOrRefund(estimation.total)}: ${formatAbsMas(estimation.total)} MAS`
+
+      const balance = await ctx.provider.balance(true)
+      if (balance < estimation.fees) {
+        throw new Error(
+          `Current balance ${formatMas(balance)} MAS is too low, ${formatMas(estimation.fees)} MAS are required`
+        )
+      }
     },
     rendererOptions: {
       outputBar: Infinity,

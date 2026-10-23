@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'fs'
 import { ListrTask } from 'listr2'
 import { posix as path } from 'path'
 
-import { Provider, SmartContract } from '@massalabs/massa-web3'
+import { Provider, SmartContract, U64 } from '@massalabs/massa-web3'
 
 import { batcher } from '../lib/batcher'
 
@@ -11,12 +11,14 @@ import {
   requiresUpdate,
   toChunkPosts,
 } from '../lib/website/chunk'
-import { listFiles } from '../lib/website/read'
+import { LAST_UPDATE_KEY } from '../lib/website/metadata'
+import { getOnChainFile, listFiles } from '../lib/website/read'
 
 import { FileChunkPost } from '../lib/website/models/FileChunkPost'
 import { FileInit } from '../lib/website/models/FileInit'
 
 import { FileDelete } from '../lib/website/models/FileDelete'
+import { Metadata } from '../lib/website/models/Metadata'
 import { UploadCtx } from './tasks'
 
 /**
@@ -27,13 +29,15 @@ export function prepareBatchesTask(): ListrTask {
   return {
     title: 'Preparing batches',
     task: async (ctx: UploadCtx, task) => {
-      const { chunks, fileInits, localFiles } = await prepareChunks(
-        ctx.provider,
-        ctx.websiteDirPath,
-        ctx.chunkSize,
-        ctx.sc
-      )
+      const { chunks, fileInits, localFiles, replacedStorageCost } =
+        await prepareChunks(
+          ctx.provider,
+          ctx.websiteDirPath,
+          ctx.chunkSize,
+          ctx.sc
+        )
       ctx.fileInits = fileInits
+      ctx.freedStorageCost = replacedStorageCost
 
       // check that the provided website directory has correct format
       if (!ctx.skipIndexHtmlCheck && !localFiles.includes('index.html')) {
@@ -56,9 +60,31 @@ export function prepareBatchesTask(): ListrTask {
         ctx.filesToDelete = filesInSC
           .filter((file) => !localFiles.includes(file))
           .map((file) => new FileDelete(file))
+
+        // Storage freed by deleting the files
+        for (const file of ctx.filesToDelete) {
+          const onChainFile = await getOnChainFile(
+            ctx.provider,
+            ctx.sc.address,
+            file.location
+          )
+          ctx.freedStorageCost += onChainFile?.storageCost ?? 0n
+        }
       }
 
       ctx.batches = batcher(chunks, ctx.chunkSize)
+
+      // Stamp the website with its update time whenever something changes.
+      // Done here, before the cost estimation, so that it is accounted for.
+      if (
+        ctx.fileInits.length !== 0 ||
+        ctx.filesToDelete.length !== 0 ||
+        ctx.metadatas.length !== 0 ||
+        ctx.metadatasToDelete.length !== 0
+      ) {
+        const utcNowDate = U64.fromNumber(Math.floor(Date.now() / 1000))
+        ctx.metadatas.push(new Metadata(LAST_UPDATE_KEY, utcNowDate.toString()))
+      }
 
       if (ctx.batches.length < 16) {
         for (const batch of ctx.batches) {
@@ -92,6 +118,8 @@ export function prepareBatchesTask(): ListrTask {
  * @param path - the path to the website directory
  * @param chunkSize - the maximum size of each chunk
  * @param basePath - the base path to compute relative paths (optional)
+ * @returns the chunks and file inits of the files to upload, the local files,
+ * and the storage cost of the on-chain files they replace (the SC frees it)
  */
 async function prepareChunks(
   provider: Provider,
@@ -103,6 +131,7 @@ async function prepareChunks(
   chunks: FileChunkPost[]
   fileInits: FileInit[]
   localFiles: string[]
+  replacedStorageCost: bigint
 }> {
   // init variables
   const files = readdirSync(dirPath)
@@ -111,6 +140,7 @@ async function prepareChunks(
   const fileInits: FileInit[] = []
 
   const localFiles: string[] = []
+  let replacedStorageCost = 0n
 
   // iterate over the files
   for (const file of files) {
@@ -129,15 +159,21 @@ async function prepareChunks(
       chunks.push(...result.chunks)
       fileInits.push(...result.fileInits)
       localFiles.push(...result.localFiles)
+      replacedStorageCost += result.replacedStorageCost
     } else if (stats.isFile()) {
       const data = readFileSync(fullPath)
       const relativePath = path.relative(basePath, fullPath)
 
       localFiles.push(relativePath)
 
-      if (!(await requiresUpdate(provider, relativePath, data, sc?.address))) {
+      const onChainFile = sc
+        ? await getOnChainFile(provider, sc.address, relativePath)
+        : undefined
+
+      if (!requiresUpdate(data, onChainFile?.content)) {
         continue
       }
+      replacedStorageCost += onChainFile?.storageCost ?? 0n
       const chunksData = divideIntoChunks(data, chunkSize)
 
       // Compute the relative path from the base path
@@ -148,5 +184,5 @@ async function prepareChunks(
     }
   }
 
-  return { chunks, fileInits, localFiles }
+  return { chunks, fileInits, localFiles, replacedStorageCost }
 }
