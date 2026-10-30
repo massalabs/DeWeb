@@ -9,6 +9,7 @@ import {
   strToBytes,
 } from '@massalabs/massa-web3'
 import { Metadata } from './models/Metadata'
+import { readStorageBatched } from './readStorageBatched'
 import {
   globalMetadataKey,
   GLOBAL_METADATA_TAG,
@@ -47,7 +48,7 @@ export async function getGlobalMetadata(
     address,
     globalMetadataKey(prefix)
   )
-  const metadata = await provider.readStorage(address, metadataKeys, false)
+  const metadata = await readStorageBatched(provider, address, metadataKeys)
 
   return metadata.map((m, index) => {
     const metadataKeyBytes = metadataKeys[index].slice(
@@ -105,10 +106,10 @@ export async function getFileMetadata(
     return keyStr.includes(fileMetadataTagStr)
   })
 
-  const metadataValues = await provider.readStorage(
+  const metadataValues = await readStorageBatched(
+    provider,
     address,
-    filteredKeys,
-    false
+    filteredKeys
   )
 
   return metadataValues.reduce(

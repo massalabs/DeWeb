@@ -17,6 +17,7 @@ import {
   fileLocationKey,
 } from './storageKeys'
 import { fileHash, HASH_LENGTH } from './metadata'
+import { readStorageBatched } from './readStorageBatched'
 
 /**
  * Lists files from the given website on Massa blockchain
@@ -31,10 +32,10 @@ export async function listFiles(
     scAddress,
     FILE_LOCATION_TAG
   )
-  const fileLocations = await provider.readStorage(
+  const fileLocations = await readStorageBatched(
+    provider,
     scAddress,
-    allStorageKeys,
-    false
+    allStorageKeys
   )
 
   const files: string[] = []
@@ -109,7 +110,7 @@ export async function getFileFromAddress(
     chunksKeys.push(fileChunkKey(filePathHash, i))
   }
 
-  const fileChunks = await provider.readStorage(scAddress, chunksKeys, false)
+  const fileChunks = await readStorageBatched(provider, scAddress, chunksKeys)
 
   return fileChunks
     .filter((chunk) => !!chunk)
@@ -117,34 +118,6 @@ export async function getFileFromAddress(
       (acc, chunk) => Uint8Array.from([...acc, ...chunk]),
       new Uint8Array()
     )
-}
-
-/** Maximum number of datastore entries the node reads in one request */
-const MAX_READ_STORAGE_KEYS = 128
-
-/**
- * Read datastore entries, in as many requests as the node limit requires
- * @param provider - Provider instance
- * @param scAddress - Address of the smart contract
- * @param keys - the keys to read
- * @returns the values, null for a missing key
- */
-export async function readStorageBatched(
-  provider: PublicProvider,
-  scAddress: string,
-  keys: Uint8Array[]
-): Promise<(Uint8Array | null)[]> {
-  const values: (Uint8Array | null)[] = []
-  for (let i = 0; i < keys.length; i += MAX_READ_STORAGE_KEYS) {
-    values.push(
-      ...(await provider.readStorage(
-        scAddress,
-        keys.slice(i, i + MAX_READ_STORAGE_KEYS),
-        false
-      ))
-    )
-  }
-  return values
 }
 
 /**
