@@ -239,7 +239,7 @@ func GetHttpHeaders(network *msConfig.NetworkInfos, websiteAddress string, fileP
 		}
 	}
 
-	httpHeaderValues, err := node.ContractDatastoreEntries(client, websiteAddress, httpHeaderKeys)
+	httpHeaderValues, err := contractDatastoreEntries(client, websiteAddress, httpHeaderKeys)
 	if err != nil {
 		return nil, fmt.Errorf("fetching http header metadata values: %w", err)
 	}
@@ -304,7 +304,7 @@ func GetFilesPathList(
 		return nil, fmt.Errorf("fetching website file location keys: %w", err)
 	}
 
-	filesPathListResponse, err := node.ContractDatastoreEntries(client, websiteAddress, filteredKeys)
+	filesPathListResponse, err := contractDatastoreEntries(client, websiteAddress, filteredKeys)
 	if err != nil {
 		return nil, fmt.Errorf("fetching website files path list: %w", err)
 	}
@@ -348,40 +348,53 @@ func fetchAllChunks(client *node.Client, websiteAddress string, filePath string,
 		keys[i] = storagekeys.FileChunkKey(filePathHash[:], i)
 	}
 
+	response, err := contractDatastoreEntries(client, websiteAddress, keys)
+	if err != nil {
+		return nil, err
+	}
+
 	var dataStore []byte
-	totalBatches := (int(chunkNumber) + datastoreBatchSize - 1) / datastoreBatchSize
 
-	for batch := 0; batch < totalBatches; batch++ {
-		start := batch * datastoreBatchSize
-
-		end := start + datastoreBatchSize
-		if end > int(chunkNumber) {
-			end = int(chunkNumber)
+	for _, entry := range response {
+		if len(entry.FinalValue) == 0 {
+			return nil, fmt.Errorf("empty chunk")
 		}
 
-		batchKeys := keys[start:end]
+		dataStore = append(dataStore, entry.FinalValue...)
+	}
+
+	return dataStore, nil
+}
+
+// contractDatastoreEntries fetches the values of the given keys in batches of datastoreBatchSize,
+// because nodes limit the number of entries accepted per get_datastore_entries request.
+// The values are returned in the same order as the keys.
+func contractDatastoreEntries(
+	client *node.Client,
+	websiteAddress string,
+	keys [][]byte,
+) ([]node.DatastoreEntryResponse, error) {
+	entries := make([]node.DatastoreEntryResponse, 0, len(keys))
+	totalBatches := (len(keys) + datastoreBatchSize - 1) / datastoreBatchSize
+
+	for start := 0; start < len(keys); start += datastoreBatchSize {
+		batchKeys := keys[start:min(start+datastoreBatchSize, len(keys))]
 
 		response, err := node.ContractDatastoreEntries(client, websiteAddress, batchKeys)
 		if err != nil {
-			return nil, fmt.Errorf("calling get_datastore_entries '%+v': %w", batchKeys, err)
+			return nil, fmt.Errorf("calling get_datastore_entries: %w", err)
 		}
 
 		if len(response) != len(batchKeys) {
 			return nil, fmt.Errorf("expected %d entries, got %d", len(batchKeys), len(response))
 		}
 
-		for _, entry := range response {
-			if len(entry.FinalValue) == 0 {
-				return nil, fmt.Errorf("empty chunk")
-			}
+		entries = append(entries, response...)
 
-			dataStore = append(dataStore, entry.FinalValue...)
-		}
-
-		logger.Debugf("Processed batch %d/%d", batch+1, totalBatches)
+		logger.Debugf("Processed batch %d/%d", start/datastoreBatchSize+1, totalBatches)
 	}
 
-	return dataStore, nil
+	return entries, nil
 }
 
 // GetOwner retrieves the owner of the website.

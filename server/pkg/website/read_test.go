@@ -14,6 +14,7 @@ import (
 	"github.com/massalabs/deweb-server/int/api/config"
 	msConfig "github.com/massalabs/deweb-server/pkg/config"
 	"github.com/massalabs/station/pkg/logger"
+	"github.com/massalabs/station/pkg/node"
 )
 
 func TestMain(m *testing.M) {
@@ -230,5 +231,78 @@ func TestLastUpdateCacheSetDisabledWithZeroTTL(t *testing.T) {
 
 	if _, ok := globalLastUpdateCache.get("AS_disabled"); ok {
 		t.Fatalf("expected a cache miss when caching is disabled")
+	}
+}
+
+// echoNode stands up a JSON-RPC server that answers get_datastore_entries with each requested
+// key as its final value, and records the number of keys of each request.
+func echoNode(t *testing.T, batchSizes *[]int) *httptest.Server {
+	t.Helper()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			ID     json.RawMessage `json:"id"`
+			Params [][]struct {
+				Key []int `json:"key"`
+			} `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Params) != 1 {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+
+		*batchSizes = append(*batchSizes, len(req.Params[0]))
+
+		results := make([]map[string][]byte, len(req.Params[0]))
+		for i, entry := range req.Params[0] {
+			key := make([]byte, len(entry.Key))
+			for j, b := range entry.Key {
+				key[j] = byte(b)
+			}
+
+			results[i] = map[string][]byte{"final_value": key}
+		}
+
+		body, _ := json.Marshal(map[string]any{"jsonrpc": "2.0", "id": req.ID, "result": results})
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+
+	t.Cleanup(srv.Close)
+
+	return srv
+}
+
+func TestContractDatastoreEntriesBatchesAndKeepsOrder(t *testing.T) {
+	var batchSizes []int
+
+	srv := echoNode(t, &batchSizes)
+	client := node.NewClient(srv.URL)
+
+	const keyCount = 2*datastoreBatchSize + 1
+
+	keys := make([][]byte, keyCount)
+	for i := range keys {
+		keys[i] = []byte(fmt.Sprintf("key-%d", i))
+	}
+
+	entries, err := contractDatastoreEntries(client, "AS_batch", keys)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if want := []int{datastoreBatchSize, datastoreBatchSize, 1}; fmt.Sprint(batchSizes) != fmt.Sprint(want) {
+		t.Fatalf("expected batches %v, got %v", want, batchSizes)
+	}
+
+	if len(entries) != keyCount {
+		t.Fatalf("expected %d entries, got %d", keyCount, len(entries))
+	}
+
+	for i, entry := range entries {
+		if string(entry.FinalValue) != string(keys[i]) {
+			t.Fatalf("entry %d: expected %q, got %q", i, keys[i], entry.FinalValue)
+		}
 	}
 }
